@@ -1,0 +1,16 @@
+Clear
+
+New Circuit.MinimalRadial basekv=20 pu=1.0 phases=3 bus1=SourceBus angle=0
+
+New Transformer.Sub phases=3 windings=2 XHL=6
+~ wdg=1 bus=SourceBus conn=wye kv=20 kva=10000 %r=0.5
+~ wdg=2 bus=MVBus conn=wye kv=10 kva=10000 %r=0.5
+
+New Line.Feeder phases=3 bus1=MVBus.1.2.3 bus2=LoadBus.1.2.3
+~ r1=0.12 x1=0.09 r0=0.36 x0=0.27 c1=3.4 c0=1.6 length=1 units=km
+
+New Load.Load1 bus1=LoadBus.1.2.3 phases=3 conn=wye model=1 kv=10 kW=1500 kvar=500
+
+Set Voltagebases=[20, 10]
+CalcVoltageBases
+Solve
