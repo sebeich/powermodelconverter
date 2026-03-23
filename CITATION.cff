@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+title: PowerModelConverter
+message: If you use this repository, please cite it using the metadata below.
+type: software
+authors:
+  - family-names: Eichhorn
+    given-names: Sebastian
+  - family-names: Tonkoski
+    given-names: Radoje
+repository-code: ssh://git@gitlab.lrz.de/tum-een/doctoral-researchers/sebastian/powermodelconverter.git
+license: BSD-3-Clause

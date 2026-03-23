@@ -1,0 +1,14 @@
+Clear
+
+New Circuit.MinimalUnbalanced3ph basekv=10 pu=1.0 phases=3 bus1=SourceBus angle=0
+
+New Line.Feeder phases=3 bus1=SourceBus.1.2.3 bus2=LoadBus.1.2.3
+~ r1=0.05 x1=0.02 r0=0.15 x0=0.06 c1=0 c0=0 length=0.01 units=km
+
+New Load.LoadA bus1=LoadBus.1 phases=1 conn=wye model=1 kv=5.7735 kW=3 kvar=1
+New Load.LoadB bus1=LoadBus.2 phases=1 conn=wye model=1 kv=5.7735 kW=1.5 kvar=0.5
+New Load.LoadC bus1=LoadBus.3 phases=1 conn=wye model=1 kv=5.7735 kW=4.5 kvar=1.5
+
+Set Voltagebases=[10]
+CalcVoltageBases
+Solve

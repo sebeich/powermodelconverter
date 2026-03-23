@@ -1,0 +1,176 @@
+{
+  "capabilities": [
+    {
+      "tool": "matpower",
+      "balanced_import": true,
+      "balanced_export": true,
+      "balanced_validation": true,
+      "unbalanced_import": false,
+      "unbalanced_export": false,
+      "unbalanced_validation": false,
+      "notes": "Balanced MATPOWER cases are validated. Unbalanced semantics are outside the MATPOWER exchange contract."
+    },
+    {
+      "tool": "opendss",
+      "balanced_import": true,
+      "balanced_export": false,
+      "balanced_validation": true,
+      "unbalanced_import": true,
+      "unbalanced_export": true,
+      "unbalanced_validation": true,
+      "notes": "OpenDSS import is validated for a supported subset. Unbalanced routes are signed off for pandapower and PowerModelsDistribution on the starter three-phase feeder."
+    },
+    {
+      "tool": "pandapower",
+      "balanced_import": true,
+      "balanced_export": true,
+      "balanced_validation": true,
+      "unbalanced_import": true,
+      "unbalanced_export": true,
+      "unbalanced_validation": true,
+      "notes": "Balanced JSON and native pandapower 3ph models are supported. Unbalanced validation currently targets native pandapower roundtrips."
+    },
+    {
+      "tool": "powermodels",
+      "balanced_import": false,
+      "balanced_export": true,
+      "balanced_validation": true,
+      "unbalanced_import": false,
+      "unbalanced_export": false,
+      "unbalanced_validation": false,
+      "notes": "Balanced PowerModels JSON export is validated with Julia AC power flow."
+    },
+    {
+      "tool": "powermodelsdistribution",
+      "balanced_import": false,
+      "balanced_export": false,
+      "balanced_validation": false,
+      "unbalanced_import": false,
+      "unbalanced_export": true,
+      "unbalanced_validation": true,
+      "notes": "Validated as an unbalanced backend for the OpenDSS-source starter feeder. Canonical import into this repo is not implemented yet."
+    },
+    {
+      "tool": "pypower",
+      "balanced_import": false,
+      "balanced_export": false,
+      "balanced_validation": false,
+      "unbalanced_import": false,
+      "unbalanced_export": false,
+      "unbalanced_validation": false,
+      "notes": "Planned via the MATPOWER-style balanced exchange contract."
+    }
+  ],
+  "records": [
+    {
+      "case_id": "case9",
+      "source_tool": "matpower",
+      "export_tool": "pandapower",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 0.0,
+      "max_voltage_delta_pu": 0.0,
+      "compared_points": 9,
+      "notes": "Official MATPOWER case9 imported through pandapower converter."
+    },
+    {
+      "case_id": "case9",
+      "source_tool": "matpower",
+      "export_tool": "powermodels",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 6.785621049595659e-09,
+      "max_voltage_delta_pu": 9.653878480485528e-12,
+      "compared_points": 9,
+      "notes": "Balanced export validated with Julia PowerModels AC power flow."
+    },
+    {
+      "case_id": "minimal_radial",
+      "source_tool": "opendss",
+      "export_tool": "pandapower",
+      "model_type": "balanced_subset",
+      "status": "validated",
+      "slack_delta_mva": 0.00021851256480850633,
+      "max_voltage_delta_pu": 0.0009315241926163918,
+      "compared_points": 3,
+      "notes": "Validated against OpenDSS source slack power and bus voltages for the currently supported subset."
+    },
+    {
+      "case_id": "minimal_radial",
+      "source_tool": "opendss",
+      "export_tool": "powermodels",
+      "model_type": "balanced_subset",
+      "status": "validated",
+      "slack_delta_mva": 6.866395075742565e-14,
+      "max_voltage_delta_pu": 6.670367046887758e-16,
+      "compared_points": 3,
+      "notes": "Balanced-equivalent export validated with Julia PowerModels AC power flow."
+    },
+    {
+      "case_id": "minimal_unbalanced_3ph",
+      "source_tool": "opendss",
+      "export_tool": "pandapower",
+      "model_type": "unbalanced_3ph",
+      "status": "validated",
+      "slack_delta_mva": 9.593086055593304e-12,
+      "max_voltage_delta_pu": 6.383702925421362e-06,
+      "compared_points": 6,
+      "notes": "Unbalanced OpenDSS starter feeder validated against source node voltages with pandapower runpp_3ph."
+    },
+    {
+      "case_id": "minimal_unbalanced_3ph",
+      "source_tool": "opendss",
+      "export_tool": "powermodelsdistribution",
+      "model_type": "unbalanced_3ph",
+      "status": "validated",
+      "slack_delta_mva": 7.088681169219646e-06,
+      "max_voltage_delta_pu": 0.0009360913672985923,
+      "compared_points": 6,
+      "notes": "Unbalanced OpenDSS starter feeder exported to PowerModelsDistribution and validated against source node voltages."
+    },
+    {
+      "case_id": "case9_from_matpower.pandapower",
+      "source_tool": "pandapower",
+      "export_tool": "pandapower",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 0.0,
+      "max_voltage_delta_pu": 0.0,
+      "compared_points": 9,
+      "notes": "Pandapower JSON re-import generated from the validated MATPOWER case9 route."
+    },
+    {
+      "case_id": "case9_from_matpower.pandapower",
+      "source_tool": "pandapower",
+      "export_tool": "powermodels",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 6.785621049595659e-09,
+      "max_voltage_delta_pu": 9.653878480485528e-12,
+      "compared_points": 9,
+      "notes": "Balanced pandapower JSON export validated with Julia PowerModels AC power flow."
+    },
+    {
+      "case_id": "ieee_european_lv_asymmetric",
+      "source_tool": "pandapower",
+      "export_tool": "pandapower",
+      "model_type": "unbalanced_3ph",
+      "status": "validated",
+      "slack_delta_mva": 0.0,
+      "max_voltage_delta_pu": 0.0,
+      "compared_points": 2721,
+      "notes": "Native pandapower 3-phase roundtrip validated with runpp_3ph."
+    },
+    {
+      "case_id": "ieee_european_lv_asymmetric",
+      "source_tool": "pandapower",
+      "export_tool": "powermodelsdistribution",
+      "model_type": "unbalanced_3ph",
+      "status": "validated",
+      "slack_delta_mva": 0.00023219707119944715,
+      "max_voltage_delta_pu": 0.004777856745994203,
+      "compared_points": 2721,
+      "notes": "Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages."
+    }
+  ]
+}
