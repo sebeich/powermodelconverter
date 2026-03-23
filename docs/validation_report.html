@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PowerModelConverter Validation Dashboard</title>
+  <style>
+    :root {
+      --bg: #f3efe7;
+      --panel: #fffdf9;
+      --ink: #1d1b18;
+      --muted: #6a645c;
+      --line: #d8d0c4;
+      --green: #1f7a5c;
+      --amber: #a0671a;
+      --red: #9f2d2d;
+      --blue: #1d4ed8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #fff6d8 0, transparent 28%),
+        radial-gradient(circle at bottom right, #dff5ee 0, transparent 26%),
+        var(--bg);
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 20px 48px; }
+    .hero {
+      background: linear-gradient(135deg, #1b4d3e, #233a72);
+      color: white;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 18px 50px rgba(20, 30, 40, 0.18);
+    }
+    .hero h1 { margin: 0 0 10px; font-size: 2rem; }
+    .hero p { margin: 0; max-width: 850px; color: rgba(255,255,255,.88); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 22px;
+    }
+    .card, .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 8px 26px rgba(40, 35, 25, 0.06);
+    }
+    .card { padding: 18px; }
+    .card h2 { margin: 0 0 6px; font-size: .95rem; color: var(--muted); }
+    .card .value { font-size: 2rem; font-weight: 700; }
+    .card .sub { margin-top: 6px; color: var(--muted); font-size: .92rem; }
+    .section { margin-top: 22px; padding: 20px; }
+    .section h2 { margin: 0 0 14px; font-size: 1.2rem; }
+    .analysis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+    .analysis-card {
+      background: linear-gradient(180deg, #fffaf0, #fffdf9);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .analysis-card h3 { margin: 0 0 8px; font-size: 1rem; }
+    .analysis-card p { margin: 0; color: var(--muted); line-height: 1.45; }
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+    }
+    .matrix th, .matrix td, .table th, .table td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .matrix th { background: #f8f3ea; }
+    .cell { text-align: center; font-weight: 600; text-transform: uppercase; font-size: .78rem; }
+    .cell-validated { background: rgba(31, 122, 92, 0.12); color: var(--green); }
+    .cell-not_validated { background: rgba(160, 103, 26, 0.12); color: var(--amber); }
+    .cell-empty { color: var(--muted); }
+    .caps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .cap-card {
+      background: #fdfaf3;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .cap-card h3 { margin: 0 0 8px; }
+    .cap-card p { margin: 0 0 10px; color: var(--muted); }
+    .cap-card ul { margin: 0; padding-left: 18px; }
+    .table { width: 100%; border-collapse: collapse; }
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .pill-validated { background: rgba(31,122,92,.12); color: var(--green); }
+    .pill-not_validated { background: rgba(160,103,26,.12); color: var(--amber); }
+    .footer { margin-top: 18px; color: var(--muted); font-size: .92rem; }
+    svg { display: block; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>PowerModelConverter Validation Dashboard</h1>
+      <p>Generated from the live route inventory. This page shows which conversions are validated, which are still pending, and the measured precision for each route in the current repository state.</p>
+    </section>
+
+    <div class="grid">
+      <article class="card">
+        <h2>Validated Routes</h2>
+        <div class="value">10</div>
+        <div class="sub">Routes with successful measured validation</div>
+      </article>
+      <article class="card">
+        <h2>Pending Routes</h2>
+        <div class="value">0</div>
+        <div class="sub">Tracked explicitly, but not yet signed off</div>
+      </article>
+      <article class="card">
+        <h2>Best Voltage Delta</h2>
+        <div class="value">0</div>
+        <div class="sub">Smallest measured full-voltage mismatch</div>
+      </article>
+      <article class="card">
+        <h2>Worst Validated Voltage Delta</h2>
+        <div class="value">0.00477785674599</div>
+        <div class="sub">Largest mismatch among currently validated routes</div>
+      </article>
+      <article class="card">
+        <h2>Validated 3-Phase Routes</h2>
+        <div class="value">4</div>
+        <div class="sub">Routes using explicit unbalanced three-phase node-voltage checks</div>
+      </article>
+    </div>
+
+    <section class="section">
+      <h2>Analysis</h2>
+      <div class="analysis">
+        <article class="analysis-card">
+          <h3>Validation Rule</h3>
+          <p>Every signed-off route is checked by slack-power agreement first and full complex-voltage agreement second. Rows labeled 3-phase unbalanced are validated node by node across explicit phase voltages, not just balanced bus magnitudes. The current PMD-backed 3-phase routes use a documented 5e-3 pu voltage threshold.</p>
+        </article>
+        <article class="analysis-card">
+          <h3>Strongest Current Route</h3>
+          <p>matpower -&gt; pandapower on case9 (balanced) with slack delta 0 MVA and max voltage delta 0 pu.</p>
+        </article>
+        <article class="analysis-card">
+          <h3>Largest Current Mismatch</h3>
+          <p>pandapower -&gt; powermodelsdistribution on ieee_european_lv_asymmetric (unbalanced_3ph) with slack delta 0.000232197071199 MVA and max voltage delta 0.00477785674599 pu.</p>
+        </article>
+        <article class="analysis-card">
+          <h3>Unbalanced Coverage</h3>
+          <p>4 unbalanced route(s) are validated and 0 remain pending. Today that includes native pandapower 3-phase roundtrip validation and an OpenDSS starter feeder validated to both pandapower and PowerModelsDistribution.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Conversion Matrix</h2>
+      <table class="matrix">
+        <thead>
+          <tr><th>Source \ Export</th><th>pandapower</th><th>powermodels</th><th>powermodelsdistribution</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>matpower</th><td class="cell cell-validated" title="case9: Official MATPOWER case9 imported through pandapower converter.">validated</td><td class="cell cell-validated" title="case9: Balanced export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-empty">-</td></tr><tr><th>opendss</th><td class="cell cell-validated" title="minimal_radial: Validated against OpenDSS source slack power and bus voltages for the currently supported subset. | minimal_unbalanced_3ph: Unbalanced OpenDSS starter feeder validated against source node voltages with pandapower runpp_3ph.">validated</td><td class="cell cell-validated" title="minimal_radial: Balanced-equivalent export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-validated" title="minimal_unbalanced_3ph: Unbalanced OpenDSS starter feeder exported to PowerModelsDistribution and validated against source node voltages.">validated</td></tr><tr><th>pandapower</th><td class="cell cell-validated" title="case9_from_matpower.pandapower: Pandapower JSON re-import generated from the validated MATPOWER case9 route. | ieee_european_lv_asymmetric: Native pandapower 3-phase roundtrip validated with runpp_3ph.">validated</td><td class="cell cell-validated" title="case9_from_matpower.pandapower: Balanced pandapower JSON export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-validated" title="ieee_european_lv_asymmetric: Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages.">validated</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Precision Plots</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Export</th>
+            <th>Case</th>
+            <th>Model</th>
+            <th>Slack Delta</th>
+            <th>Slack Precision</th>
+            <th>Voltage Delta</th>
+            <th>Voltage Precision</th>
+            <th>Compared Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td>matpower</td>
+              <td>pandapower</td>
+              <td>case9</td>
+              <td>Balanced</td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>9</td>
+            </tr>
+            
+            <tr>
+              <td>matpower</td>
+              <td>powermodels</td>
+              <td>case9</td>
+              <td>Balanced</td>
+              <td>6.7856210496e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="123" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>9.65387848049e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="165" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>9</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>minimal_radial</td>
+              <td>Balanced Subset</td>
+              <td>0.000218512564809</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="55" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0.000931524192616</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="45" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodels</td>
+              <td>minimal_radial</td>
+              <td>Balanced Subset</td>
+              <td>6.86639507574e-14</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>6.67036704689e-16</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>minimal_unbalanced_3ph</td>
+              <td>3-Phase Unbalanced</td>
+              <td>9.59308605559e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="165" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>6.38370292542e-06</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="78" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>6</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodelsdistribution</td>
+              <td>minimal_unbalanced_3ph</td>
+              <td>3-Phase Unbalanced</td>
+              <td>7.08868116922e-06</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="77" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0.000936091367299</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="45" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>6</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>pandapower</td>
+              <td>case9_from_matpower.pandapower</td>
+              <td>Balanced</td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>9</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>powermodels</td>
+              <td>case9_from_matpower.pandapower</td>
+              <td>Balanced</td>
+              <td>6.7856210496e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="123" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>9.65387848049e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="165" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>9</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>pandapower</td>
+              <td>ieee_european_lv_asymmetric</td>
+              <td>3-Phase Unbalanced</td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>2721</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>powermodelsdistribution</td>
+              <td>ieee_european_lv_asymmetric</td>
+              <td>3-Phase Unbalanced</td>
+              <td>0.000232197071199</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="55" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0.00477785674599</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="35" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>2721</td>
+            </tr>
+            
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Tool Capabilities</h2>
+      <div class="caps">
+        
+            <article class="cap-card">
+              <h3>matpower</h3>
+              <p>Balanced MATPOWER cases are validated. Unbalanced semantics are outside the MATPOWER exchange contract.</p>
+              <ul>
+                <li>Balanced: import=yes, export=yes, validation=yes</li>
+                <li>Unbalanced: import=no, export=no, validation=no</li>
+              </ul>
+            </article>
+            
+            <article class="cap-card">
+              <h3>opendss</h3>
+              <p>OpenDSS import is validated for a supported subset. Unbalanced routes are signed off for pandapower and PowerModelsDistribution on the starter three-phase feeder.</p>
+              <ul>
+                <li>Balanced: import=yes, export=no, validation=yes</li>
+                <li>Unbalanced: import=yes, export=yes, validation=yes</li>
+              </ul>
+            </article>
+            
+            <article class="cap-card">
+              <h3>pandapower</h3>
+              <p>Balanced JSON and native pandapower 3ph models are supported. Unbalanced validation currently targets native pandapower roundtrips.</p>
+              <ul>
+                <li>Balanced: import=yes, export=yes, validation=yes</li>
+                <li>Unbalanced: import=yes, export=yes, validation=yes</li>
+              </ul>
+            </article>
+            
+            <article class="cap-card">
+              <h3>powermodels</h3>
+              <p>Balanced PowerModels JSON export is validated with Julia AC power flow.</p>
+              <ul>
+                <li>Balanced: import=no, export=yes, validation=yes</li>
+                <li>Unbalanced: import=no, export=no, validation=no</li>
+              </ul>
+            </article>
+            
+            <article class="cap-card">
+              <h3>powermodelsdistribution</h3>
+              <p>Validated as an unbalanced backend for the OpenDSS-source starter feeder. Canonical import into this repo is not implemented yet.</p>
+              <ul>
+                <li>Balanced: import=no, export=no, validation=no</li>
+                <li>Unbalanced: import=no, export=yes, validation=yes</li>
+              </ul>
+            </article>
+            
+            <article class="cap-card">
+              <h3>pypower</h3>
+              <p>Planned via the MATPOWER-style balanced exchange contract.</p>
+              <ul>
+                <li>Balanced: import=no, export=no, validation=no</li>
+                <li>Unbalanced: import=no, export=no, validation=no</li>
+              </ul>
+            </article>
+            
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Route Details</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Export</th>
+            <th>Case</th>
+            <th>Model</th>
+            <th>Status</th>
+            <th>Slack Delta</th>
+            <th>Voltage Delta</th>
+            <th>Compared Points</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td>matpower</td>
+              <td>pandapower</td>
+              <td>case9</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0</td>
+              <td>0</td>
+              <td>9</td>
+              <td>Official MATPOWER case9 imported through pandapower converter.</td>
+            </tr>
+            
+            <tr>
+              <td>matpower</td>
+              <td>powermodels</td>
+              <td>case9</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>6.7856210496e-09</td>
+              <td>9.65387848049e-12</td>
+              <td>9</td>
+              <td>Balanced export validated with Julia PowerModels AC power flow.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>minimal_radial</td>
+              <td>Balanced Subset</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0.000218512564809</td>
+              <td>0.000931524192616</td>
+              <td>3</td>
+              <td>Validated against OpenDSS source slack power and bus voltages for the currently supported subset.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodels</td>
+              <td>minimal_radial</td>
+              <td>Balanced Subset</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>6.86639507574e-14</td>
+              <td>6.67036704689e-16</td>
+              <td>3</td>
+              <td>Balanced-equivalent export validated with Julia PowerModels AC power flow.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>minimal_unbalanced_3ph</td>
+              <td>3-Phase Unbalanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>9.59308605559e-12</td>
+              <td>6.38370292542e-06</td>
+              <td>6</td>
+              <td>Unbalanced OpenDSS starter feeder validated against source node voltages with pandapower runpp_3ph.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodelsdistribution</td>
+              <td>minimal_unbalanced_3ph</td>
+              <td>3-Phase Unbalanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>7.08868116922e-06</td>
+              <td>0.000936091367299</td>
+              <td>6</td>
+              <td>Unbalanced OpenDSS starter feeder exported to PowerModelsDistribution and validated against source node voltages.</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>pandapower</td>
+              <td>case9_from_matpower.pandapower</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0</td>
+              <td>0</td>
+              <td>9</td>
+              <td>Pandapower JSON re-import generated from the validated MATPOWER case9 route.</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>powermodels</td>
+              <td>case9_from_matpower.pandapower</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>6.7856210496e-09</td>
+              <td>9.65387848049e-12</td>
+              <td>9</td>
+              <td>Balanced pandapower JSON export validated with Julia PowerModels AC power flow.</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>pandapower</td>
+              <td>ieee_european_lv_asymmetric</td>
+              <td>3-Phase Unbalanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0</td>
+              <td>0</td>
+              <td>2721</td>
+              <td>Native pandapower 3-phase roundtrip validated with runpp_3ph.</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>powermodelsdistribution</td>
+              <td>ieee_european_lv_asymmetric</td>
+              <td>3-Phase Unbalanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0.000232197071199</td>
+              <td>0.00477785674599</td>
+              <td>2721</td>
+              <td>Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages.</td>
+            </tr>
+            
+        </tbody>
+      </table>
+      <p class="footer">Generated by <code>scripts/generate_validation_report.py</code>.</p>
+    </section>
+  </div>
+</body>
+</html>

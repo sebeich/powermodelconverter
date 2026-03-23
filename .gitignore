@@ -1,0 +1,6 @@
+.venv/
+.julia_depot/
+.juliaup/
+__pycache__/
+.pytest_cache/
+*.pyc

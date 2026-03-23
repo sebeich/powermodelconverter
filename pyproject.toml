@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=82", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "powermodelconverter"
+version = "0.1.0"
+description = "Validation-first power system model conversion platform"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "matpowercaseframes>=2.0.3",
+  "numpy>=2.3",
+  "opendssdirect.py>=0.9.4",
+  "pandas>=2.3",
+  "pandapower>=3.4.0",
+  "pytest>=9.0",
+  "simbench>=1.6.1",
+]
+
+[project.scripts]
+pmc = "powermodelconverter.cli.main:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
