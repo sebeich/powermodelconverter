@@ -21,21 +21,22 @@ Today the repo can:
 - import pandapower JSON, including native three-phase pandapower models
 - export balanced cases to pandapower JSON
 - export balanced cases to PowerModels JSON
+- export balanced transmission-style cases to PyPSA NetCDF
 - export unbalanced OpenDSS starter feeders to PowerModelsDistribution input
 - validate balanced routes against pandapower and Julia `PowerModels`
+- validate balanced routes against PyPSA AC power flow for the current supported subset
 - validate native pandapower three-phase roundtrips with `runpp_3ph`
 - validate unbalanced OpenDSS starter feeders against both pandapower and Julia `PowerModelsDistribution`
 
 The full route inventory is tracked in:
 
-- [validation_report.html](/home/seb/powermodelconverter/docs/validation_report.html)
-- [validation_report.md](/home/seb/powermodelconverter/docs/validation_report.md)
-- [validation_report.json](/home/seb/powermodelconverter/docs/validation_report.json)
-- [research_methodology_llm_input.md](/home/seb/powermodelconverter/docs/research_methodology_llm_input.md)
+- [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html)
+- [validation_report.md](/home/seb/powermodelconverter-1/docs/validation_report.md)
+- [validation_report.json](/home/seb/powermodelconverter-1/docs/validation_report.json)
 
 ## Current Validation Status
 
-Validated routes right now:
+Validated routes right now include:
 
 - `matpower -> pandapower` on `case9`
 - `matpower -> powermodels` on `case9`
@@ -43,14 +44,27 @@ Validated routes right now:
 - `opendss -> powermodels` on `minimal_radial`
 - `opendss -> pandapower` on `minimal_unbalanced_3ph`
 - `opendss -> powermodelsdistribution` on `minimal_unbalanced_3ph`
+- `opendss -> pandapower` on `minimal_chain`
+- `opendss -> powermodelsdistribution` on `minimal_unbalanced_branch`
 - `pandapower -> pandapower` on a balanced `case9` JSON roundtrip
 - `pandapower -> powermodels` on that balanced `case9` JSON roundtrip
+- `pandapower -> pypsa` on that balanced `case9` JSON roundtrip
+- `pypsa -> pandapower` on that balanced `case9` PyPSA roundtrip
 - `pandapower -> pandapower` on `ieee_european_lv_asymmetric` with three-phase validation
 - `pandapower -> powermodelsdistribution` on `ieee_european_lv_asymmetric`
+- `pandapower -> pypsa` on `case4gs`
+- `pandapower -> pypsa` on `case5`
+- `pandapower -> powermodels` on `case6ww`
+- `pandapower -> powermodels` on `case33bw`
+- `pypsa -> pandapower` on `pypsa_triangle_native`
+- `pypsa -> pandapower` on `pypsa_radial_native`
+- `pypsa -> pandapower` on `pypsa_five_bus_ring_native`
+- `powermodels.jl -> powermodels` on `case6_powermodels_pkg`
 
 Not yet validated:
 
 - broader native unbalanced pandapower topologies outside the current supported subset
+- transformer-, shunt-, link-, store-, or storage-unit-heavy PyPSA models outside the current supported subset
 
 Representative measured precisions from the generated report:
 
@@ -64,30 +78,41 @@ Representative measured precisions from the generated report:
   slack delta approximately `2.32e-04 MVA`, max phase-voltage delta approximately `4.78e-03 pu`
 - `pandapower -> pandapower` on `ieee_european_lv_asymmetric`:
   slack delta `0.0 MVA`, max phase-voltage delta `0.0 pu`, `2721` compared phase points
+- `pandapower -> pypsa` on `case5`:
+  slack delta `7.41711783924e-10 MVA`, max voltage delta `6.25769027876e-13 pu`
+- `pypsa -> pandapower` on `pypsa_five_bus_ring_native`:
+  slack delta `1.21967274857e-10 MVA`, max voltage delta `2.22875838357e-16 pu`
+
+Current generated summary:
+
+- `22` validated routes
+- `17` balanced validated routes
+- `5` unbalanced validated routes
+- `5592` total deterministic voltage comparison points
 
 ## Repository Layout
 
-- [pyproject.toml](/home/seb/powermodelconverter/pyproject.toml)
+- [pyproject.toml](/home/seb/powermodelconverter-1/pyproject.toml)
   Python package metadata, dependencies, and CLI entrypoint.
-- [src/powermodelconverter/core](/home/seb/powermodelconverter/src/powermodelconverter/core)
+- [src/powermodelconverter/core](/home/seb/powermodelconverter-1/src/powermodelconverter/core)
   Canonical case model, capability registry, and shared exceptions.
-- [src/powermodelconverter/adapters](/home/seb/powermodelconverter/src/powermodelconverter/adapters)
-  Import and export logic for MATPOWER, OpenDSS, pandapower, and auxiliary native importers.
-- [src/powermodelconverter/validation](/home/seb/powermodelconverter/src/powermodelconverter/validation)
+- [src/powermodelconverter/adapters](/home/seb/powermodelconverter-1/src/powermodelconverter/adapters)
+  Import and export logic for MATPOWER, OpenDSS, pandapower, PyPSA, and auxiliary native importers.
+- [src/powermodelconverter/validation](/home/seb/powermodelconverter-1/src/powermodelconverter/validation)
   Balanced and unbalanced validation services.
-- [src/powermodelconverter/cli](/home/seb/powermodelconverter/src/powermodelconverter/cli)
+- [src/powermodelconverter/cli](/home/seb/powermodelconverter-1/src/powermodelconverter/cli)
   Command-line interface exposed as `pmc`.
-- [src/powermodelconverter/julia](/home/seb/powermodelconverter/src/powermodelconverter/julia)
+- [src/powermodelconverter/julia](/home/seb/powermodelconverter-1/src/powermodelconverter/julia)
   Local Julia project used for `PowerModels` validation.
-- [src/powermodelconverter/julia_pmd](/home/seb/powermodelconverter/src/powermodelconverter/julia_pmd)
+- [src/powermodelconverter/julia_pmd](/home/seb/powermodelconverter-1/src/powermodelconverter/julia_pmd)
   Local Julia project used for `PowerModelsDistribution` validation.
-- [src/powermodelconverter/data/samples](/home/seb/powermodelconverter/src/powermodelconverter/data/samples)
+- [src/powermodelconverter/data/samples](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples)
   Starter model files used for validation and examples.
-- [docs](/home/seb/powermodelconverter/docs)
+- [docs](/home/seb/powermodelconverter-1/docs)
   Generated validation inventory and future documentation.
-- [tests](/home/seb/powermodelconverter/tests)
+- [tests](/home/seb/powermodelconverter-1/tests)
   Smoke tests and route-validation tests.
-- [scripts](/home/seb/powermodelconverter/scripts)
+- [scripts](/home/seb/powermodelconverter-1/scripts)
   Environment bootstrap and report-generation scripts.
 
 ## Canonical Model
@@ -117,10 +142,12 @@ At a high level:
   balanced import/export/validation and native unbalanced three-phase import/export/validation
 - `opendss`
   balanced import and validation for the supported subset, plus a validated unbalanced starter feeder route
+- `pypsa`
+  balanced import/export/validation for the current transmission-style AC subset
 - `powermodels`
   balanced export and balanced validation
 - `powermodelsdistribution`
-  validated as an unbalanced backend for the OpenDSS starter feeder route and the native pandapower `ieee_european_lv_asymmetric` feeder
+  validated as an unbalanced backend for the OpenDSS starter feeder routes and the native pandapower `ieee_european_lv_asymmetric` feeder
 - `pypower`
   planned
 
@@ -140,26 +167,30 @@ python3 -m venv .venv
 bash scripts/bootstrap_julia_env.sh
 ```
 
-That installs the local Julia dependencies used by the validation scripts in [src/powermodelconverter/julia](/home/seb/powermodelconverter/src/powermodelconverter/julia) and [src/powermodelconverter/julia_pmd](/home/seb/powermodelconverter/src/powermodelconverter/julia_pmd).
+That installs the local Julia dependencies used by the validation scripts in [src/powermodelconverter/julia](/home/seb/powermodelconverter-1/src/powermodelconverter/julia) and [src/powermodelconverter/julia_pmd](/home/seb/powermodelconverter-1/src/powermodelconverter/julia_pmd).
 
 ## License
 
-This project is released under the BSD 3-Clause License. See [LICENSE](/home/seb/powermodelconverter/LICENSE).
+This project is released under the BSD 3-Clause License. See [LICENSE](/home/seb/powermodelconverter-1/LICENSE).
 
 ## Sample Cases
 
 Included sample files:
 
-- MATPOWER: [case9.m](/home/seb/powermodelconverter/src/powermodelconverter/data/samples/matpower/case9.m)
-- OpenDSS starter case: [minimal_radial.dss](/home/seb/powermodelconverter/src/powermodelconverter/data/samples/opendss/minimal_radial.dss)
-- OpenDSS unbalanced starter feeder: [minimal_unbalanced_3ph.dss](/home/seb/powermodelconverter/src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss)
-- OpenDSS future target: [IEEE13Nodeckt.dss](/home/seb/powermodelconverter/src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss)
-- pandapower 3-phase: [ieee_european_lv_asymmetric.json](/home/seb/powermodelconverter/src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json)
+- MATPOWER: [case9.m](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/matpower/case9.m)
+- OpenDSS starter case: [minimal_radial.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/minimal_radial.dss)
+- OpenDSS balanced chained feeder: [minimal_chain.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/minimal_chain.dss)
+- OpenDSS unbalanced starter feeder: [minimal_unbalanced_3ph.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss)
+- OpenDSS unbalanced branched feeder: [minimal_unbalanced_branch.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/minimal_unbalanced_branch.dss)
+- OpenDSS future target: [IEEE13Nodeckt.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss)
+- pandapower 3-phase: [ieee_european_lv_asymmetric.json](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json)
 
 Notes:
 
 - `minimal_radial.dss` is the current validated OpenDSS reference case
+- `minimal_chain.dss` is an additional validated balanced OpenDSS feeder inside the supported subset
 - `minimal_unbalanced_3ph.dss` is the current validated OpenDSS unbalanced starter feeder for both pandapower and PowerModelsDistribution
+- `minimal_unbalanced_branch.dss` is an additional validated unbalanced OpenDSS feeder for PowerModelsDistribution
 - `IEEE13Nodeckt.dss` is present as a future expansion target, but not yet covered by the supported OpenDSS subset
 - SimBench remains available only as a native pandapower-family import helper, not as a cross-tool exchange route
 
@@ -221,9 +252,9 @@ PY
 
 This rewrites:
 
-- [validation_report.html](/home/seb/powermodelconverter/docs/validation_report.html)
-- [validation_report.md](/home/seb/powermodelconverter/docs/validation_report.md)
-- [validation_report.json](/home/seb/powermodelconverter/docs/validation_report.json)
+- [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html)
+- [validation_report.md](/home/seb/powermodelconverter-1/docs/validation_report.md)
+- [validation_report.json](/home/seb/powermodelconverter-1/docs/validation_report.json)
 
 ## Paper
 
@@ -231,8 +262,7 @@ The repository is prepared for a companion paper submission. The bibliographic r
 
 Until then:
 
-- use [CITATION.cff](/home/seb/powermodelconverter/CITATION.cff) for repository citation metadata
-- use [docs/research_methodology_llm_input.md](/home/seb/powermodelconverter/docs/research_methodology_llm_input.md) for the current research-methodology summary
+- use [CITATION.cff](/home/seb/powermodelconverter-1/CITATION.cff) for repository citation metadata
 
 ### 8. Run the test suite
 
