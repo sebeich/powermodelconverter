@@ -1,0 +1,20 @@
+Clear
+
+New Circuit.MinimalChain basekv=20 pu=1.0 phases=3 bus1=SourceBus angle=0
+
+New Transformer.Sub phases=3 windings=2 XHL=5.5
+~ wdg=1 bus=SourceBus conn=wye kv=20 kva=12000 %r=0.45
+~ wdg=2 bus=MVBus conn=wye kv=10 kva=12000 %r=0.45
+
+New Line.Main phases=3 bus1=MVBus.1.2.3 bus2=MidBus.1.2.3
+~ r1=0.08 x1=0.06 r0=0.24 x0=0.18 c1=3.0 c0=1.4 length=0.45 units=km
+
+New Line.Lateral phases=3 bus1=MidBus.1.2.3 bus2=LoadBus.1.2.3
+~ r1=0.075 x1=0.055 r0=0.225 x0=0.165 c1=2.7 c0=1.3 length=0.3 units=km
+
+New Load.MidLoad bus1=MidBus.1.2.3 phases=3 conn=wye model=1 kv=10 kW=700 kvar=210
+New Load.EndLoad bus1=LoadBus.1.2.3 phases=3 conn=wye model=1 kv=10 kW=950 kvar=285
+
+Set Voltagebases=[20, 10]
+CalcVoltageBases
+Solve

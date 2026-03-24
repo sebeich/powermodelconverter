@@ -1,4 +1,14 @@
 {
+  "summary": {
+    "method": "deterministic full-voltage comparison",
+    "validated_routes": 22,
+    "pending_routes": 0,
+    "balanced_routes": 17,
+    "unbalanced_routes": 5,
+    "total_compared_points": 5592,
+    "max_compared_points": 2721,
+    "min_compared_points": 3
+  },
   "capabilities": [
     {
       "tool": "matpower",
@@ -59,6 +69,16 @@
       "unbalanced_export": false,
       "unbalanced_validation": false,
       "notes": "Planned via the MATPOWER-style balanced exchange contract."
+    },
+    {
+      "tool": "pypsa",
+      "balanced_import": true,
+      "balanced_export": true,
+      "balanced_validation": true,
+      "unbalanced_import": false,
+      "unbalanced_export": false,
+      "unbalanced_validation": false,
+      "notes": "Balanced AC PyPSA import/export is validated for the current line-based transmission subset against pandapower and PyPSA power flow. Current scope excludes unbalanced networks and does not yet sign off transformer-, shunt-, link-, store-, or storage-unit-heavy PyPSA models."
     }
   ],
   "records": [
@@ -151,6 +171,28 @@
       "notes": "Balanced pandapower JSON export validated with Julia PowerModels AC power flow."
     },
     {
+      "case_id": "case9_from_matpower.pandapower",
+      "source_tool": "pandapower",
+      "export_tool": "pypsa",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 6.784744556480118e-09,
+      "max_voltage_delta_pu": 9.65318809283269e-12,
+      "compared_points": 9,
+      "notes": "Balanced line-based pandapower model exported to PyPSA NetCDF and validated against pandapower AC power flow."
+    },
+    {
+      "case_id": "case9_from_matpower.pandapower.pypsa",
+      "source_tool": "pypsa",
+      "export_tool": "pandapower",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 6.785723933250835e-09,
+      "max_voltage_delta_pu": 9.65338230830084e-12,
+      "compared_points": 9,
+      "notes": "PyPSA NetCDF re-import validated against PyPSA AC power flow and converted back through pandapower for the current line-based balanced subset."
+    },
+    {
       "case_id": "ieee_european_lv_asymmetric",
       "source_tool": "pandapower",
       "export_tool": "pandapower",
@@ -171,6 +213,116 @@
       "max_voltage_delta_pu": 0.004777856745994203,
       "compared_points": 2721,
       "notes": "Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages."
+    },
+    {
+      "case_id": "minimal_chain",
+      "source_tool": "opendss",
+      "export_tool": "pandapower",
+      "model_type": "balanced_subset",
+      "status": "validated",
+      "slack_delta_mva": 0.00019774215058634178,
+      "max_voltage_delta_pu": 0.0009738504937805174,
+      "compared_points": 4,
+      "notes": "OpenDSS native chained feeder with two loads validated against source bus voltages through pandapower."
+    },
+    {
+      "case_id": "minimal_unbalanced_branch",
+      "source_tool": "opendss",
+      "export_tool": "powermodelsdistribution",
+      "model_type": "unbalanced_3ph",
+      "status": "validated",
+      "slack_delta_mva": 1.3812973673339542e-05,
+      "max_voltage_delta_pu": 0.0011702342223846927,
+      "compared_points": 9,
+      "notes": "OpenDSS native branched unbalanced feeder validated against source node voltages through PowerModelsDistribution."
+    },
+    {
+      "case_id": "case4gs",
+      "source_tool": "pandapower",
+      "export_tool": "pypsa",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 8.139479087634298e-08,
+      "max_voltage_delta_pu": 2.830500145127767e-11,
+      "compared_points": 4,
+      "notes": "Pandapower package case4gs validated through PyPSA on the supported balanced AC subset."
+    },
+    {
+      "case_id": "case5",
+      "source_tool": "pandapower",
+      "export_tool": "pypsa",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 7.417117839241067e-10,
+      "max_voltage_delta_pu": 6.2576902787602e-13,
+      "compared_points": 5,
+      "notes": "Pandapower package case5 validated through PyPSA on the supported balanced AC subset."
+    },
+    {
+      "case_id": "case6ww",
+      "source_tool": "pandapower",
+      "export_tool": "powermodels",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 1.3273378925938947e-07,
+      "max_voltage_delta_pu": 1.7609314201384615e-10,
+      "compared_points": 6,
+      "notes": "Pandapower package case6ww validated with Julia PowerModels AC power flow."
+    },
+    {
+      "case_id": "case33bw",
+      "source_tool": "pandapower",
+      "export_tool": "powermodels",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 1.0966967286535883e-07,
+      "max_voltage_delta_pu": 3.825620661836411e-09,
+      "compared_points": 33,
+      "notes": "Pandapower package Baran-Wu 33-bus feeder validated with Julia PowerModels AC power flow."
+    },
+    {
+      "case_id": "pypsa_triangle_native",
+      "source_tool": "pypsa",
+      "export_tool": "pandapower",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 4.3655745685100555e-11,
+      "max_voltage_delta_pu": 1.228454648361104e-16,
+      "compared_points": 3,
+      "notes": "Native PyPSA meshed triangle with one slack, one PV generator, and two loads validated against PyPSA AC power flow through pandapower."
+    },
+    {
+      "case_id": "pypsa_radial_native",
+      "source_tool": "pypsa",
+      "export_tool": "pandapower",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 1.5468898073209348e-10,
+      "max_voltage_delta_pu": 1.3564234607959496e-15,
+      "compared_points": 3,
+      "notes": "Native PyPSA radial transmission-style case validated against PyPSA AC power flow through pandapower."
+    },
+    {
+      "case_id": "pypsa_five_bus_ring_native",
+      "source_tool": "pypsa",
+      "export_tool": "pandapower",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 1.2196727485745367e-10,
+      "max_voltage_delta_pu": 2.2287583835685736e-16,
+      "compared_points": 5,
+      "notes": "Native PyPSA five-bus ring with distributed load validated against PyPSA AC power flow through pandapower."
+    },
+    {
+      "case_id": "case6_powermodels_pkg",
+      "source_tool": "powermodels.jl",
+      "export_tool": "powermodels",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 4.412235823639328e-13,
+      "max_voltage_delta_pu": 5.117875266520903e-16,
+      "compared_points": 6,
+      "notes": "PowerModels.jl package MATPOWER case6 validated with Julia PowerModels AC power flow."
     }
   ]
 }

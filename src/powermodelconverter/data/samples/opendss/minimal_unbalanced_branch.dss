@@ -1,0 +1,19 @@
+Clear
+
+New Circuit.MinimalUnbalancedBranch basekv=10 pu=1.0 phases=3 bus1=SourceBus angle=0
+
+New Line.Main phases=3 bus1=SourceBus.1.2.3 bus2=TapBus.1.2.3
+~ r1=0.045 x1=0.018 r0=0.135 x0=0.054 c1=0 c0=0 length=0.015 units=km
+
+New Line.Branch phases=3 bus1=TapBus.1.2.3 bus2=LoadBus.1.2.3
+~ r1=0.065 x1=0.024 r0=0.195 x0=0.072 c1=0 c0=0 length=0.02 units=km
+
+New Load.TapA bus1=TapBus.1 phases=1 conn=wye model=1 kv=5.7735 kW=2.0 kvar=0.7
+New Load.TapC bus1=TapBus.3 phases=1 conn=wye model=1 kv=5.7735 kW=1.2 kvar=0.4
+New Load.LoadA bus1=LoadBus.1 phases=1 conn=wye model=1 kv=5.7735 kW=3.5 kvar=1.1
+New Load.LoadB bus1=LoadBus.2 phases=1 conn=wye model=1 kv=5.7735 kW=2.0 kvar=0.6
+New Load.LoadC bus1=LoadBus.3 phases=1 conn=wye model=1 kv=5.7735 kW=4.0 kvar=1.4
+
+Set Voltagebases=[10]
+CalcVoltageBases
+Solve

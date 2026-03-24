@@ -11,6 +11,8 @@ from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter
 from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
 from powermodelconverter.adapters.pandapower_import_adapter import PandapowerImportAdapter
 from powermodelconverter.adapters.powermodels_distribution_adapter import PowerModelsDistributionAdapter
+from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
+from powermodelconverter.adapters.pypsa_import_adapter import PypsaImportAdapter
 from powermodelconverter.adapters.simbench_adapter import SimbenchImportAdapter
 from powermodelconverter.core.capabilities import capability_rows
 from powermodelconverter.validation.powerflow import ValidationService
@@ -24,7 +26,11 @@ def build_parser() -> argparse.ArgumentParser:
     caps.add_argument("--format", choices=["json"], default="json")
 
     validate = subparsers.add_parser("validate", help="Import, export, and validate a case")
-    validate.add_argument("--source-format", choices=["matpower", "opendss", "simbench", "pandapower"], required=True)
+    validate.add_argument(
+        "--source-format",
+        choices=["matpower", "opendss", "simbench", "pandapower", "pypsa"],
+        required=True,
+    )
     validate.add_argument("--source", required=True)
     validate.add_argument("--export-dir", default="src/powermodelconverter/data/exports")
     validate.add_argument(
@@ -38,6 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="src/powermodelconverter/julia_pmd/run_powermodels_distribution_pf.jl",
     )
     validate.add_argument("--julia-pmd-project", default="src/powermodelconverter/julia_pmd")
+    validate.add_argument("--pypsa-export", action="store_true", help="Export and validate a PyPSA .nc file for balanced cases")
     return parser
 
 
@@ -50,6 +57,7 @@ def main() -> None:
         return
 
     pandapower = PandapowerAdapter()
+    pypsa = PypsaAdapter()
     validator = ValidationService()
 
     if args.source_format == "matpower":
@@ -109,6 +117,15 @@ def main() -> None:
                 reference_slack_q_mvar=reference_slack_q,
                 reference_voltages=reference_voltages,
             )
+    elif args.source_format == "pypsa":
+        source_reference = pypsa.solve_source_case(args.source)
+        case = PypsaImportAdapter().import_case(args.source)
+        initial_validation = validator.validate_against_pandapower(
+            case,
+            reference_slack_p_mw=source_reference.slack_p_mw,
+            reference_slack_q_mvar=source_reference.slack_q_mvar,
+            reference_voltages=source_reference.voltages,
+        )
     else:
         adapter = OpenDSSImportAdapter()
         source_reference = adapter.solve_source_case(args.source)
@@ -135,6 +152,9 @@ def main() -> None:
             )
         except ValueError:
             powermodelsdistribution_path = None
+    pypsa_path = None
+    if not case.is_unbalanced and args.pypsa_export:
+        pypsa_path = pypsa.export_netcdf(case, export_dir / f"{case.case_id}.pypsa.nc")
     powermodels_validation = None
     if not case.is_unbalanced:
         powermodels_validation = validator.validate_powermodels_export(
@@ -167,6 +187,9 @@ def main() -> None:
             reference_slack_q_mvar=reference_slack_q_mvar,
             reference_node_voltages=reference_node_voltages,
         )
+    pypsa_validation = None
+    if pypsa_path is not None:
+        pypsa_validation = validator.validate_pypsa_export(case, pypsa_path=pypsa_path)
 
     print(
         json.dumps(
@@ -176,11 +199,13 @@ def main() -> None:
                 "is_unbalanced": case.is_unbalanced,
                 "pandapower_export": str(pandapower_path),
                 "powermodels_export": str(powermodels_path) if powermodels_path else None,
+                "pypsa_export": str(pypsa_path) if pypsa_path else None,
                 "powermodelsdistribution_export": (
                     str(powermodelsdistribution_path) if powermodelsdistribution_path else None
                 ),
                 "initial_validation": asdict(initial_validation),
                 "powermodels_validation": asdict(powermodels_validation) if powermodels_validation else None,
+                "pypsa_validation": asdict(pypsa_validation) if pypsa_validation else None,
                 "powermodelsdistribution_validation": (
                     asdict(powermodelsdistribution_validation) if powermodelsdistribution_validation else None
                 ),

@@ -66,6 +66,16 @@ CAPABILITY_MATRIX: dict[str, ToolCapability] = {
         unbalanced_validation=True,
         notes="Validated as an unbalanced backend for the OpenDSS-source starter feeder. Canonical import into this repo is not implemented yet.",
     ),
+    "pypsa": ToolCapability(
+        tool="pypsa",
+        balanced_import=True,
+        balanced_export=True,
+        balanced_validation=True,
+        unbalanced_import=False,
+        unbalanced_export=False,
+        unbalanced_validation=False,
+        notes="Balanced AC PyPSA import/export is validated for the current line-based transmission subset against pandapower and PyPSA power flow. Current scope excludes unbalanced networks and does not yet sign off transformer-, shunt-, link-, store-, or storage-unit-heavy PyPSA models.",
+    ),
     "pypower": ToolCapability(
         tool="pypower",
         balanced_import=False,
