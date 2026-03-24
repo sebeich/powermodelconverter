@@ -1,8 +1,13 @@
 from pathlib import Path
 
+import pandapower.networks as pn
+
 from powermodelconverter.adapters.matpower_adapter import MatpowerImportAdapter
 from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter
+from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
+from powermodelconverter.adapters.pypsa_import_adapter import PypsaImportAdapter
 from powermodelconverter.adapters.simbench_adapter import SimbenchImportAdapter
+from powermodelconverter.core.model import CanonicalCase
 from powermodelconverter.validation.powerflow import ValidationService
 
 
@@ -25,9 +30,24 @@ def test_opendss_import_and_validation() -> None:
     case = adapter.import_case(source)
     result = ValidationService().validate_opendss_roundtrip(case, reference)
     assert result.passed is True
+    assert result.details["compared_buses"] == len(reference.voltages)
 
 
 def test_simbench_import_normalizes_indices() -> None:
     case = SimbenchImportAdapter().import_case("1-HV-mixed--0-no_sw")
     assert case.source_format == "simbench"
     assert case.metadata["normalized_indices"] is True
+
+
+def test_pypsa_export_and_import_validate_against_pandapower(tmp_path: Path) -> None:
+    source_net = pn.case9()
+    case = CanonicalCase.from_pandapower(case_id="case9", source_format="pandapower", net=source_net)
+
+    pypsa_path = PypsaAdapter().export_netcdf(case, tmp_path / "case9.pypsa.nc")
+    pypsa_case = PypsaImportAdapter().import_case(pypsa_path)
+
+    result = ValidationService().validate_pypsa_export(case, pypsa_path=pypsa_path)
+    assert result.passed is True
+    assert result.details["compared_buses"] == len(case.table("bus"))
+    assert pypsa_case.source_format == "pypsa"
+    assert len(pypsa_case.table("bus")) == len(case.table("bus"))

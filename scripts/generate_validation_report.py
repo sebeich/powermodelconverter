@@ -10,12 +10,17 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 import pandapower as pp
+import pandapower.networks as pn
+import pypsa
 
 from powermodelconverter.adapters.matpower_adapter import MatpowerImportAdapter
 from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter
 from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
 from powermodelconverter.adapters.pandapower_import_adapter import PandapowerImportAdapter
 from powermodelconverter.adapters.powermodels_distribution_adapter import PowerModelsDistributionAdapter
+from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
+from powermodelconverter.adapters.pypsa_import_adapter import PypsaImportAdapter
+from powermodelconverter.core.model import CanonicalCase
 from powermodelconverter.core.capabilities import capability_rows
 from powermodelconverter.validation.powerflow import ValidationResult, ValidationService
 
@@ -40,11 +45,24 @@ class RouteRecord:
     notes: str
 
 
+@dataclass(slots=True)
+class ValidationSummary:
+    method: str
+    validated_routes: int
+    pending_routes: int
+    balanced_routes: int
+    unbalanced_routes: int
+    total_compared_points: int
+    max_compared_points: int
+    min_compared_points: int
+
+
 def main() -> None:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
     validator = ValidationService()
     pandapower = PandapowerAdapter()
+    pypsa = PypsaAdapter()
     records: list[RouteRecord] = []
 
     with TemporaryDirectory(prefix="pmc_validation_") as tmp:
@@ -161,6 +179,34 @@ def main() -> None:
                 notes="Balanced pandapower JSON export validated with Julia PowerModels AC power flow.",
             )
         )
+        records.append(
+            validation_record(
+                case_id=pp_balanced_case.case_id,
+                source_tool="pandapower",
+                export_tool="pypsa",
+                model_type="balanced",
+                result=validate_pypsa_export(pp_balanced_case, validator, pypsa, tmpdir),
+                notes="Balanced line-based pandapower model exported to PyPSA NetCDF and validated against pandapower AC power flow.",
+            )
+        )
+        pypsa_path = tmpdir / f"{pp_balanced_case.case_id}.pypsa.nc"
+        pypsa_case = PypsaImportAdapter().import_case(pypsa_path)
+        pypsa_reference = pypsa.solve_network_file(pypsa_path)
+        records.append(
+            validation_record(
+                case_id=pypsa_case.case_id,
+                source_tool="pypsa",
+                export_tool="pandapower",
+                model_type="balanced",
+                result=validator.validate_against_pandapower(
+                    pypsa_case,
+                    reference_slack_p_mw=pypsa_reference.slack_p_mw,
+                    reference_slack_q_mvar=pypsa_reference.slack_q_mvar,
+                    reference_voltages=pypsa_reference.voltages,
+                ),
+                notes="PyPSA NetCDF re-import validated against PyPSA AC power flow and converted back through pandapower for the current line-based balanced subset.",
+            )
+        )
 
         # Pandapower native unbalanced sample
         pp_unbalanced_case = PandapowerImportAdapter().import_case(
@@ -192,12 +238,144 @@ def main() -> None:
             )
         )
 
+        # Additional OpenDSS native feeders within the current supported subset
+        for sample_name, export_tool, validator_fn, notes in [
+            (
+                "minimal_chain.dss",
+                "pandapower",
+                validate_opendss_source_to_pandapower,
+                "OpenDSS native chained feeder with two loads validated against source bus voltages through pandapower.",
+            ),
+            (
+                "minimal_unbalanced_branch.dss",
+                "powermodelsdistribution",
+                validate_opendss_source_to_powermodelsdistribution,
+                "OpenDSS native branched unbalanced feeder validated against source node voltages through PowerModelsDistribution.",
+            ),
+        ]:
+            source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss" / sample_name
+            source_reference = opendss_adapter.solve_source_case(source)
+            source_case = opendss_adapter.import_case(source)
+            records.append(
+                validation_record(
+                    case_id=source_case.case_id,
+                    source_tool="opendss",
+                    export_tool=export_tool,
+                    model_type="unbalanced_3ph" if source_case.is_unbalanced else "balanced_subset",
+                    result=validator_fn(source_case, source_reference, validator, tmpdir),
+                    notes=notes,
+                )
+            )
+
+        # Additional pandapower package-native cases
+        for case_id, net_builder, export_tool, validator_fn, notes in [
+            (
+                "case4gs",
+                pn.case4gs,
+                "pypsa",
+                validate_pypsa_export,
+                "Pandapower package case4gs validated through PyPSA on the supported balanced AC subset.",
+            ),
+            (
+                "case5",
+                pn.case5,
+                "pypsa",
+                validate_pypsa_export,
+                "Pandapower package case5 validated through PyPSA on the supported balanced AC subset.",
+            ),
+            (
+                "case6ww",
+                pn.case6ww,
+                "powermodels",
+                validate_powermodels,
+                "Pandapower package case6ww validated with Julia PowerModels AC power flow.",
+            ),
+            (
+                "case33bw",
+                pn.case33bw,
+                "powermodels",
+                validate_powermodels,
+                "Pandapower package Baran-Wu 33-bus feeder validated with Julia PowerModels AC power flow.",
+            ),
+        ]:
+            case = CanonicalCase.from_pandapower(case_id=case_id, source_format="pandapower", net=net_builder())
+            records.append(
+                validation_record(
+                    case_id=case.case_id,
+                    source_tool="pandapower",
+                    export_tool=export_tool,
+                    model_type="balanced",
+                    result=validator_fn(case, pandapower, validator, tmpdir)
+                    if validator_fn is validate_powermodels
+                    else validator_fn(case, validator, pypsa, tmpdir),
+                    notes=notes,
+                )
+            )
+
+        # Native PyPSA cases built directly with the PyPSA API
+        for builder, case_id, notes in [
+            (
+                build_pypsa_triangle_network,
+                "pypsa_triangle_native",
+                "Native PyPSA meshed triangle with one slack, one PV generator, and two loads validated against PyPSA AC power flow through pandapower.",
+            ),
+            (
+                build_pypsa_radial_network,
+                "pypsa_radial_native",
+                "Native PyPSA radial transmission-style case validated against PyPSA AC power flow through pandapower.",
+            ),
+            (
+                build_pypsa_five_bus_ring_network,
+                "pypsa_five_bus_ring_native",
+                "Native PyPSA five-bus ring with distributed load validated against PyPSA AC power flow through pandapower.",
+            ),
+        ]:
+            native_case, native_reference = build_pypsa_origin_case(case_id, builder, pypsa, tmpdir)
+            records.append(
+                validation_record(
+                    case_id=native_case.case_id,
+                    source_tool="pypsa",
+                    export_tool="pandapower",
+                    model_type="balanced",
+                    result=validator.validate_against_pandapower(
+                        native_case,
+                        reference_slack_p_mw=native_reference.slack_p_mw,
+                        reference_slack_q_mvar=native_reference.slack_q_mvar,
+                        reference_voltages=native_reference.voltages,
+                    ),
+                    notes=notes,
+                )
+            )
+
+        # PowerModels.jl package-native MATPOWER case
+        for case_id, source, export_tool, notes in [
+            (
+                "case6",
+                REPO_ROOT / ".julia_depot/packages/PowerModels/VCmhH/test/data/matpower/case6.m",
+                "powermodels",
+                "PowerModels.jl package MATPOWER case6 validated with Julia PowerModels AC power flow.",
+            ),
+        ]:
+            case = MatpowerImportAdapter().import_case(source)
+            records.append(
+                validation_record(
+                    case_id=f"{case_id}_powermodels_pkg",
+                    source_tool="powermodels.jl",
+                    export_tool=export_tool,
+                    model_type="balanced",
+                    result=validate_powermodels(case, pandapower, validator, tmpdir),
+                    notes=notes,
+                )
+            )
+
+        summary = build_summary(records)
         payload = {
+            "summary": asdict(summary),
             "capabilities": capability_rows(),
             "records": [asdict(record) for record in records],
         }
         JSON_REPORT.write_text(json.dumps(payload, indent=2))
-        MARKDOWN_REPORT.write_text(render_markdown(records))
+        MARKDOWN_REPORT.write_text(render_markdown(summary, records))
         HTML_REPORT.write_text(render_html(payload, records))
 
     print(f"Wrote {JSON_REPORT}")
@@ -285,6 +463,93 @@ def validate_powermodelsdistribution_from_pandapower(
     )
 
 
+def validate_pypsa_export(
+    case: Any,
+    validator: ValidationService,
+    pypsa: PypsaAdapter,
+    tmpdir: Path,
+) -> ValidationResult:
+    destination = tmpdir / f"{case.case_id}.pypsa.nc"
+    path = pypsa.export_netcdf(case, destination)
+    return validator.validate_pypsa_export(case, pypsa_path=path)
+
+
+def validate_opendss_source_to_pandapower(
+    case: Any,
+    reference: Any,
+    validator: ValidationService,
+    tmpdir: Path,
+) -> ValidationResult:
+    del tmpdir
+    return validator.validate_opendss_roundtrip(case, reference)
+
+
+def validate_opendss_source_to_powermodelsdistribution(
+    case: Any,
+    reference: Any,
+    validator: ValidationService,
+    tmpdir: Path,
+) -> ValidationResult:
+    return validate_powermodelsdistribution(case, reference, validator, tmpdir)
+
+
+def build_pypsa_origin_case(
+    case_id: str,
+    builder: Any,
+    pypsa_adapter: PypsaAdapter,
+    tmpdir: Path,
+) -> tuple[CanonicalCase, Any]:
+    path = tmpdir / f"{case_id}.nc"
+    network = builder()
+    network.export_to_netcdf(path)
+    return PypsaImportAdapter().import_case(path), pypsa_adapter.solve_network_file(path)
+
+
+def build_pypsa_triangle_network() -> pypsa.Network:
+    network = pypsa.Network()
+    for bus_name in ("A", "B", "C"):
+        network.add("Bus", bus_name, v_nom=220.0)
+    network.add("Generator", "Slack", bus="A", control="Slack", p_set=0.0, vm_pu=1.0)
+    network.add("Generator", "PV", bus="B", control="PV", p_set=40.0, vm_pu=1.0)
+    network.add("Load", "LoadB", bus="B", p_set=60.0, q_set=20.0)
+    network.add("Load", "LoadC", bus="C", p_set=45.0, q_set=15.0)
+    network.add("Line", "AB", bus0="A", bus1="B", r=0.01, x=0.08, b=0.0, g=0.0, s_nom=200.0, length=1.0)
+    network.add("Line", "BC", bus0="B", bus1="C", r=0.015, x=0.09, b=0.0, g=0.0, s_nom=200.0, length=1.0)
+    network.add("Line", "CA", bus0="C", bus1="A", r=0.02, x=0.11, b=0.0, g=0.0, s_nom=200.0, length=1.0)
+    return network
+
+
+def build_pypsa_radial_network() -> pypsa.Network:
+    network = pypsa.Network()
+    for bus_name in ("Slack", "Mid", "Load"):
+        network.add("Bus", bus_name, v_nom=110.0)
+    network.add("Generator", "Grid", bus="Slack", control="Slack", p_set=0.0, vm_pu=1.0)
+    network.add("Load", "DemandMid", bus="Mid", p_set=30.0, q_set=10.0)
+    network.add("Load", "DemandLoad", bus="Load", p_set=20.0, q_set=5.0)
+    network.add("Line", "L1", bus0="Slack", bus1="Mid", r=0.005, x=0.04, b=0.0, g=0.0, s_nom=150.0, length=1.0)
+    network.add("Line", "L2", bus0="Mid", bus1="Load", r=0.006, x=0.05, b=0.0, g=0.0, s_nom=150.0, length=1.0)
+    return network
+
+
+def build_pypsa_five_bus_ring_network() -> pypsa.Network:
+    network = pypsa.Network()
+    for bus_name in ("B1", "B2", "B3", "B4", "B5"):
+        network.add("Bus", bus_name, v_nom=132.0)
+    network.add("Generator", "Grid", bus="B1", control="Slack", p_set=0.0, vm_pu=1.0)
+    network.add("Generator", "Support", bus="B3", control="PV", p_set=35.0, vm_pu=1.0)
+    for bus_name, p_set, q_set in (("B2", 20.0, 7.0), ("B4", 28.0, 9.0), ("B5", 18.0, 6.0)):
+        network.add("Load", f"Load_{bus_name}", bus=bus_name, p_set=p_set, q_set=q_set)
+    for name, bus0, bus1, r, x in (
+        ("L12", "B1", "B2", 0.008, 0.06),
+        ("L23", "B2", "B3", 0.01, 0.07),
+        ("L34", "B3", "B4", 0.011, 0.075),
+        ("L45", "B4", "B5", 0.012, 0.08),
+        ("L51", "B5", "B1", 0.009, 0.065),
+    ):
+        network.add("Line", name, bus0=bus0, bus1=bus1, r=r, x=x, b=0.0, g=0.0, s_nom=180.0, length=1.0)
+    return network
+
+
 def validation_record(
     *,
     case_id: str,
@@ -329,11 +594,41 @@ def unsupported_record(
     )
 
 
-def render_markdown(records: list[RouteRecord]) -> str:
+def build_summary(records: list[RouteRecord]) -> ValidationSummary:
+    validated = [record for record in records if record.status == "validated"]
+    compared_counts = [record.compared_points for record in validated if record.compared_points is not None]
+    balanced_routes = [record for record in validated if "unbalanced" not in record.model_type]
+    unbalanced_routes = [record for record in validated if "unbalanced" in record.model_type]
+    return ValidationSummary(
+        method="deterministic full-voltage comparison",
+        validated_routes=len(validated),
+        pending_routes=len(records) - len(validated),
+        balanced_routes=len(balanced_routes),
+        unbalanced_routes=len(unbalanced_routes),
+        total_compared_points=sum(compared_counts),
+        max_compared_points=max(compared_counts, default=0),
+        min_compared_points=min(compared_counts, default=0),
+    )
+
+
+def render_markdown(summary: ValidationSummary, records: list[RouteRecord]) -> str:
     lines = [
         "# Validation Report",
         "",
         "This file is generated by `scripts/generate_validation_report.py`.",
+        "",
+        "## Summary",
+        "",
+        f"- Validation method: {summary.method}",
+        f"- Validated routes: {summary.validated_routes}",
+        f"- Pending routes: {summary.pending_routes}",
+        f"- Balanced validated routes: {summary.balanced_routes}",
+        f"- Unbalanced validated routes: {summary.unbalanced_routes}",
+        f"- Total deterministic voltage points compared: {summary.total_compared_points}",
+        f"- Smallest route comparison set: {summary.min_compared_points}",
+        f"- Largest route comparison set: {summary.max_compared_points}",
+        "",
+        "Every validated route records both the slack-power mismatch and the maximum deterministic complex-voltage mismatch across all matched buses or phase nodes.",
         "",
         "## Validated Routes",
         "",
@@ -359,6 +654,7 @@ def format_metric(value: float | None) -> str:
 def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
     validated = [record for record in records if record.status == "validated"]
     pending = [record for record in records if record.status != "validated"]
+    summary = payload["summary"]
     source_tools = sorted({record.source_tool for record in records})
     export_tools = sorted({record.export_tool for record in records})
     three_phase_validated = [record for record in validated if record.model_type == "unbalanced_3ph"]
@@ -610,6 +906,10 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
         <article class="analysis-card">
           <h3>Validation Rule</h3>
           <p>Every signed-off route is checked by slack-power agreement first and full complex-voltage agreement second. Rows labeled 3-phase unbalanced are validated node by node across explicit phase voltages, not just balanced bus magnitudes. The current PMD-backed 3-phase routes use a documented 5e-3 pu voltage threshold.</p>
+        </article>
+        <article class="analysis-card">
+          <h3>Deterministic Coverage</h3>
+          <p>The current report signs off {summary['validated_routes']} route(s) with deterministic full-voltage comparisons across {summary['total_compared_points']} matched buses or phase nodes in total. Individual routes compare between {summary['min_compared_points']} and {summary['max_compared_points']} points.</p>
         </article>
         <article class="analysis-card">
           <h3>Strongest Current Route</h3>

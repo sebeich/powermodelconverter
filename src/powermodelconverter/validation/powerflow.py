@@ -11,6 +11,7 @@ from typing import Any
 
 from powermodelconverter.adapters.opendss_adapter import OpenDSSResultSnapshot
 from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
+from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
 from powermodelconverter.core.exceptions import ValidationError
 from powermodelconverter.core.model import CanonicalCase
 
@@ -27,6 +28,7 @@ class ValidationResult:
 class ValidationService:
     def __init__(self) -> None:
         self._pandapower = PandapowerAdapter()
+        self._pypsa = PypsaAdapter()
 
     def validate_against_pandapower(
         self,
@@ -246,6 +248,50 @@ class ValidationService:
                 "slack_tolerance_mva": slack_tolerance_mva,
                 "voltage_tolerance_pu": voltage_tolerance_pu,
             },
+        )
+
+    def validate_pypsa_export(
+        self,
+        case: CanonicalCase,
+        *,
+        pypsa_path: Path,
+        slack_tolerance_mva: float = 1e-3,
+        voltage_tolerance_pu: float = 1e-3,
+    ) -> ValidationResult:
+        normalized_net = self._pypsa._normalize_pandapower_names(self._pandapower.to_net(case))
+        normalized_case = self._pandapower.to_canonical(
+            normalized_net,
+            case_id=case.case_id,
+            source_format=case.source_format,
+            metadata={key: value for key, value in case.metadata.items() if key != "pandapower_json"},
+            source_path=case.source_path,
+        )
+        reference = self._pandapower.run_power_flow(normalized_case)
+        pypsa_result = self._pypsa.solve_network_file(pypsa_path)
+
+        slack_ref_p = float(reference.res_ext_grid.p_mw.sum())
+        slack_ref_q = float(reference.res_ext_grid.q_mvar.sum())
+        slack_delta = math.hypot(pypsa_result.slack_p_mw - slack_ref_p, pypsa_result.slack_q_mvar - slack_ref_q)
+
+        max_voltage_delta = 0.0
+        compared = 0
+        for _, row in reference.res_bus.iterrows():
+            bus_key = self._bus_key(reference, int(row.name))
+            candidate = pypsa_result.voltages.get(bus_key)
+            if candidate is None:
+                continue
+            angle_rad = math.radians(float(row.va_degree))
+            actual = complex(float(row.vm_pu) * math.cos(angle_rad), float(row.vm_pu) * math.sin(angle_rad))
+            max_voltage_delta = max(max_voltage_delta, abs(actual - candidate))
+            compared += 1
+
+        passed = slack_delta <= slack_tolerance_mva and max_voltage_delta <= voltage_tolerance_pu and compared > 0
+        return ValidationResult(
+            case_id=case.case_id,
+            passed=passed,
+            slack_delta_mva=slack_delta,
+            max_voltage_delta_pu=max_voltage_delta,
+            details={"compared_buses": compared, "backend": "pypsa"},
         )
 
     def _run_powermodels_pf(

@@ -123,7 +123,7 @@
     <div class="grid">
       <article class="card">
         <h2>Validated Routes</h2>
-        <div class="value">10</div>
+        <div class="value">22</div>
         <div class="sub">Routes with successful measured validation</div>
       </article>
       <article class="card">
@@ -143,7 +143,7 @@
       </article>
       <article class="card">
         <h2>Validated 3-Phase Routes</h2>
-        <div class="value">4</div>
+        <div class="value">5</div>
         <div class="sub">Routes using explicit unbalanced three-phase node-voltage checks</div>
       </article>
     </div>
@@ -156,6 +156,10 @@
           <p>Every signed-off route is checked by slack-power agreement first and full complex-voltage agreement second. Rows labeled 3-phase unbalanced are validated node by node across explicit phase voltages, not just balanced bus magnitudes. The current PMD-backed 3-phase routes use a documented 5e-3 pu voltage threshold.</p>
         </article>
         <article class="analysis-card">
+          <h3>Deterministic Coverage</h3>
+          <p>The current report signs off 22 route(s) with deterministic full-voltage comparisons across 5592 matched buses or phase nodes in total. Individual routes compare between 3 and 2721 points.</p>
+        </article>
+        <article class="analysis-card">
           <h3>Strongest Current Route</h3>
           <p>matpower -&gt; pandapower on case9 (balanced) with slack delta 0 MVA and max voltage delta 0 pu.</p>
         </article>
@@ -165,7 +169,7 @@
         </article>
         <article class="analysis-card">
           <h3>Unbalanced Coverage</h3>
-          <p>4 unbalanced route(s) are validated and 0 remain pending. Today that includes native pandapower 3-phase roundtrip validation and an OpenDSS starter feeder validated to both pandapower and PowerModelsDistribution.</p>
+          <p>5 unbalanced route(s) are validated and 0 remain pending. Today that includes native pandapower 3-phase roundtrip validation and an OpenDSS starter feeder validated to both pandapower and PowerModelsDistribution.</p>
         </article>
       </div>
     </section>
@@ -174,10 +178,10 @@
       <h2>Conversion Matrix</h2>
       <table class="matrix">
         <thead>
-          <tr><th>Source \ Export</th><th>pandapower</th><th>powermodels</th><th>powermodelsdistribution</th></tr>
+          <tr><th>Source \ Export</th><th>pandapower</th><th>powermodels</th><th>powermodelsdistribution</th><th>pypsa</th></tr>
         </thead>
         <tbody>
-          <tr><th>matpower</th><td class="cell cell-validated" title="case9: Official MATPOWER case9 imported through pandapower converter.">validated</td><td class="cell cell-validated" title="case9: Balanced export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-empty">-</td></tr><tr><th>opendss</th><td class="cell cell-validated" title="minimal_radial: Validated against OpenDSS source slack power and bus voltages for the currently supported subset. | minimal_unbalanced_3ph: Unbalanced OpenDSS starter feeder validated against source node voltages with pandapower runpp_3ph.">validated</td><td class="cell cell-validated" title="minimal_radial: Balanced-equivalent export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-validated" title="minimal_unbalanced_3ph: Unbalanced OpenDSS starter feeder exported to PowerModelsDistribution and validated against source node voltages.">validated</td></tr><tr><th>pandapower</th><td class="cell cell-validated" title="case9_from_matpower.pandapower: Pandapower JSON re-import generated from the validated MATPOWER case9 route. | ieee_european_lv_asymmetric: Native pandapower 3-phase roundtrip validated with runpp_3ph.">validated</td><td class="cell cell-validated" title="case9_from_matpower.pandapower: Balanced pandapower JSON export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-validated" title="ieee_european_lv_asymmetric: Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages.">validated</td></tr>
+          <tr><th>matpower</th><td class="cell cell-validated" title="case9: Official MATPOWER case9 imported through pandapower converter.">validated</td><td class="cell cell-validated" title="case9: Balanced export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td></tr><tr><th>opendss</th><td class="cell cell-validated" title="minimal_radial: Validated against OpenDSS source slack power and bus voltages for the currently supported subset. | minimal_unbalanced_3ph: Unbalanced OpenDSS starter feeder validated against source node voltages with pandapower runpp_3ph. | minimal_chain: OpenDSS native chained feeder with two loads validated against source bus voltages through pandapower.">validated</td><td class="cell cell-validated" title="minimal_radial: Balanced-equivalent export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-validated" title="minimal_unbalanced_3ph: Unbalanced OpenDSS starter feeder exported to PowerModelsDistribution and validated against source node voltages. | minimal_unbalanced_branch: OpenDSS native branched unbalanced feeder validated against source node voltages through PowerModelsDistribution.">validated</td><td class="cell cell-empty">-</td></tr><tr><th>pandapower</th><td class="cell cell-validated" title="case9_from_matpower.pandapower: Pandapower JSON re-import generated from the validated MATPOWER case9 route. | ieee_european_lv_asymmetric: Native pandapower 3-phase roundtrip validated with runpp_3ph.">validated</td><td class="cell cell-validated" title="case9_from_matpower.pandapower: Balanced pandapower JSON export validated with Julia PowerModels AC power flow. | case6ww: Pandapower package case6ww validated with Julia PowerModels AC power flow. | case33bw: Pandapower package Baran-Wu 33-bus feeder validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-validated" title="ieee_european_lv_asymmetric: Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages.">validated</td><td class="cell cell-validated" title="case9_from_matpower.pandapower: Balanced line-based pandapower model exported to PyPSA NetCDF and validated against pandapower AC power flow. | case4gs: Pandapower package case4gs validated through PyPSA on the supported balanced AC subset. | case5: Pandapower package case5 validated through PyPSA on the supported balanced AC subset.">validated</td></tr><tr><th>powermodels.jl</th><td class="cell cell-empty">-</td><td class="cell cell-validated" title="case6_powermodels_pkg: PowerModels.jl package MATPOWER case6 validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td></tr><tr><th>pypsa</th><td class="cell cell-validated" title="case9_from_matpower.pandapower.pypsa: PyPSA NetCDF re-import validated against PyPSA AC power flow and converted back through pandapower for the current line-based balanced subset. | pypsa_triangle_native: Native PyPSA meshed triangle with one slack, one PV generator, and two loads validated against PyPSA AC power flow through pandapower. | pypsa_radial_native: Native PyPSA radial transmission-style case validated against PyPSA AC power flow through pandapower. | pypsa_five_bus_ring_native: Native PyPSA five-bus ring with distributed load validated against PyPSA AC power flow through pandapower.">validated</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td></tr>
         </tbody>
       </table>
     </section>
@@ -298,6 +302,30 @@
             
             <tr>
               <td>pandapower</td>
+              <td>pypsa</td>
+              <td>case9_from_matpower.pandapower</td>
+              <td>Balanced</td>
+              <td>6.78474455648e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="123" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>9.65318809283e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="165" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>9</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa</td>
+              <td>pandapower</td>
+              <td>case9_from_matpower.pandapower.pypsa</td>
+              <td>Balanced</td>
+              <td>6.78572393325e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="123" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>9.6533823083e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="165" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>9</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
               <td>pandapower</td>
               <td>ieee_european_lv_asymmetric</td>
               <td>3-Phase Unbalanced</td>
@@ -318,6 +346,126 @@
               <td>0.00477785674599</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="35" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>2721</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>minimal_chain</td>
+              <td>Balanced Subset</td>
+              <td>0.000197742150586</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="56" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0.000973850493781</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="45" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>4</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodelsdistribution</td>
+              <td>minimal_unbalanced_branch</td>
+              <td>3-Phase Unbalanced</td>
+              <td>1.38129736733e-05</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="73" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0.00117023422238</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="44" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>9</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>pypsa</td>
+              <td>case4gs</td>
+              <td>Balanced</td>
+              <td>8.13947908763e-08</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="106" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>2.83050014513e-11</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="158" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>4</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>pypsa</td>
+              <td>case5</td>
+              <td>Balanced</td>
+              <td>7.41711783924e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="137" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>6.25769027876e-13</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>5</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>powermodels</td>
+              <td>case6ww</td>
+              <td>Balanced</td>
+              <td>1.32733789259e-07</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="103" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>1.76093142014e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="146" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>6</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>powermodels</td>
+              <td>case33bw</td>
+              <td>Balanced</td>
+              <td>1.09669672865e-07</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="104" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.82562066184e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="126" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>33</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa</td>
+              <td>pandapower</td>
+              <td>pypsa_triangle_native</td>
+              <td>Balanced</td>
+              <td>4.36557456851e-11</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="155" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>1.22845464836e-16</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa</td>
+              <td>pandapower</td>
+              <td>pypsa_radial_native</td>
+              <td>Balanced</td>
+              <td>1.54688980732e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="147" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>1.3564234608e-15</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa</td>
+              <td>pandapower</td>
+              <td>pypsa_five_bus_ring_native</td>
+              <td>Balanced</td>
+              <td>1.21967274857e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="149" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>2.22875838357e-16</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>5</td>
+            </tr>
+            
+            <tr>
+              <td>powermodels.jl</td>
+              <td>powermodels</td>
+              <td>case6_powermodels_pkg</td>
+              <td>Balanced</td>
+              <td>4.41223582364e-13</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>5.11787526652e-16</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>6</td>
             </tr>
             
         </tbody>
@@ -378,6 +526,15 @@
               <p>Planned via the MATPOWER-style balanced exchange contract.</p>
               <ul>
                 <li>Balanced: import=no, export=no, validation=no</li>
+                <li>Unbalanced: import=no, export=no, validation=no</li>
+              </ul>
+            </article>
+            
+            <article class="cap-card">
+              <h3>pypsa</h3>
+              <p>Balanced AC PyPSA import/export is validated for the current line-based transmission subset against pandapower and PyPSA power flow. Current scope excludes unbalanced networks and does not yet sign off transformer-, shunt-, link-, store-, or storage-unit-heavy PyPSA models.</p>
+              <ul>
+                <li>Balanced: import=yes, export=yes, validation=yes</li>
                 <li>Unbalanced: import=no, export=no, validation=no</li>
               </ul>
             </article>
@@ -501,6 +658,30 @@
             
             <tr>
               <td>pandapower</td>
+              <td>pypsa</td>
+              <td>case9_from_matpower.pandapower</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>6.78474455648e-09</td>
+              <td>9.65318809283e-12</td>
+              <td>9</td>
+              <td>Balanced line-based pandapower model exported to PyPSA NetCDF and validated against pandapower AC power flow.</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa</td>
+              <td>pandapower</td>
+              <td>case9_from_matpower.pandapower.pypsa</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>6.78572393325e-09</td>
+              <td>9.6533823083e-12</td>
+              <td>9</td>
+              <td>PyPSA NetCDF re-import validated against PyPSA AC power flow and converted back through pandapower for the current line-based balanced subset.</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
               <td>pandapower</td>
               <td>ieee_european_lv_asymmetric</td>
               <td>3-Phase Unbalanced</td>
@@ -521,6 +702,126 @@
               <td>0.00477785674599</td>
               <td>2721</td>
               <td>Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>minimal_chain</td>
+              <td>Balanced Subset</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0.000197742150586</td>
+              <td>0.000973850493781</td>
+              <td>4</td>
+              <td>OpenDSS native chained feeder with two loads validated against source bus voltages through pandapower.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodelsdistribution</td>
+              <td>minimal_unbalanced_branch</td>
+              <td>3-Phase Unbalanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>1.38129736733e-05</td>
+              <td>0.00117023422238</td>
+              <td>9</td>
+              <td>OpenDSS native branched unbalanced feeder validated against source node voltages through PowerModelsDistribution.</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>pypsa</td>
+              <td>case4gs</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>8.13947908763e-08</td>
+              <td>2.83050014513e-11</td>
+              <td>4</td>
+              <td>Pandapower package case4gs validated through PyPSA on the supported balanced AC subset.</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>pypsa</td>
+              <td>case5</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>7.41711783924e-10</td>
+              <td>6.25769027876e-13</td>
+              <td>5</td>
+              <td>Pandapower package case5 validated through PyPSA on the supported balanced AC subset.</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>powermodels</td>
+              <td>case6ww</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>1.32733789259e-07</td>
+              <td>1.76093142014e-10</td>
+              <td>6</td>
+              <td>Pandapower package case6ww validated with Julia PowerModels AC power flow.</td>
+            </tr>
+            
+            <tr>
+              <td>pandapower</td>
+              <td>powermodels</td>
+              <td>case33bw</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>1.09669672865e-07</td>
+              <td>3.82562066184e-09</td>
+              <td>33</td>
+              <td>Pandapower package Baran-Wu 33-bus feeder validated with Julia PowerModels AC power flow.</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa</td>
+              <td>pandapower</td>
+              <td>pypsa_triangle_native</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>4.36557456851e-11</td>
+              <td>1.22845464836e-16</td>
+              <td>3</td>
+              <td>Native PyPSA meshed triangle with one slack, one PV generator, and two loads validated against PyPSA AC power flow through pandapower.</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa</td>
+              <td>pandapower</td>
+              <td>pypsa_radial_native</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>1.54688980732e-10</td>
+              <td>1.3564234608e-15</td>
+              <td>3</td>
+              <td>Native PyPSA radial transmission-style case validated against PyPSA AC power flow through pandapower.</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa</td>
+              <td>pandapower</td>
+              <td>pypsa_five_bus_ring_native</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>1.21967274857e-10</td>
+              <td>2.22875838357e-16</td>
+              <td>5</td>
+              <td>Native PyPSA five-bus ring with distributed load validated against PyPSA AC power flow through pandapower.</td>
+            </tr>
+            
+            <tr>
+              <td>powermodels.jl</td>
+              <td>powermodels</td>
+              <td>case6_powermodels_pkg</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>4.41223582364e-13</td>
+              <td>5.11787526652e-16</td>
+              <td>6</td>
+              <td>PowerModels.jl package MATPOWER case6 validated with Julia PowerModels AC power flow.</td>
             </tr>
             
         </tbody>
