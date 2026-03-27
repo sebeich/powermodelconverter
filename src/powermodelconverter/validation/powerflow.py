@@ -41,8 +41,7 @@ class ValidationService:
         voltage_tolerance_pu: float = 1e-3,
     ) -> ValidationResult:
         net = self._pandapower.run_power_flow(case)
-        slack_p = float(net.res_ext_grid.p_mw.sum())
-        slack_q = float(net.res_ext_grid.q_mvar.sum())
+        slack_p, slack_q = self._extract_balanced_slack(net)
         slack_delta = math.hypot(slack_p - reference_slack_p_mw, slack_q - reference_slack_q_mvar)
 
         max_voltage_delta = 0.0
@@ -65,6 +64,18 @@ class ValidationService:
             max_voltage_delta_pu=max_voltage_delta,
             details={"compared_buses": compared},
         )
+
+    def _extract_balanced_slack(self, net: Any) -> tuple[float, float]:
+        slack_p = float(net.res_ext_grid.p_mw.sum()) if hasattr(net, "res_ext_grid") else 0.0
+        slack_q = float(net.res_ext_grid.q_mvar.sum()) if hasattr(net, "res_ext_grid") else 0.0
+        if hasattr(net, "gen") and hasattr(net, "res_gen") and len(net.gen):
+            slack_mask = net.gen.get("slack", False)
+            if hasattr(slack_mask, "fillna"):
+                slack_mask = slack_mask.fillna(False)
+            if getattr(slack_mask, "any", lambda: False)():
+                slack_p += float(net.res_gen.loc[slack_mask, "p_mw"].sum())
+                slack_q += float(net.res_gen.loc[slack_mask, "q_mvar"].sum())
+        return slack_p, slack_q
 
     def validate_opendss_roundtrip(
         self,
@@ -111,6 +122,72 @@ class ValidationService:
             slack_delta_mva=slack_delta,
             max_voltage_delta_pu=max_voltage_delta,
             details={"compared_nodes": compared, "mode": "unbalanced_3ph", "backend": "pandapower"},
+        )
+
+    def validate_pandapower_case_against_opendss(
+        self,
+        case: CanonicalCase,
+        reference: OpenDSSResultSnapshot,
+        *,
+        slack_tolerance_mva: float = 1e-3,
+        voltage_tolerance_pu: float = 1e-3,
+    ) -> ValidationResult:
+        net = self._pandapower.run_power_flow(case)
+        slack_p, slack_q = self._extract_balanced_slack(net)
+        slack_delta = math.hypot(slack_p - reference.slack_p_mw, slack_q - reference.slack_q_mvar)
+
+        max_voltage_delta = 0.0
+        compared = 0
+        for _, row in net.res_bus.iterrows():
+            bus_key = self._bus_key(net, int(row.name)).lower()
+            candidate = reference.voltages.get(bus_key)
+            if candidate is None:
+                continue
+            angle_rad = math.radians(float(row.va_degree))
+            actual = complex(float(row.vm_pu) * math.cos(angle_rad), float(row.vm_pu) * math.sin(angle_rad))
+            max_voltage_delta = max(max_voltage_delta, abs(actual - candidate))
+            compared += 1
+
+        passed = slack_delta <= slack_tolerance_mva and max_voltage_delta <= voltage_tolerance_pu and compared > 0
+        return ValidationResult(
+            case_id=case.case_id,
+            passed=passed,
+            slack_delta_mva=slack_delta,
+            max_voltage_delta_pu=max_voltage_delta,
+            details={"compared_buses": compared, "backend": "opendss"},
+        )
+
+    def validate_pandapower_unbalanced_against_opendss(
+        self,
+        case: CanonicalCase,
+        reference: OpenDSSResultSnapshot,
+        *,
+        slack_tolerance_mva: float = 1e-3,
+        voltage_tolerance_pu: float = 1e-3,
+    ) -> ValidationResult:
+        net = self._pandapower.run_power_flow_3ph(case)
+        slack = self._extract_3ph_slack(net)
+        slack_p = sum(slack[key] for key in ("p_a_mw", "p_b_mw", "p_c_mw"))
+        slack_q = sum(slack[key] for key in ("q_a_mvar", "q_b_mvar", "q_c_mvar"))
+        slack_delta = math.hypot(slack_p - reference.slack_p_mw, slack_q - reference.slack_q_mvar)
+
+        node_voltages = self._extract_3ph_node_voltages(net)
+        max_voltage_delta = 0.0
+        compared = 0
+        for key, candidate in reference.node_voltages.items():
+            actual = node_voltages.get(key.lower())
+            if actual is None:
+                continue
+            max_voltage_delta = max(max_voltage_delta, abs(actual - candidate))
+            compared += 1
+
+        passed = slack_delta <= slack_tolerance_mva and max_voltage_delta <= voltage_tolerance_pu and compared > 0
+        return ValidationResult(
+            case_id=case.case_id,
+            passed=passed,
+            slack_delta_mva=slack_delta,
+            max_voltage_delta_pu=max_voltage_delta,
+            details={"compared_nodes": compared, "mode": "unbalanced_3ph", "backend": "opendss"},
         )
 
     def validate_pandapower_unbalanced_roundtrip(
@@ -176,8 +253,7 @@ class ValidationService:
             julia_script=julia_script,
             julia_depot=julia_depot,
         )
-        slack_ref_p = float(net.res_ext_grid.p_mw.sum())
-        slack_ref_q = float(net.res_ext_grid.q_mvar.sum())
+        slack_ref_p, slack_ref_q = self._extract_balanced_slack(net)
         slack_delta = math.hypot(payload["slack_p_mw"] - slack_ref_p, payload["slack_q_mvar"] - slack_ref_q)
 
         max_voltage_delta = 0.0
@@ -269,8 +345,7 @@ class ValidationService:
         reference = self._pandapower.run_power_flow(normalized_case)
         pypsa_result = self._pypsa.solve_network_file(pypsa_path)
 
-        slack_ref_p = float(reference.res_ext_grid.p_mw.sum())
-        slack_ref_q = float(reference.res_ext_grid.q_mvar.sum())
+        slack_ref_p, slack_ref_q = self._extract_balanced_slack(reference)
         slack_delta = math.hypot(pypsa_result.slack_p_mw - slack_ref_p, pypsa_result.slack_q_mvar - slack_ref_q)
 
         max_voltage_delta = 0.0
@@ -365,11 +440,11 @@ class ValidationService:
     def _bus_key(self, net: Any, bus_idx: int) -> str:
         value = net.bus.loc[bus_idx, "name"] if "name" in net.bus.columns else None
         if value is None:
-            return str(bus_idx)
+            return f"BUS{bus_idx}"
         if isinstance(value, float) and math.isnan(value):
-            return str(bus_idx)
+            return f"BUS{bus_idx}"
         text = str(value).strip()
-        return text if text else str(bus_idx)
+        return text if text else f"BUS{bus_idx}"
 
     def _extract_3ph_bus_voltages(self, net: Any) -> dict[str, complex]:
         voltages: dict[str, complex] = {}

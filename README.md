@@ -12,14 +12,27 @@ For every supported route, the target is:
 2. Full validation via complex bus voltages
 3. For three-phase models, full validation via phase voltages per bus
 
+## Validation Methodology
+
+The repo uses two complementary evidence layers:
+
+- Native-origin cases are the primary ground-truth layer. They start from models that were authored natively in a source ecosystem and therefore preserve that tool's own modeling assumptions as far as possible.
+- Canonical common-subset cases are the interoperability layer. They intentionally restrict the model to a shared subset so that each tool-to-tool path can be tested on the same electrical problem without hidden unsupported semantics.
+
+The design goal is not to replace native-origin validation with canonical cases. It is to use canonical cases to prove broad interchangeability, and native-origin cases to prove tool-native fidelity. Balanced and unbalanced routes are therefore tracked separately in the generated reports.
+
 ## What The Repo Does
 
 Today the repo can:
 
 - import balanced MATPOWER `.m` cases
+- import balanced CGMES/CIM packages through pandapower's native CGMES loader
 - import OpenDSS `.dss` cases for a first supported subset
 - import pandapower JSON, including native three-phase pandapower models
+- import balanced PyPSA networks for the current supported subset
 - export balanced cases to pandapower JSON
+- export a balanced supported subset to CGMES/CIM and validate it by native pandapower re-import
+- export balanced cases to OpenDSS for the current supported subset
 - export balanced cases to PowerModels JSON
 - export balanced transmission-style cases to PyPSA NetCDF
 - export unbalanced OpenDSS starter feeders to PowerModelsDistribution input
@@ -27,6 +40,7 @@ Today the repo can:
 - validate balanced routes against PyPSA AC power flow for the current supported subset
 - validate native pandapower three-phase roundtrips with `runpp_3ph`
 - validate unbalanced OpenDSS starter feeders against both pandapower and Julia `PowerModelsDistribution`
+- validate native pandapower three-phase exports to OpenDSS and PowerModelsDistribution
 
 The full route inventory is tracked in:
 
@@ -34,61 +48,17 @@ The full route inventory is tracked in:
 - [validation_report.md](/home/seb/powermodelconverter-1/docs/validation_report.md)
 - [validation_report.json](/home/seb/powermodelconverter-1/docs/validation_report.json)
 
-## Current Validation Status
+## Validation Status
 
-Validated routes right now include:
+This repository is meant to be used as a verified converter, not just a parser.
 
-- `matpower -> pandapower` on `case9`
-- `matpower -> powermodels` on `case9`
-- `opendss -> pandapower` on `minimal_radial`
-- `opendss -> powermodels` on `minimal_radial`
-- `opendss -> pandapower` on `minimal_unbalanced_3ph`
-- `opendss -> powermodelsdistribution` on `minimal_unbalanced_3ph`
-- `opendss -> pandapower` on `minimal_chain`
-- `opendss -> powermodelsdistribution` on `minimal_unbalanced_branch`
-- `pandapower -> pandapower` on a balanced `case9` JSON roundtrip
-- `pandapower -> powermodels` on that balanced `case9` JSON roundtrip
-- `pandapower -> pypsa` on that balanced `case9` JSON roundtrip
-- `pypsa -> pandapower` on that balanced `case9` PyPSA roundtrip
-- `pandapower -> pandapower` on `ieee_european_lv_asymmetric` with three-phase validation
-- `pandapower -> powermodelsdistribution` on `ieee_european_lv_asymmetric`
-- `pandapower -> pypsa` on `case4gs`
-- `pandapower -> pypsa` on `case5`
-- `pandapower -> powermodels` on `case6ww`
-- `pandapower -> powermodels` on `case33bw`
-- `pypsa -> pandapower` on `pypsa_triangle_native`
-- `pypsa -> pandapower` on `pypsa_radial_native`
-- `pypsa -> pandapower` on `pypsa_five_bus_ring_native`
-- `powermodels.jl -> powermodels` on `case6_powermodels_pkg`
+The detailed route inventory, tested cases, and measured numerical precision are generated into:
 
-Not yet validated:
+- [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html)
+- [validation_report.md](/home/seb/powermodelconverter-1/docs/validation_report.md)
+- [validation_report.json](/home/seb/powermodelconverter-1/docs/validation_report.json)
 
-- broader native unbalanced pandapower topologies outside the current supported subset
-- transformer-, shunt-, link-, store-, or storage-unit-heavy PyPSA models outside the current supported subset
-
-Representative measured precisions from the generated report:
-
-- `matpower -> powermodels` on `case9`:
-  slack delta `6.7856210496e-09 MVA`, max voltage delta `9.65387848049e-12 pu`
-- `opendss -> powermodels` on `minimal_radial`:
-  slack delta `6.86639507574e-14 MVA`, max voltage delta `6.67036704689e-16 pu`
-- `opendss -> powermodelsdistribution` on `minimal_unbalanced_3ph`:
-  slack delta `7.08868116922e-06 MVA`, max voltage delta `0.000936091367299 pu`
-- `pandapower -> powermodelsdistribution` on `ieee_european_lv_asymmetric`:
-  slack delta approximately `2.32e-04 MVA`, max phase-voltage delta approximately `4.78e-03 pu`
-- `pandapower -> pandapower` on `ieee_european_lv_asymmetric`:
-  slack delta `0.0 MVA`, max phase-voltage delta `0.0 pu`, `2721` compared phase points
-- `pandapower -> pypsa` on `case5`:
-  slack delta `7.41711783924e-10 MVA`, max voltage delta `6.25769027876e-13 pu`
-- `pypsa -> pandapower` on `pypsa_five_bus_ring_native`:
-  slack delta `1.21967274857e-10 MVA`, max voltage delta `2.22875838357e-16 pu`
-
-Current generated summary:
-
-- `22` validated routes
-- `17` balanced validated routes
-- `5` unbalanced validated routes
-- `5592` total deterministic voltage comparison points
+Use those reports when you need the exact signed-off route matrix. The README stays focused on operating the repository with your own networks.
 
 ## Repository Layout
 
@@ -97,7 +67,7 @@ Current generated summary:
 - [src/powermodelconverter/core](/home/seb/powermodelconverter-1/src/powermodelconverter/core)
   Canonical case model, capability registry, and shared exceptions.
 - [src/powermodelconverter/adapters](/home/seb/powermodelconverter-1/src/powermodelconverter/adapters)
-  Import and export logic for MATPOWER, OpenDSS, pandapower, PyPSA, and auxiliary native importers.
+  Import and export logic for MATPOWER, CGMES/CIM, OpenDSS, pandapower, PyPSA, and auxiliary native importers.
 - [src/powermodelconverter/validation](/home/seb/powermodelconverter-1/src/powermodelconverter/validation)
   Balanced and unbalanced validation services.
 - [src/powermodelconverter/cli](/home/seb/powermodelconverter-1/src/powermodelconverter/cli)
@@ -138,10 +108,12 @@ At a high level:
 
 - `matpower`
   balanced import, balanced export, balanced validation
+- `cgmes`
+  balanced import, balanced export for the current supported subset, balanced validation through native pandapower CGMES loading
 - `pandapower`
   balanced import/export/validation and native unbalanced three-phase import/export/validation
 - `opendss`
-  balanced import and validation for the supported subset, plus a validated unbalanced starter feeder route
+  balanced and unbalanced import/export/validation for the currently signed-off subsets
 - `pypsa`
   balanced import/export/validation for the current transmission-style AC subset
 - `powermodels`
@@ -177,6 +149,8 @@ This project is released under the BSD 3-Clause License. See [LICENSE](/home/seb
 
 Included sample files:
 
+- CGMES base case: [CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip)
+- CGMES boundary case: [CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip)
 - MATPOWER: [case9.m](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/matpower/case9.m)
 - OpenDSS starter case: [minimal_radial.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/minimal_radial.dss)
 - OpenDSS balanced chained feeder: [minimal_chain.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/minimal_chain.dss)
@@ -185,24 +159,47 @@ Included sample files:
 - OpenDSS future target: [IEEE13Nodeckt.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss)
 - pandapower 3-phase: [ieee_european_lv_asymmetric.json](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json)
 
-Notes:
+These samples serve two purposes:
 
-- `minimal_radial.dss` is the current validated OpenDSS reference case
-- `minimal_chain.dss` is an additional validated balanced OpenDSS feeder inside the supported subset
-- `minimal_unbalanced_3ph.dss` is the current validated OpenDSS unbalanced starter feeder for both pandapower and PowerModelsDistribution
-- `minimal_unbalanced_branch.dss` is an additional validated unbalanced OpenDSS feeder for PowerModelsDistribution
-- `IEEE13Nodeckt.dss` is present as a future expansion target, but not yet covered by the supported OpenDSS subset
-- SimBench remains available only as a native pandapower-family import helper, not as a cross-tool exchange route
+- they are regression cases for the validated routes in the generated reports
+- they are templates for how to structure your own input files when trying a new conversion
 
 ## How To Use
 
-### 1. Show the supported route matrix
+### 1. Install the environments
+
+```bash
+python3 -m venv .venv
+./.venv/bin/pip install --upgrade pip setuptools wheel
+./.venv/bin/pip install -e .
+bash scripts/bootstrap_julia_env.sh
+```
+
+The Python environment runs the adapters and CLI. The Julia environment is required for the `PowerModels` and `PowerModelsDistribution` validation backends.
+
+### 2. Check what the current repo claims to support
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main capabilities
 ```
 
-### 2. Validate a MATPOWER case
+Use this before attempting a new route. It is the quick way to see which source and target formats are implemented in this branch.
+
+### 3. Run a verified conversion from your own network
+
+The main entrypoint is `validate`. You provide a source model, the CLI imports it, exports it through the signed-off backends for that source, and compares load-flow results.
+
+Typical pattern:
+
+```bash
+./.venv/bin/python -m powermodelconverter.cli.main validate \
+  --source-format <format> \
+  --source <path-to-your-model>
+```
+
+Supported source-format values in the current repo include `matpower`, `opendss`, `pandapower`, `cgmes`, and `pypsa` for the currently signed-off subsets.
+
+### 4. Example: validate a MATPOWER network
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main validate \
@@ -210,7 +207,7 @@ Notes:
   --source src/powermodelconverter/data/samples/matpower/case9.m
 ```
 
-### 3. Validate the current OpenDSS starter route
+### 5. Example: validate a balanced OpenDSS feeder
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main validate \
@@ -218,7 +215,7 @@ Notes:
   --source src/powermodelconverter/data/samples/opendss/minimal_radial.dss
 ```
 
-### 4. Validate an OpenDSS unbalanced three-phase feeder
+### 6. Example: validate an unbalanced OpenDSS feeder
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main validate \
@@ -226,7 +223,7 @@ Notes:
   --source src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss
 ```
 
-### 5. Validate a native pandapower three-phase model
+### 7. Example: validate a native pandapower three-phase model
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main validate \
@@ -234,41 +231,40 @@ Notes:
   --source src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json
 ```
 
-### 6. Import a native SimBench case into the canonical layer
+### 8. Example: validate a CGMES/CIM package
 
 ```bash
-./.venv/bin/python - <<'PY'
-from powermodelconverter.adapters.simbench_adapter import SimbenchImportAdapter
-case = SimbenchImportAdapter().import_case("1-HV-mixed--0-no_sw")
-print(case.case_id, case.source_format, case.is_unbalanced, case.phase_count)
-PY
+./.venv/bin/python -m powermodelconverter.cli.main validate \
+  --source-format cgmes \
+  --source src/powermodelconverter/data/samples/cgmes
 ```
 
-### 7. Regenerate the full validation inventory
+### 9. Regenerate the validation inventory
 
 ```bash
 ./.venv/bin/python scripts/generate_validation_report.py
 ```
 
-This rewrites:
+Do this after adding a new route, changing an adapter, or adding a new test case. It rewrites:
 
 - [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html)
 - [validation_report.md](/home/seb/powermodelconverter-1/docs/validation_report.md)
 - [validation_report.json](/home/seb/powermodelconverter-1/docs/validation_report.json)
 
-## Paper
-
-The repository is prepared for a companion paper submission. The bibliographic reference and DOI are intentionally left blank until the publication record is available.
-
-Until then:
-
-- use [CITATION.cff](/home/seb/powermodelconverter-1/CITATION.cff) for repository citation metadata
-
-### 8. Run the test suite
+### 10. Run the test suite
 
 ```bash
 ./.venv/bin/python -m pytest -q
 ```
+
+### 11. Recommended workflow for your own networks
+
+1. Start with the source tool that authored your network natively.
+2. Run `capabilities` to confirm the route exists in this branch.
+3. Run `validate` on your network file or package.
+4. Inspect the reported slack mismatch and voltage mismatch.
+5. Open [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html) to compare your route against the signed-off reference cases.
+6. If your model uses advanced components, check the limitations section below before trusting the result.
 
 ## CLI Output
 
@@ -278,16 +274,11 @@ The `validate` command prints JSON with:
 - `source_format`
 - `is_unbalanced`
 - export artifact paths
-- initial validation result
+- initial validation result against the first backend roundtrip
 - PowerModels validation result when applicable
 - PowerModelsDistribution validation result for supported unbalanced OpenDSS routes
 
-For unbalanced pandapower cases:
-
-- `powermodels_export` is `null`
-- `powermodels_validation` is `null`
-
-That is intentional for balanced `PowerModels`. Unbalanced pandapower cases can export to `PowerModelsDistribution` when they stay inside the currently supported 3-phase subset.
+In practice, treat the JSON as the machine-readable certificate for a conversion run: it tells you which exports were produced and how closely the solved electrical state matched after conversion.
 
 ## Validation Rules
 
@@ -308,24 +299,61 @@ Three-phase PowerModelsDistribution routes use:
 - max phase-voltage mismatch tolerance: `5e-3 pu`
 - comparison over all compared phase nodes
 
+Quick interpretation:
+
+- small slack mismatch means the overall power balance stayed consistent
+- small voltage mismatch means the converted model preserved the electrical state bus by bus, or phase by phase for unbalanced cases
+- a route should only be treated as signed off if it is both implemented and listed in the generated report
+
+## Supported Abilities And Current Limits
+
+Use this section as the practical trust boundary for your own models.
+
+### Balanced routes
+
+Current strengths:
+
+- bus-branch transmission and distribution style AC cases with one clear slack source
+- lines and constant-power loads across the validated subsets
+- MATPOWER, pandapower, OpenDSS, CGMES/CIM, PyPSA, and PowerModels on their currently signed-off balanced subsets
+
+Current limits:
+
+- CGMES export is currently conservative and centered on a bus-branch subset
+- PyPSA support is aimed at line-based AC models, not the full PyPSA component space
+- broader OpenDSS control semantics are not yet universally signed off
+
+### Unbalanced routes
+
+Current strengths:
+
+- native pandapower 3-phase models in the signed-off subset
+- unbalanced OpenDSS feeders in the signed-off subset
+- export and validation against `PowerModelsDistribution`
+
+Current limits:
+
+- not every unbalanced topology or component combination is covered yet
+- regulator-heavy, switch-heavy, and broader feeder-library semantics are still outside the validated boundary
+- `PowerModelsDistribution` is used as a validation/export backend, not yet as a full general import backend
+
 ## Known Limits
 
 - SimBench is treated as a native pandapower-family import convenience, not as a separate exchange backend.
+- CGMES import relies on pandapower's native CIM/CGMES loader, so fidelity is anchored to pandapower's supported CGMES semantics.
+- CGMES export is currently limited to balanced transformer-free bus-branch models with one slack source, lines, and constant-power loads.
+- The OpenDSS paths are signed off for the current balanced and three-phase subsets in this repo, not yet for arbitrary OpenDSS models with broader controls, switching, and equipment semantics.
+- The PyPSA path is validated on the current line-based balanced subset and does not yet sign off transformer-, shunt-, link-, store-, or storage-unit-heavy PyPSA models.
+- `PowerModelsDistribution` is validated as an export/solver backend only; import back into the canonical layer is not implemented.
 - OpenDSS import currently targets a conservative subset:
   `Vsource`, `bus`, `line`, `transformer`, and `load`.
-- `PowerModelsDistribution` is currently validated for the OpenDSS starter feeder and the native pandapower `ieee_european_lv_asymmetric` feeder, not yet for every possible unbalanced topology.
+- `PowerModelsDistribution` is currently validated for the OpenDSS starter feeders and the native pandapower `ieee_european_lv_asymmetric` feeder, not yet for every possible unbalanced topology.
+- The additional OpenDSS branched unbalanced feeder is validated through `PowerModelsDistribution`, but broader feeder libraries and regulator-heavy models are still outside the signed-off scope.
+- PyPSA validation is currently limited to the transmission-style balanced AC subset represented in the generated report. Transformer-, shunt-, link-, store-, and storage-unit-heavy PyPSA models are not claimed as validated.
+- `PowerModels.jl` is used here as a validation backend and package-native reference source, not yet as a general import backend into the canonical layer.
 - `pypower`, PowerFactory, PSS/E, and PSCAD adapters are not implemented yet.
 - The canonical schema is still pandapower-backed rather than a fully neutral multi-phase network model.
-
-## Development Workflow
-
-Recommended loop:
-
-1. install the Python and Julia environments
-2. run one or more `validate` commands on sample cases
-3. run `./.venv/bin/python scripts/generate_validation_report.py`
-4. run `./.venv/bin/python -m pytest -q`
-5. inspect [validation_report.html](/home/seb/powermodelconverter/docs/validation_report.html) before claiming a new route is validated
+- The generated validation report is the source of truth for what is actually signed off in this branch. If a route is not listed there, it should not be treated as validated.
 
 ## Roadmap
 

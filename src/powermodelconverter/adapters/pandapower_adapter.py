@@ -63,6 +63,7 @@ class PandapowerAdapter:
 
     def run_power_flow_3ph(self, case: CanonicalCase, **kwargs: Any) -> Any:
         net = self.to_net(case)
+        self._prepare_3ph_net(net)
         pp.runpp_3ph(net, numba=False, **kwargs)
         return net
 
@@ -90,3 +91,17 @@ class PandapowerAdapter:
         convert_pp_to_pm(net)
         bus_lookup = net.get("_pd2pm_lookups", {}).get("bus", np.array([], dtype=int))
         return {int(bus_idx): int(pm_bus) for bus_idx, pm_bus in enumerate(bus_lookup)}
+
+    def _prepare_3ph_net(self, net: Any) -> None:
+        if hasattr(net, "ext_grid") and len(net.ext_grid):
+            defaults = {
+                "s_sc_max_mva": 1000.0,
+                "rx_max": 0.1,
+                "x0x_max": 1.0,
+                "r0x0_max": 0.1,
+            }
+            for column, default in defaults.items():
+                if column not in net.ext_grid.columns:
+                    net.ext_grid[column] = default
+                else:
+                    net.ext_grid[column] = net.ext_grid[column].fillna(default)

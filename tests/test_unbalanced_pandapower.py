@@ -3,6 +3,8 @@ from pathlib import Path
 import pandapower as pp
 import pandapower.networks as pn
 
+from powermodelconverter.adapters.opendss_export_adapter import OpenDSSExportAdapter
+from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter
 from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
 from powermodelconverter.adapters.pandapower_import_adapter import PandapowerImportAdapter
 from powermodelconverter.adapters.powermodels_distribution_adapter import PowerModelsDistributionAdapter
@@ -25,6 +27,15 @@ def test_unbalanced_pandapower_roundtrip(tmp_path: Path) -> None:
     validator = ValidationService()
     reference_net = PandapowerAdapter().run_power_flow_3ph(case)
     slack = validator._extract_3ph_slack(reference_net)
+    opendss_export = OpenDSSExportAdapter().export_case(
+        case,
+        tmp_path / "ieee_european_lv_asymmetric_opendss.dss",
+    )
+    opendss_reference = OpenDSSImportAdapter().solve_source_case(opendss_export)
+    opendss_result = validator.validate_pandapower_unbalanced_against_opendss(case, opendss_reference)
+    assert opendss_result.passed is True
+    assert opendss_result.details["backend"] == "opendss"
+
     export = PowerModelsDistributionAdapter().export_input(
         case,
         tmp_path / "ieee_european_lv_asymmetric_powermodelsdistribution.dss",

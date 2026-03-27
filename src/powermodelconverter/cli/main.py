@@ -6,11 +6,15 @@ import json
 import math
 from pathlib import Path
 
+from powermodelconverter.adapters.cgmes_export_adapter import CGMESExportAdapter
+from powermodelconverter.adapters.cgmes_import_adapter import CGMESImportAdapter
 from powermodelconverter.adapters.matpower_adapter import MatpowerImportAdapter
+from powermodelconverter.adapters.opendss_export_adapter import OpenDSSExportAdapter
 from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter
 from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
 from powermodelconverter.adapters.pandapower_import_adapter import PandapowerImportAdapter
 from powermodelconverter.adapters.powermodels_distribution_adapter import PowerModelsDistributionAdapter
+from powermodelconverter.adapters.powermodels_distribution_import_adapter import PowerModelsDistributionImportAdapter
 from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
 from powermodelconverter.adapters.pypsa_import_adapter import PypsaImportAdapter
 from powermodelconverter.adapters.simbench_adapter import SimbenchImportAdapter
@@ -28,7 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     validate = subparsers.add_parser("validate", help="Import, export, and validate a case")
     validate.add_argument(
         "--source-format",
-        choices=["matpower", "opendss", "simbench", "pandapower", "pypsa"],
+        choices=["matpower", "opendss", "simbench", "pandapower", "pypsa", "cgmes", "powermodelsdistribution"],
         required=True,
     )
     validate.add_argument("--source", required=True)
@@ -58,13 +62,13 @@ def main() -> None:
 
     pandapower = PandapowerAdapter()
     pypsa = PypsaAdapter()
+    cgmes = CGMESExportAdapter()
     validator = ValidationService()
 
     if args.source_format == "matpower":
         case = MatpowerImportAdapter().import_case(args.source)
         reference = pandapower.run_power_flow(case)
-        reference_slack_p = float(reference.res_ext_grid.p_mw.sum())
-        reference_slack_q = float(reference.res_ext_grid.q_mvar.sum())
+        reference_slack_p, reference_slack_q = validator._extract_balanced_slack(reference)
         reference_voltages = {
             validator._bus_key(reference, int(idx)): complex(
                 float(row.vm_pu) * math.cos(math.radians(float(row.va_degree))),
@@ -81,8 +85,7 @@ def main() -> None:
     elif args.source_format == "simbench":
         case = SimbenchImportAdapter().import_case(args.source)
         reference = pandapower.run_power_flow(case)
-        reference_slack_p = float(reference.res_ext_grid.p_mw.sum())
-        reference_slack_q = float(reference.res_ext_grid.q_mvar.sum())
+        reference_slack_p, reference_slack_q = validator._extract_balanced_slack(reference)
         reference_voltages = {
             validator._bus_key(reference, int(idx)): complex(
                 float(row.vm_pu) * math.cos(math.radians(float(row.va_degree))),
@@ -102,8 +105,7 @@ def main() -> None:
             initial_validation = validator.validate_pandapower_unbalanced_roundtrip(case)
         else:
             reference = pandapower.run_power_flow(case)
-            reference_slack_p = float(reference.res_ext_grid.p_mw.sum())
-            reference_slack_q = float(reference.res_ext_grid.q_mvar.sum())
+            reference_slack_p, reference_slack_q = validator._extract_balanced_slack(reference)
             reference_voltages = {
                 validator._bus_key(reference, int(idx)): complex(
                     float(row.vm_pu) * math.cos(math.radians(float(row.va_degree))),
@@ -126,6 +128,28 @@ def main() -> None:
             reference_slack_q_mvar=source_reference.slack_q_mvar,
             reference_voltages=source_reference.voltages,
         )
+    elif args.source_format == "cgmes":
+        case = CGMESImportAdapter().import_case(args.source)
+        reference = pandapower.run_power_flow(case)
+        reference_slack_p, reference_slack_q = validator._extract_balanced_slack(reference)
+        reference_voltages = {
+            validator._bus_key(reference, int(idx)): complex(
+                float(row.vm_pu) * math.cos(math.radians(float(row.va_degree))),
+                float(row.vm_pu) * math.sin(math.radians(float(row.va_degree))),
+            )
+            for idx, row in reference.res_bus.iterrows()
+        }
+        initial_validation = validator.validate_against_pandapower(
+            case,
+            reference_slack_p_mw=reference_slack_p,
+            reference_slack_q_mvar=reference_slack_q,
+            reference_voltages=reference_voltages,
+        )
+    elif args.source_format == "powermodelsdistribution":
+        adapter = PowerModelsDistributionImportAdapter()
+        source_reference = adapter.solve_source_case(args.source)
+        case = adapter.import_case(args.source)
+        initial_validation = validator.validate_opendss_unbalanced_roundtrip(case, source_reference)
     else:
         adapter = OpenDSSImportAdapter()
         source_reference = adapter.solve_source_case(args.source)
@@ -137,6 +161,19 @@ def main() -> None:
 
     export_dir = Path(args.export_dir)
     pandapower_path = pandapower.export_json(case, export_dir / f"{case.case_id}.pandapower.json")
+    opendss_path = None
+    opendss_validation = None
+    if args.source_format == "pandapower":
+        try:
+            opendss_path = OpenDSSExportAdapter().export_case(case, export_dir / f"{case.case_id}.dss")
+            opendss_reference = OpenDSSImportAdapter().solve_source_case(opendss_path)
+            if case.is_unbalanced:
+                opendss_validation = validator.validate_pandapower_unbalanced_against_opendss(case, opendss_reference)
+            else:
+                opendss_validation = validator.validate_pandapower_case_against_opendss(case, opendss_reference)
+        except ValueError:
+            opendss_path = None
+            opendss_validation = None
     powermodels_path = None
     if not case.is_unbalanced:
         powermodels_path = pandapower.export_powermodels_json(
@@ -155,6 +192,30 @@ def main() -> None:
     pypsa_path = None
     if not case.is_unbalanced and args.pypsa_export:
         pypsa_path = pypsa.export_netcdf(case, export_dir / f"{case.case_id}.pypsa.nc")
+    cgmes_path = None
+    cgmes_validation = None
+    if not case.is_unbalanced and args.source_format == "pandapower":
+        try:
+            cgmes_path = cgmes.export_case(case, export_dir / f"{case.case_id}.cgmes.zip")
+            cgmes_case = CGMESImportAdapter().import_case(cgmes_path)
+            reference = pandapower.run_power_flow(case)
+            reference_slack_p, reference_slack_q = validator._extract_balanced_slack(reference)
+            reference_voltages = {
+                validator._bus_key(reference, int(idx)): complex(
+                    float(row.vm_pu) * math.cos(math.radians(float(row.va_degree))),
+                    float(row.vm_pu) * math.sin(math.radians(float(row.va_degree))),
+                )
+                for idx, row in reference.res_bus.iterrows()
+            }
+            cgmes_validation = validator.validate_against_pandapower(
+                cgmes_case,
+                reference_slack_p_mw=reference_slack_p,
+                reference_slack_q_mvar=reference_slack_q,
+                reference_voltages=reference_voltages,
+            )
+        except ValueError:
+            cgmes_path = None
+            cgmes_validation = None
     powermodels_validation = None
     if not case.is_unbalanced:
         powermodels_validation = validator.validate_powermodels_export(
@@ -166,7 +227,7 @@ def main() -> None:
         )
     powermodelsdistribution_validation = None
     if case.is_unbalanced and powermodelsdistribution_path is not None:
-        if args.source_format == "opendss":
+        if args.source_format in {"opendss", "powermodelsdistribution"}:
             reference_slack_p_mw = source_reference.slack_p_mw
             reference_slack_q_mvar = source_reference.slack_q_mvar
             reference_node_voltages = source_reference.node_voltages
@@ -198,14 +259,18 @@ def main() -> None:
                 "source_format": case.source_format,
                 "is_unbalanced": case.is_unbalanced,
                 "pandapower_export": str(pandapower_path),
+                "opendss_export": str(opendss_path) if opendss_path else None,
                 "powermodels_export": str(powermodels_path) if powermodels_path else None,
                 "pypsa_export": str(pypsa_path) if pypsa_path else None,
+                "cgmes_export": str(cgmes_path) if cgmes_path else None,
                 "powermodelsdistribution_export": (
                     str(powermodelsdistribution_path) if powermodelsdistribution_path else None
                 ),
                 "initial_validation": asdict(initial_validation),
+                "opendss_validation": asdict(opendss_validation) if opendss_validation else None,
                 "powermodels_validation": asdict(powermodels_validation) if powermodels_validation else None,
                 "pypsa_validation": asdict(pypsa_validation) if pypsa_validation else None,
+                "cgmes_validation": asdict(cgmes_validation) if cgmes_validation else None,
                 "powermodelsdistribution_validation": (
                     asdict(powermodelsdistribution_validation) if powermodelsdistribution_validation else None
                 ),

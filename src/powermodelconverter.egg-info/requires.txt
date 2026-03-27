@@ -1,7 +1,9 @@
+lxml>=6.0
 matpowercaseframes>=2.0.3
 numpy>=2.3
 opendssdirect.py>=0.9.4
 pandas>=2.3
 pandapower>=3.4.0
+pypsa>=1.1.2
 pytest>=9.0
 simbench>=1.6.1
