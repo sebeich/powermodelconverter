@@ -123,6 +123,61 @@ At a high level:
 - `pypower`
   planned
 
+## Conversion Overview
+
+The detailed signed-off route inventory lives in the generated validation reports. For day-to-day use, the tables below provide the quick visual overview.
+
+### Balanced Tool Support
+
+| Tool | Import | Export | Validation | Notes |
+| --- | --- | --- | --- | --- |
+| `pandapower` | Yes | Yes | Yes | Core balanced exchange backend and reference runtime in this repo |
+| `matpower` | Yes | Yes | Yes | Balanced MATPOWER `.m` workflows are signed off |
+| `opendss` | Yes | Yes | Yes | Balanced subset is signed off, not arbitrary OpenDSS semantics |
+| `cgmes` | Yes | Yes | Yes | Export is currently limited to the validated balanced subset |
+| `pypsa` | Yes | Yes | Yes | Signed off for the current line-based AC subset |
+| `powermodels` | No | Yes | Yes | Validation/export backend for balanced AC models |
+| `pypower` | No | No | No | Planned |
+
+### Balanced Conversion Matrix
+
+`Yes` means the route is available in the current validated balanced toolchain. `Subset` means the route exists but only for the signed-off balanced component subset documented below.
+
+| From \ To | `pandapower` | `matpower` | `opendss` | `cgmes` | `pypsa` | `powermodels` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `pandapower` | Yes | Yes | Subset | Subset | Subset | Yes |
+| `matpower` | Yes | Yes | Subset | Subset | Subset | Yes |
+| `opendss` | Yes | Yes | Subset | Subset | Subset | Yes |
+| `cgmes` | Yes | Yes | Subset | Subset | Subset | Yes |
+| `pypsa` | Yes | Yes | Subset | Subset | Subset | Yes |
+
+### Unbalanced Tool Support
+
+| Tool | Import | Export | Validation | Notes |
+| --- | --- | --- | --- | --- |
+| `pandapower` | Yes | Yes | Yes | Native 3-phase pandapower subset is signed off |
+| `opendss` | Yes | Yes | Yes | Starter three-phase feeder subset is signed off |
+| `powermodelsdistribution` | Yes | Yes | Yes | Signed off for the current DSS-compatible unbalanced subset |
+
+### Unbalanced Conversion Matrix
+
+`Yes` means the route is available in the current validated unbalanced toolchain for the signed-off 3-phase subset.
+
+| From \ To | `pandapower` | `opendss` | `powermodelsdistribution` |
+| --- | --- | --- | --- |
+| `pandapower` | Yes | Yes | Yes |
+| `opendss` | Yes | Yes | Yes |
+| `powermodelsdistribution` | Yes | Yes | Yes |
+
+### Practical Meaning Of `Subset`
+
+| Area | Currently Signed Off | Not Yet Claimed As Generally Validated |
+| --- | --- | --- |
+| Balanced CGMES | Bus-branch style balanced models with one slack source, lines, and constant-power loads | Broader CIM semantics such as transformers, multiple generators, switched topology, and unbalanced CIM |
+| Balanced OpenDSS | Conservative AC subset used in the signed-off balanced routes | Broader control, switch, regulator, capacitor, and line-code-heavy semantics |
+| Balanced PyPSA | Line-based AC transmission-style models in the validated set | Full PyPSA component space such as links, stores, storage units, and broader transformer/shunt-heavy cases |
+| Unbalanced OpenDSS / PMD / pandapower | Native 3-phase feeder subset exercised by the validated starter and native asymmetric cases | Arbitrary feeder libraries, regulator-heavy cases, and wider advanced component combinations |
+
 ## Installation
 
 ### Python environment
