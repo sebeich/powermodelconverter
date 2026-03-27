@@ -38,6 +38,7 @@ class MatpowerExportAdapter(ExportAdapter):
     def export_case(self, case: CanonicalCase, destination: str | Path, **kwargs: Any) -> Path:
         path = Path(destination)
         path.parent.mkdir(parents=True, exist_ok=True)
-        net = self._pandapower.to_net(case)
-        to_mpc(net, filename=str(path), **kwargs)
+        net = self._pandapower.run_power_flow(case)
+        export_kwargs = {"init": "results", **kwargs}
+        to_mpc(net, filename=str(path), **export_kwargs)
         return path

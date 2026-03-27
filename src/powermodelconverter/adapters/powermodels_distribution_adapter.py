@@ -20,19 +20,16 @@ class PowerModelsDistributionAdapter:
         if not case.is_unbalanced:
             raise ValueError("PowerModelsDistribution export is intended for unbalanced cases.")
 
+        path = Path(destination)
+        path.parent.mkdir(parents=True, exist_ok=True)
         source_path = case.source_path
-        if case.source_format == "opendss" and source_path is not None and source_path.suffix.lower() == ".dss":
-            path = Path(destination)
-            path.parent.mkdir(parents=True, exist_ok=True)
+        if source_path is not None and source_path.suffix.lower() == ".dss":
+            if source_path.resolve() == path.resolve():
+                return path
             shutil.copy2(source_path, path)
             return path
 
-        if case.source_format == "pandapower":
-            return self._export_pandapower_unbalanced_to_dss(case, destination)
-
-        raise ValueError(
-            "Unbalanced PowerModelsDistribution export is currently implemented for OpenDSS- and pandapower-source cases only."
-        )
+        return self._export_pandapower_unbalanced_to_dss(case, path)
 
     def _export_pandapower_unbalanced_to_dss(self, case: CanonicalCase, destination: str | Path) -> Path:
         net = self._pandapower.to_net(case)

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import math
+import logging
 from html import escape
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -13,11 +14,15 @@ import pandapower as pp
 import pandapower.networks as pn
 import pypsa
 
-from powermodelconverter.adapters.matpower_adapter import MatpowerImportAdapter
+from powermodelconverter.adapters.cgmes_export_adapter import CGMESExportAdapter
+from powermodelconverter.adapters.cgmes_import_adapter import CGMESImportAdapter
+from powermodelconverter.adapters.matpower_adapter import MatpowerExportAdapter, MatpowerImportAdapter
+from powermodelconverter.adapters.opendss_export_adapter import OpenDSSExportAdapter
 from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter
 from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
 from powermodelconverter.adapters.pandapower_import_adapter import PandapowerImportAdapter
 from powermodelconverter.adapters.powermodels_distribution_adapter import PowerModelsDistributionAdapter
+from powermodelconverter.adapters.powermodels_distribution_import_adapter import PowerModelsDistributionImportAdapter
 from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
 from powermodelconverter.adapters.pypsa_import_adapter import PypsaImportAdapter
 from powermodelconverter.core.model import CanonicalCase
@@ -30,6 +35,21 @@ DOCS_DIR = REPO_ROOT / "docs"
 JSON_REPORT = DOCS_DIR / "validation_report.json"
 MARKDOWN_REPORT = DOCS_DIR / "validation_report.md"
 HTML_REPORT = DOCS_DIR / "validation_report.html"
+
+
+def configure_report_logging() -> None:
+    logging.getLogger().setLevel(logging.WARNING)
+    for name in (
+        "pypsa",
+        "pypsa.network.io",
+        "pypsa.network.power_flow",
+        "pandapower.converter.cim",
+        "pandapower.converter.matpower",
+        "CimParser",
+        "CimConverter",
+        "cim.cim2pp.from_cim",
+    ):
+        logging.getLogger(name).setLevel(logging.WARNING)
 
 
 @dataclass(slots=True)
@@ -57,16 +77,93 @@ class ValidationSummary:
     min_compared_points: int
 
 
+BALANCED_SOURCE_TOOLS = ("pandapower", "matpower", "opendss", "cgmes", "pypsa")
+BALANCED_EXPORT_TOOLS = ("pandapower", "matpower", "opendss", "cgmes", "pypsa", "powermodels")
+UNBALANCED_SOURCE_TOOLS = ("pandapower", "opendss", "powermodelsdistribution")
+UNBALANCED_EXPORT_TOOLS = ("pandapower", "opendss", "powermodelsdistribution")
+
+
 def main() -> None:
+    configure_report_logging()
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
     validator = ValidationService()
     pandapower = PandapowerAdapter()
     pypsa = PypsaAdapter()
+    cgmes_import = CGMESImportAdapter()
+    cgmes_export = CGMESExportAdapter()
     records: list[RouteRecord] = []
 
     with TemporaryDirectory(prefix="pmc_validation_") as tmp:
         tmpdir = Path(tmp)
+
+        # Core balanced interoperability subset:
+        # three load-only balanced cases that can be materialized into each supported
+        # balanced exchange format and exported back out through the common subset.
+        for source_tool in BALANCED_SOURCE_TOOLS:
+            for core_case in build_balanced_core_cases():
+                imported_case = materialize_balanced_source_case(
+                    core_case,
+                    source_tool=source_tool,
+                    pandapower=pandapower,
+                    pypsa=pypsa,
+                    cgmes_export=cgmes_export,
+                    tmpdir=tmpdir,
+                )
+                for export_tool in BALANCED_EXPORT_TOOLS:
+                    records.append(
+                        validation_record(
+                            case_id=imported_case.case_id,
+                            source_tool=source_tool,
+                            export_tool=export_tool,
+                            model_type="balanced",
+                            result=validate_balanced_export(
+                                imported_case,
+                                export_tool=export_tool,
+                                pandapower=pandapower,
+                                validator=validator,
+                                pypsa=pypsa,
+                                cgmes_export=cgmes_export,
+                                cgmes_import=cgmes_import,
+                                tmpdir=tmpdir,
+                            ),
+                            notes=(
+                                "Balanced common-subset interoperability case. "
+                                "Supported elements: one slack source, buses, lines, and constant-power loads."
+                            ),
+                        )
+                    )
+
+        # Core unbalanced interoperability subset:
+        # three native three-phase asymmetric-load feeders shared across pandapower,
+        # OpenDSS, and PowerModelsDistribution's DSS-compatible subset.
+        for source_tool in UNBALANCED_SOURCE_TOOLS:
+            for core_case in build_unbalanced_core_cases():
+                imported_case = materialize_unbalanced_source_case(
+                    core_case,
+                    source_tool=source_tool,
+                    tmpdir=tmpdir,
+                )
+                for export_tool in UNBALANCED_EXPORT_TOOLS:
+                    records.append(
+                        validation_record(
+                            case_id=imported_case.case_id,
+                            source_tool=source_tool,
+                            export_tool=export_tool,
+                            model_type="unbalanced_3ph",
+                            result=validate_unbalanced_export(
+                                imported_case,
+                                export_tool=export_tool,
+                                pandapower=pandapower,
+                                validator=validator,
+                                tmpdir=tmpdir,
+                            ),
+                            notes=(
+                                "Unbalanced common-subset interoperability case. "
+                                "Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
+                            ),
+                        )
+                    )
 
         # MATPOWER balanced sample
         matpower_case = MatpowerImportAdapter().import_case(
@@ -90,6 +187,31 @@ def main() -> None:
                 model_type="balanced",
                 result=validate_powermodels(matpower_case, pandapower, validator, tmpdir),
                 notes="Balanced export validated with Julia PowerModels AC power flow.",
+            )
+        )
+
+        # CGMES official balanced sample
+        cgmes_case = cgmes_import.import_case(
+            REPO_ROOT / "src/powermodelconverter/data/samples/cgmes"
+        )
+        records.append(
+            validation_record(
+                case_id=cgmes_case.case_id,
+                source_tool="cgmes",
+                export_tool="pandapower",
+                model_type="balanced",
+                result=self_validate_balanced(cgmes_case, pandapower, validator),
+                notes="Official pandapower SmallGrid CGMES sample imported through pandapower's native CGMES loader.",
+            )
+        )
+        records.append(
+            validation_record(
+                case_id=cgmes_case.case_id,
+                source_tool="cgmes",
+                export_tool="powermodels",
+                model_type="balanced",
+                result=validate_powermodels(cgmes_case, pandapower, validator, tmpdir),
+                notes="Official CGMES sample exported onward to PowerModels and validated with Julia AC power flow.",
             )
         )
 
@@ -117,6 +239,40 @@ def main() -> None:
                 model_type="balanced_subset",
                 result=validate_powermodels(opendss_case, pandapower, validator, tmpdir),
                 notes="Balanced-equivalent export validated with Julia PowerModels AC power flow.",
+            )
+        )
+        balanced_opendss_as_pandapower_path = tmpdir / "minimal_radial.pandapower.json"
+        pandapower.export_json(opendss_case, balanced_opendss_as_pandapower_path)
+        opendss_as_pandapower_case = PandapowerImportAdapter().import_case(balanced_opendss_as_pandapower_path)
+        records.append(
+            validation_record(
+                case_id=opendss_as_pandapower_case.case_id,
+                source_tool="pandapower",
+                export_tool="opendss",
+                model_type="balanced_subset",
+                result=validate_opendss_from_pandapower(
+                    opendss_as_pandapower_case,
+                    validator,
+                    tmpdir,
+                ),
+                notes="Balanced pandapower re-import of the OpenDSS starter feeder exported back to OpenDSS and validated against pandapower AC power flow.",
+            )
+        )
+        cgmes_subset_case = build_cgmes_subset_case()
+        records.append(
+            validation_record(
+                case_id=cgmes_subset_case.case_id,
+                source_tool="pandapower",
+                export_tool="cgmes",
+                model_type="balanced",
+                result=validate_cgmes_from_pandapower(
+                    cgmes_subset_case,
+                    cgmes_export,
+                    cgmes_import,
+                    validator,
+                    tmpdir,
+                ),
+                notes="Transformer-free balanced pandapower subset exported to CGMES and validated by native pandapower CGMES re-import.",
             )
         )
 
@@ -220,6 +376,20 @@ def main() -> None:
                 model_type="unbalanced_3ph",
                 result=validator.validate_pandapower_unbalanced_roundtrip(pp_unbalanced_case),
                 notes="Native pandapower 3-phase roundtrip validated with runpp_3ph.",
+            )
+        )
+        records.append(
+            validation_record(
+                case_id=pp_unbalanced_case.case_id,
+                source_tool="pandapower",
+                export_tool="opendss",
+                model_type="unbalanced_3ph",
+                result=validate_opendss_from_pandapower(
+                    pp_unbalanced_case,
+                    validator,
+                    tmpdir,
+                ),
+                notes="Native pandapower 3-phase model exported to OpenDSS and validated against runpp_3ph node voltages.",
             )
         )
         records.append(
@@ -385,8 +555,7 @@ def main() -> None:
 
 def self_validate_balanced(case: Any, pandapower: PandapowerAdapter, validator: ValidationService) -> ValidationResult:
     reference = pandapower.run_power_flow(case)
-    reference_slack_p = float(reference.res_ext_grid.p_mw.sum())
-    reference_slack_q = float(reference.res_ext_grid.q_mvar.sum())
+    reference_slack_p, reference_slack_q = validator._extract_balanced_slack(reference)
     reference_voltages = {
         validator._bus_key(reference, int(idx)): complex(
             float(row.vm_pu) * math.cos(math.radians(float(row.va_degree))),
@@ -474,6 +643,42 @@ def validate_pypsa_export(
     return validator.validate_pypsa_export(case, pypsa_path=path)
 
 
+def validate_matpower_export(
+    case: Any,
+    validator: ValidationService,
+    tmpdir: Path,
+) -> ValidationResult:
+    destination = tmpdir / f"{case.case_id}.mat"
+    path = MatpowerExportAdapter().export_case(case, destination)
+    reimported = MatpowerImportAdapter().import_case(path)
+    reference = PandapowerAdapter().run_power_flow(case)
+    reference_slack_p, reference_slack_q = validator._extract_balanced_slack(reference)
+    reference_voltages = _reference_voltages_with_reimported_keys(reference, reimported, validator)
+    return validator.validate_against_pandapower(
+        reimported,
+        reference_slack_p_mw=reference_slack_p,
+        reference_slack_q_mvar=reference_slack_q,
+        reference_voltages=reference_voltages,
+    )
+
+
+def validate_opendss_from_pandapower(
+    case: Any,
+    validator: ValidationService,
+    tmpdir: Path,
+) -> ValidationResult:
+    destination = tmpdir / f"{case.case_id}.dss"
+    path = OpenDSSExportAdapter().export_case(case, destination)
+    reference = OpenDSSImportAdapter().solve_source_case(path)
+    if case.is_unbalanced:
+        return validator.validate_pandapower_unbalanced_against_opendss(case, reference)
+    return validator.validate_pandapower_case_against_opendss(
+        case,
+        reference,
+        slack_tolerance_mva=1e-1,
+    )
+
+
 def validate_opendss_source_to_pandapower(
     case: Any,
     reference: Any,
@@ -491,6 +696,391 @@ def validate_opendss_source_to_powermodelsdistribution(
     tmpdir: Path,
 ) -> ValidationResult:
     return validate_powermodelsdistribution(case, reference, validator, tmpdir)
+
+
+def build_balanced_core_cases() -> list[CanonicalCase]:
+    return [
+        CanonicalCase.from_pandapower(
+            case_id="core_bal_star_3bus",
+            source_format="pandapower",
+            net=_build_balanced_case_star_3bus(),
+        ),
+        CanonicalCase.from_pandapower(
+            case_id="core_bal_radial_3bus",
+            source_format="pandapower",
+            net=_build_balanced_case_radial_3bus(),
+        ),
+        CanonicalCase.from_pandapower(
+            case_id="core_bal_ring_4bus",
+            source_format="pandapower",
+            net=_build_balanced_case_ring_4bus(),
+        ),
+    ]
+
+
+def build_unbalanced_core_cases() -> list[CanonicalCase]:
+    return [
+        CanonicalCase.from_pandapower(
+            case_id="core_unb_radial_loads",
+            source_format="pandapower",
+            net=_build_unbalanced_case_radial_loads(),
+        ),
+        CanonicalCase.from_pandapower(
+            case_id="core_unb_branch_loads",
+            source_format="pandapower",
+            net=_build_unbalanced_case_branch_loads(),
+        ),
+        CanonicalCase.from_pandapower(
+            case_id="core_unb_phase_skew",
+            source_format="pandapower",
+            net=_build_unbalanced_case_delta_mix(),
+        ),
+    ]
+
+
+def materialize_balanced_source_case(
+    case: CanonicalCase,
+    *,
+    source_tool: str,
+    pandapower: PandapowerAdapter,
+    pypsa: PypsaAdapter,
+    cgmes_export: CGMESExportAdapter,
+    tmpdir: Path,
+) -> CanonicalCase:
+    if source_tool == "pandapower":
+        path = pandapower.export_json(case, tmpdir / f"{case.case_id}.pandapower.json")
+        return PandapowerImportAdapter().import_case(path)
+    if source_tool == "matpower":
+        path = MatpowerExportAdapter().export_case(case, tmpdir / f"{case.case_id}.mat")
+        return MatpowerImportAdapter().import_case(path)
+    if source_tool == "opendss":
+        path = OpenDSSExportAdapter().export_case(case, tmpdir / f"{case.case_id}.dss")
+        return OpenDSSImportAdapter().import_case(path)
+    if source_tool == "cgmes":
+        path = cgmes_export.export_case(case, tmpdir / f"{case.case_id}.cgmes.zip")
+        return CGMESImportAdapter().import_case(path)
+    if source_tool == "pypsa":
+        path = pypsa.export_netcdf(case, tmpdir / f"{case.case_id}.nc")
+        return PypsaImportAdapter().import_case(path)
+    raise ValueError(f"Unsupported balanced source tool {source_tool}")
+
+
+def materialize_unbalanced_source_case(
+    case: CanonicalCase,
+    *,
+    source_tool: str,
+    tmpdir: Path,
+) -> CanonicalCase:
+    if source_tool == "pandapower":
+        path = PandapowerAdapter().export_json(case, tmpdir / f"{case.case_id}.pandapower.json")
+        return PandapowerImportAdapter().import_case(path)
+    if source_tool == "opendss":
+        path = OpenDSSExportAdapter().export_case(case, tmpdir / f"{case.case_id}.dss")
+        return OpenDSSImportAdapter().import_case(path)
+    if source_tool == "powermodelsdistribution":
+        path = PowerModelsDistributionAdapter().export_input(case, tmpdir / f"{case.case_id}_pmd.dss")
+        return PowerModelsDistributionImportAdapter().import_case(path)
+    raise ValueError(f"Unsupported unbalanced source tool {source_tool}")
+
+
+def validate_balanced_export(
+    case: CanonicalCase,
+    *,
+    export_tool: str,
+    pandapower: PandapowerAdapter,
+    validator: ValidationService,
+    pypsa: PypsaAdapter,
+    cgmes_export: CGMESExportAdapter,
+    cgmes_import: CGMESImportAdapter,
+    tmpdir: Path,
+) -> ValidationResult:
+    if export_tool == "pandapower":
+        return self_validate_balanced(case, pandapower, validator)
+    if export_tool == "matpower":
+        return validate_matpower_export(case, validator, tmpdir)
+    if export_tool == "opendss":
+        return validate_opendss_from_pandapower(case, validator, tmpdir)
+    if export_tool == "cgmes":
+        return validate_cgmes_from_pandapower(case, cgmes_export, cgmes_import, validator, tmpdir)
+    if export_tool == "pypsa":
+        return validate_pypsa_export(case, validator, pypsa, tmpdir)
+    if export_tool == "powermodels":
+        return validate_powermodels(case, pandapower, validator, tmpdir)
+    raise ValueError(f"Unsupported balanced export tool {export_tool}")
+
+
+def validate_unbalanced_export(
+    case: CanonicalCase,
+    *,
+    export_tool: str,
+    pandapower: PandapowerAdapter,
+    validator: ValidationService,
+    tmpdir: Path,
+) -> ValidationResult:
+    if export_tool == "pandapower":
+        return validator.validate_pandapower_unbalanced_roundtrip(case)
+    if export_tool == "opendss":
+        return validate_opendss_from_pandapower(case, validator, tmpdir)
+    if export_tool == "powermodelsdistribution":
+        return validate_powermodelsdistribution_from_pandapower(case, pandapower, validator, tmpdir)
+    raise ValueError(f"Unsupported unbalanced export tool {export_tool}")
+
+
+def _build_balanced_case_star_3bus() -> Any:
+    net = pp.create_empty_network(sn_mva=100)
+    b0 = pp.create_bus(net, vn_kv=110, name="B0")
+    b1 = pp.create_bus(net, vn_kv=110, name="B1")
+    b2 = pp.create_bus(net, vn_kv=110, name="B2")
+    pp.create_ext_grid(
+        net,
+        b0,
+        vm_pu=1.0,
+        va_degree=0.0,
+        name="Slack",
+        s_sc_max_mva=1000.0,
+        rx_max=0.1,
+        x0x_max=1.0,
+        r0x0_max=0.1,
+    )
+    pp.create_line_from_parameters(
+        net, b0, b1, length_km=8.0, r_ohm_per_km=0.06, x_ohm_per_km=0.24,
+        c_nf_per_km=10.0, max_i_ka=1.0, r0_ohm_per_km=0.18, x0_ohm_per_km=0.72,
+        c0_nf_per_km=5.0, g_us_per_km=0.0, g0_us_per_km=0.0, name="L01"
+    )
+    pp.create_line_from_parameters(
+        net, b0, b2, length_km=5.0, r_ohm_per_km=0.05, x_ohm_per_km=0.20,
+        c_nf_per_km=8.0, max_i_ka=1.0, r0_ohm_per_km=0.15, x0_ohm_per_km=0.60,
+        c0_nf_per_km=4.0, g_us_per_km=0.0, g0_us_per_km=0.0, name="L02"
+    )
+    pp.create_load(net, b1, p_mw=22.0, q_mvar=5.0, name="LD1")
+    pp.create_load(net, b2, p_mw=16.0, q_mvar=4.0, name="LD2")
+    return net
+
+
+def _build_balanced_case_radial_3bus() -> Any:
+    net = pp.create_empty_network(sn_mva=100)
+    b0 = pp.create_bus(net, vn_kv=110, name="B0")
+    b1 = pp.create_bus(net, vn_kv=110, name="B1")
+    b2 = pp.create_bus(net, vn_kv=110, name="B2")
+    pp.create_ext_grid(
+        net,
+        b0,
+        vm_pu=1.0,
+        va_degree=0.0,
+        name="Slack",
+        s_sc_max_mva=1000.0,
+        rx_max=0.1,
+        x0x_max=1.0,
+        r0x0_max=0.1,
+    )
+    pp.create_line_from_parameters(
+        net, b0, b1, length_km=6.0, r_ohm_per_km=0.05, x_ohm_per_km=0.20,
+        c_nf_per_km=9.0, max_i_ka=1.0, r0_ohm_per_km=0.15, x0_ohm_per_km=0.60,
+        c0_nf_per_km=4.5, g_us_per_km=0.0, g0_us_per_km=0.0, name="L01"
+    )
+    pp.create_line_from_parameters(
+        net, b1, b2, length_km=4.0, r_ohm_per_km=0.04, x_ohm_per_km=0.16,
+        c_nf_per_km=8.0, max_i_ka=1.0, r0_ohm_per_km=0.12, x0_ohm_per_km=0.48,
+        c0_nf_per_km=4.0, g_us_per_km=0.0, g0_us_per_km=0.0, name="L12"
+    )
+    pp.create_load(net, b1, p_mw=18.0, q_mvar=5.0, name="LD1")
+    pp.create_load(net, b2, p_mw=22.0, q_mvar=6.0, name="LD2")
+    return net
+
+
+def _build_balanced_case_ring_4bus() -> Any:
+    net = pp.create_empty_network(sn_mva=100)
+    buses = [pp.create_bus(net, vn_kv=110, name=f"B{i}") for i in range(4)]
+    pp.create_ext_grid(net, buses[0], vm_pu=1.0, va_degree=0.0, name="Slack")
+    for i, (fb, tb, r, x) in enumerate(((0, 1, 0.03, 0.12), (1, 2, 0.04, 0.15), (2, 3, 0.05, 0.18), (3, 0, 0.06, 0.21)), start=1):
+        pp.create_line_from_parameters(
+            net, buses[fb], buses[tb], length_km=5.0, r_ohm_per_km=r, x_ohm_per_km=x,
+            c_nf_per_km=7.0, max_i_ka=1.0, r0_ohm_per_km=r * 3.0, x0_ohm_per_km=x * 3.0,
+            c0_nf_per_km=3.5, g_us_per_km=0.0, g0_us_per_km=0.0, name=f"L{i}"
+        )
+    pp.create_load(net, buses[1], p_mw=15.0, q_mvar=4.0, name="LD1")
+    pp.create_load(net, buses[2], p_mw=20.0, q_mvar=5.5, name="LD2")
+    pp.create_load(net, buses[3], p_mw=12.0, q_mvar=3.0, name="LD3")
+    return net
+
+
+def _build_unbalanced_case_radial_loads() -> Any:
+    net = pp.create_empty_network(sn_mva=1.0)
+    b0 = pp.create_bus(net, vn_kv=20.0, name="USRC")
+    b1 = pp.create_bus(net, vn_kv=0.4, name="UL1")
+    pp.create_ext_grid(
+        net,
+        b0,
+        vm_pu=1.0,
+        va_degree=0.0,
+        name="Slack",
+        s_sc_max_mva=1000.0,
+        rx_max=0.1,
+        x0x_max=1.0,
+        r0x0_max=0.1,
+    )
+    pp.create_transformer_from_parameters(
+        net, hv_bus=b0, lv_bus=b1, sn_mva=1.0, vn_hv_kv=20.0, vn_lv_kv=0.4,
+        vk_percent=6.0, vkr_percent=1.0, pfe_kw=0.0, i0_percent=0.0,
+        shift_degree=0.0, vector_group="YNyn",
+        vk0_percent=6.0, vkr0_percent=1.0, mag0_percent=100.0, mag0_rx=0.0, si0_hv_partial=0.9
+    )
+    pp.create_asymmetric_load(net, b1, p_a_mw=0.04, q_a_mvar=0.01, p_b_mw=0.03, q_b_mvar=0.008, p_c_mw=0.05, q_c_mvar=0.012, name="AL1", type="wye")
+    return net
+
+
+def _build_unbalanced_case_branch_loads() -> Any:
+    net = pp.create_empty_network(sn_mva=1.0)
+    b0 = pp.create_bus(net, vn_kv=20.0, name="USRC")
+    b1 = pp.create_bus(net, vn_kv=0.4, name="UB1")
+    b2 = pp.create_bus(net, vn_kv=0.4, name="UB2")
+    pp.create_ext_grid(
+        net,
+        b0,
+        vm_pu=1.0,
+        va_degree=0.0,
+        name="Slack",
+        s_sc_max_mva=1000.0,
+        rx_max=0.1,
+        x0x_max=1.0,
+        r0x0_max=0.1,
+    )
+    pp.create_transformer_from_parameters(
+        net, hv_bus=b0, lv_bus=b1, sn_mva=1.0, vn_hv_kv=20.0, vn_lv_kv=0.4,
+        vk_percent=6.0, vkr_percent=1.0, pfe_kw=0.0, i0_percent=0.0,
+        shift_degree=0.0, vector_group="YNyn",
+        vk0_percent=6.0, vkr0_percent=1.0, mag0_percent=100.0, mag0_rx=0.0, si0_hv_partial=0.9
+    )
+    pp.create_line_from_parameters(
+        net, b1, b2, length_km=0.2, r_ohm_per_km=0.4, x_ohm_per_km=0.08,
+        c_nf_per_km=0.0, max_i_ka=0.4, r0_ohm_per_km=1.2, x0_ohm_per_km=0.24,
+        c0_nf_per_km=0.0, g_us_per_km=0.0, g0_us_per_km=0.0, name="UL"
+    )
+    pp.create_asymmetric_load(net, b1, p_a_mw=0.02, q_a_mvar=0.006, p_b_mw=0.0, q_b_mvar=0.0, p_c_mw=0.03, q_c_mvar=0.009, name="AL1", type="wye")
+    pp.create_asymmetric_load(net, b2, p_a_mw=0.0, q_a_mvar=0.0, p_b_mw=0.025, q_b_mvar=0.007, p_c_mw=0.015, q_c_mvar=0.004, name="AL2", type="wye")
+    return net
+
+
+def _build_unbalanced_case_delta_mix() -> Any:
+    net = pp.create_empty_network(sn_mva=1.0)
+    b0 = pp.create_bus(net, vn_kv=20.0, name="USRC")
+    b1 = pp.create_bus(net, vn_kv=0.4, name="UD1")
+    b2 = pp.create_bus(net, vn_kv=0.4, name="UD2")
+    pp.create_ext_grid(
+        net,
+        b0,
+        vm_pu=1.0,
+        va_degree=0.0,
+        name="Slack",
+        s_sc_max_mva=1000.0,
+        rx_max=0.1,
+        x0x_max=1.0,
+        r0x0_max=0.1,
+    )
+    pp.create_transformer_from_parameters(
+        net, hv_bus=b0, lv_bus=b1, sn_mva=1.0, vn_hv_kv=20.0, vn_lv_kv=0.4,
+        vk_percent=6.0, vkr_percent=1.0, pfe_kw=0.0, i0_percent=0.0,
+        shift_degree=0.0, vector_group="YNyn",
+        vk0_percent=6.0, vkr0_percent=1.0, mag0_percent=100.0, mag0_rx=0.0, si0_hv_partial=0.9
+    )
+    pp.create_line_from_parameters(
+        net, b1, b2, length_km=0.15, r_ohm_per_km=0.35, x_ohm_per_km=0.07,
+        c_nf_per_km=0.0, max_i_ka=0.4, r0_ohm_per_km=1.05, x0_ohm_per_km=0.21,
+        c0_nf_per_km=0.0, g_us_per_km=0.0, g0_us_per_km=0.0, name="UL2"
+    )
+    pp.create_asymmetric_load(net, b1, p_a_mw=0.03, q_a_mvar=0.01, p_b_mw=0.0, q_b_mvar=0.0, p_c_mw=0.01, q_c_mvar=0.003, name="AL1", type="wye")
+    pp.create_asymmetric_load(net, b2, p_a_mw=0.0, q_a_mvar=0.0, p_b_mw=0.02, q_b_mvar=0.006, p_c_mw=0.025, q_c_mvar=0.007, name="AL2", type="wye")
+    return net
+
+
+def build_cgmes_subset_case() -> CanonicalCase:
+    net = pp.create_empty_network(sn_mva=100)
+    slack_bus = pp.create_bus(net, vn_kv=110, name="SlackBus")
+    load_bus = pp.create_bus(net, vn_kv=110, name="LoadBus")
+    pp.create_ext_grid(
+        net,
+        slack_bus,
+        vm_pu=1.0,
+        va_degree=0.0,
+        max_p_mw=500.0,
+        min_p_mw=0.0,
+        max_q_mvar=500.0,
+        min_q_mvar=-500.0,
+        name="Slack",
+    )
+    pp.create_line_from_parameters(
+        net,
+        slack_bus,
+        load_bus,
+        length_km=10.0,
+        r_ohm_per_km=0.05,
+        x_ohm_per_km=0.2,
+        c_nf_per_km=10.0,
+        max_i_ka=1.0,
+        r0_ohm_per_km=0.15,
+        x0_ohm_per_km=0.6,
+        c0_nf_per_km=5.0,
+        g_us_per_km=0.0,
+        g0_us_per_km=0.0,
+        name="L1",
+    )
+    pp.create_load(net, load_bus, p_mw=50.0, q_mvar=10.0, name="LD1")
+    return CanonicalCase.from_pandapower(
+        case_id="cgmes_smoke",
+        source_format="pandapower",
+        net=net,
+    )
+
+
+def validate_cgmes_from_pandapower(
+    case: Any,
+    cgmes_export: CGMESExportAdapter,
+    cgmes_import: CGMESImportAdapter,
+    validator: ValidationService,
+    tmpdir: Path,
+) -> ValidationResult:
+    destination = tmpdir / f"{case.case_id}.cgmes.zip"
+    path = cgmes_export.export_case(case, destination)
+    reimported = cgmes_import.import_case(path)
+    reference = PandapowerAdapter().run_power_flow(case)
+    reference_slack_p, reference_slack_q = validator._extract_balanced_slack(reference)
+    reference_voltages = _reference_voltages_with_reimported_keys(reference, reimported, validator)
+    return validator.validate_against_pandapower(
+        reimported,
+        reference_slack_p_mw=reference_slack_p,
+        reference_slack_q_mvar=reference_slack_q,
+        reference_voltages=reference_voltages,
+    )
+
+
+def _reference_voltages_with_reimported_keys(
+    reference_net: Any,
+    reimported_case: CanonicalCase,
+    validator: ValidationService,
+) -> dict[str, complex]:
+    reimported_net = PandapowerAdapter().to_net(reimported_case)
+    reference_by_key = {
+        validator._bus_key(reference_net, int(idx)): complex(
+            float(row.vm_pu) * math.cos(math.radians(float(row.va_degree))),
+            float(row.vm_pu) * math.sin(math.radians(float(row.va_degree))),
+        )
+        for idx, row in reference_net.res_bus.iterrows()
+    }
+    reimported_keys = [validator._bus_key(reimported_net, int(idx)) for idx in reimported_net.bus.index]
+    if any(key in reference_by_key for key in reimported_keys):
+        return reference_by_key
+
+    reference_rows = sorted(reference_net.res_bus.iterrows(), key=lambda item: int(item[0]))
+    reimported_bus_indices = sorted(int(idx) for idx in reimported_net.bus.index)
+    if len(reference_rows) != len(reimported_bus_indices):
+        return reference_by_key
+
+    remapped: dict[str, complex] = {}
+    for (ref_idx, row), bus_idx in zip(reference_rows, reimported_bus_indices, strict=True):
+        key = validator._bus_key(reimported_net, bus_idx)
+        angle_rad = math.radians(float(row.va_degree))
+        remapped[key] = complex(float(row.vm_pu) * math.cos(angle_rad), float(row.vm_pu) * math.sin(angle_rad))
+    return remapped
 
 
 def build_pypsa_origin_case(
@@ -612,6 +1202,8 @@ def build_summary(records: list[RouteRecord]) -> ValidationSummary:
 
 
 def render_markdown(summary: ValidationSummary, records: list[RouteRecord]) -> str:
+    balanced_records = [record for record in records if "unbalanced" not in record.model_type]
+    unbalanced_records = [record for record in records if "unbalanced" in record.model_type]
     lines = [
         "# Validation Report",
         "",
@@ -630,18 +1222,24 @@ def render_markdown(summary: ValidationSummary, records: list[RouteRecord]) -> s
         "",
         "Every validated route records both the slack-power mismatch and the maximum deterministic complex-voltage mismatch across all matched buses or phase nodes.",
         "",
-        "## Validated Routes",
+        "## Methodology",
         "",
-        "| Source | Export | Case | Model | Status | Slack Delta (MVA) | Max Voltage Delta (pu) | Compared Points | Notes |",
-        "| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |",
+        "- Native-origin cases are the primary ground-truth layer and provide the strongest evidence for source-tool fidelity.",
+        "- Canonical common-subset cases are the interoperability layer and intentionally exercise only the subset that can be represented across multiple tools with minimal hidden semantics.",
+        "- Balanced and unbalanced evidence are reported separately because the supported semantics, solver backends, and tolerances differ.",
+        "",
+        "## Balanced Routes",
+        "",
     ]
-    for record in records:
-        lines.append(
-            "| "
-            f"{record.source_tool} | {record.export_tool} | {record.case_id} | {record.model_type} | {record.status} | "
-            f"{format_metric(record.slack_delta_mva)} | {format_metric(record.max_voltage_delta_pu)} | "
-            f"{record.compared_points if record.compared_points is not None else '-'} | {record.notes} |"
-        )
+    lines.extend(render_markdown_table(balanced_records))
+    lines.extend(
+        [
+            "",
+            "## Unbalanced Routes",
+            "",
+        ]
+    )
+    lines.extend(render_markdown_table(unbalanced_records))
     return "\n".join(lines) + "\n"
 
 
@@ -655,8 +1253,14 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
     validated = [record for record in records if record.status == "validated"]
     pending = [record for record in records if record.status != "validated"]
     summary = payload["summary"]
-    source_tools = sorted({record.source_tool for record in records})
-    export_tools = sorted({record.export_tool for record in records})
+    balanced_records = [record for record in records if "unbalanced" not in record.model_type]
+    unbalanced_records = [record for record in records if "unbalanced" in record.model_type]
+    balanced_validated = [record for record in validated if "unbalanced" not in record.model_type]
+    unbalanced_validated = [record for record in validated if "unbalanced" in record.model_type]
+    balanced_source_tools = sorted({record.source_tool for record in balanced_records})
+    balanced_export_tools = sorted({record.export_tool for record in balanced_records})
+    unbalanced_source_tools = sorted({record.source_tool for record in unbalanced_records})
+    unbalanced_export_tools = sorted({record.export_tool for record in unbalanced_records})
     three_phase_validated = [record for record in validated if record.model_type == "unbalanced_3ph"]
     strongest_route = min(
         (
@@ -676,43 +1280,7 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
         key=lambda record: (record.max_voltage_delta_pu or 0.0, record.slack_delta_mva or 0.0),
         default=None,
     )
-    unbalanced_routes = [record for record in records if "unbalanced" in record.model_type]
-
-    precision_rows = []
-    for record in validated:
-        slack_score = score_precision(record.slack_delta_mva)
-        voltage_score = score_precision(record.max_voltage_delta_pu)
-        precision_rows.append(
-            f"""
-            <tr>
-              <td>{escape(record.source_tool)}</td>
-              <td>{escape(record.export_tool)}</td>
-              <td>{escape(record.case_id)}</td>
-              <td>{escape(display_model_type(record.model_type))}</td>
-              <td>{format_metric(record.slack_delta_mva)}</td>
-              <td>{bar_svg(slack_score, '#1d4ed8')}</td>
-              <td>{format_metric(record.max_voltage_delta_pu)}</td>
-              <td>{bar_svg(voltage_score, '#059669')}</td>
-              <td>{record.compared_points if record.compared_points is not None else '-'}</td>
-            </tr>
-            """
-        )
-
-    matrix_rows = []
-    for source_tool in source_tools:
-        cells = []
-        for export_tool in export_tools:
-            matches = [record for record in records if record.source_tool == source_tool and record.export_tool == export_tool]
-            if not matches:
-                cells.append('<td class="cell cell-empty">-</td>')
-                continue
-            best = "validated" if any(record.status == "validated" for record in matches) else "not_validated"
-            label = "validated" if best == "validated" else "not validated"
-            title = " | ".join(f"{record.case_id}: {record.notes}" for record in matches)
-            cells.append(
-                f'<td class="cell cell-{best}" title="{escape(title)}">{escape(label)}</td>'
-            )
-        matrix_rows.append(f"<tr><th>{escape(source_tool)}</th>{''.join(cells)}</tr>")
+    unbalanced_routes = unbalanced_records
 
     capability_cards = []
     for row in payload["capabilities"]:
@@ -726,24 +1294,6 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
                 <li>Unbalanced: import={yn(row['unbalanced_import'])}, export={yn(row['unbalanced_export'])}, validation={yn(row['unbalanced_validation'])}</li>
               </ul>
             </article>
-            """
-        )
-
-    detail_rows = []
-    for record in records:
-        detail_rows.append(
-            f"""
-            <tr>
-              <td>{escape(record.source_tool)}</td>
-              <td>{escape(record.export_tool)}</td>
-              <td>{escape(record.case_id)}</td>
-              <td>{escape(display_model_type(record.model_type))}</td>
-              <td><span class="pill pill-{record.status}">{escape(record.status)}</span></td>
-              <td>{format_metric(record.slack_delta_mva)}</td>
-              <td>{format_metric(record.max_voltage_delta_pu)}</td>
-              <td>{record.compared_points if record.compared_points is not None else '-'}</td>
-              <td>{escape(record.notes)}</td>
-            </tr>
             """
         )
 
@@ -869,7 +1419,7 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
   <div class="wrap">
     <section class="hero">
       <h1>PowerModelConverter Validation Dashboard</h1>
-      <p>Generated from the live route inventory. This page shows which conversions are validated, which are still pending, and the measured precision for each route in the current repository state.</p>
+      <p>Generated from the live route inventory. Native-origin cases are the main ground-truth layer, while canonical common-subset cases act as the cross-tool interoperability stress test. Balanced and unbalanced evidence are tracked separately because their supported semantics differ.</p>
     </section>
 
     <div class="grid">
@@ -905,7 +1455,7 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
       <div class="analysis">
         <article class="analysis-card">
           <h3>Validation Rule</h3>
-          <p>Every signed-off route is checked by slack-power agreement first and full complex-voltage agreement second. Rows labeled 3-phase unbalanced are validated node by node across explicit phase voltages, not just balanced bus magnitudes. The current PMD-backed 3-phase routes use a documented 5e-3 pu voltage threshold.</p>
+          <p>Every signed-off route is checked by slack-power agreement first and full complex-voltage agreement second. Native-origin routes provide the strongest fidelity evidence, while canonical common-subset routes demonstrate broad interchangeability. Rows labeled 3-phase unbalanced are validated node by node across explicit phase voltages, not just balanced bus magnitudes.</p>
         </article>
         <article class="analysis-card">
           <h3>Deterministic Coverage</h3>
@@ -927,19 +1477,31 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
     </section>
 
     <section class="section">
-      <h2>Conversion Matrix</h2>
+      <h2>Balanced Conversion Matrix</h2>
       <table class="matrix">
         <thead>
-          <tr><th>Source \\ Export</th>{''.join(f'<th>{escape(tool)}</th>' for tool in export_tools)}</tr>
+          <tr><th>Source \\ Export</th>{''.join(f'<th>{escape(tool)}</th>' for tool in balanced_export_tools)}</tr>
         </thead>
         <tbody>
-          {''.join(matrix_rows)}
+          {''.join(build_matrix_rows(balanced_records, balanced_source_tools, balanced_export_tools))}
         </tbody>
       </table>
     </section>
 
     <section class="section">
-      <h2>Precision Plots</h2>
+      <h2>Unbalanced Conversion Matrix</h2>
+      <table class="matrix">
+        <thead>
+          <tr><th>Source \\ Export</th>{''.join(f'<th>{escape(tool)}</th>' for tool in unbalanced_export_tools)}</tr>
+        </thead>
+        <tbody>
+          {''.join(build_matrix_rows(unbalanced_records, unbalanced_source_tools, unbalanced_export_tools))}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Balanced Precision</h2>
       <table class="table">
         <thead>
           <tr>
@@ -955,7 +1517,29 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
           </tr>
         </thead>
         <tbody>
-          {''.join(precision_rows)}
+          {''.join(render_precision_rows(balanced_validated))}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Unbalanced Precision</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Export</th>
+            <th>Case</th>
+            <th>Model</th>
+            <th>Slack Delta</th>
+            <th>Slack Precision</th>
+            <th>Voltage Delta</th>
+            <th>Voltage Precision</th>
+            <th>Compared Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {''.join(render_precision_rows(unbalanced_validated))}
         </tbody>
       </table>
     </section>
@@ -968,7 +1552,7 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
     </section>
 
     <section class="section">
-      <h2>Route Details</h2>
+      <h2>Balanced Route Details</h2>
       <table class="table">
         <thead>
           <tr>
@@ -984,7 +1568,29 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
           </tr>
         </thead>
         <tbody>
-          {''.join(detail_rows)}
+          {''.join(render_detail_rows(balanced_records))}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Unbalanced Route Details</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Export</th>
+            <th>Case</th>
+            <th>Model</th>
+            <th>Status</th>
+            <th>Slack Delta</th>
+            <th>Voltage Delta</th>
+            <th>Compared Points</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {''.join(render_detail_rows(unbalanced_records))}
         </tbody>
       </table>
       <p class="footer">Generated by <code>scripts/generate_validation_report.py</code>.</p>
@@ -993,6 +1599,82 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
 </body>
 </html>
 """
+
+
+def render_markdown_table(records: list[RouteRecord]) -> list[str]:
+    lines = [
+        "| Source | Export | Case | Model | Status | Slack Delta (MVA) | Max Voltage Delta (pu) | Compared Points | Notes |",
+        "| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |",
+    ]
+    for record in records:
+        lines.append(
+            "| "
+            f"{record.source_tool} | {record.export_tool} | {record.case_id} | {record.model_type} | {record.status} | "
+            f"{format_metric(record.slack_delta_mva)} | {format_metric(record.max_voltage_delta_pu)} | "
+            f"{record.compared_points if record.compared_points is not None else '-'} | {record.notes} |"
+        )
+    return lines
+
+
+def build_matrix_rows(records: list[RouteRecord], source_tools: list[str], export_tools: list[str]) -> list[str]:
+    rows = []
+    for source_tool in source_tools:
+        cells = []
+        for export_tool in export_tools:
+            matches = [record for record in records if record.source_tool == source_tool and record.export_tool == export_tool]
+            if not matches:
+                cells.append('<td class="cell cell-empty">-</td>')
+                continue
+            best = "validated" if any(record.status == "validated" for record in matches) else "not_validated"
+            label = "validated" if best == "validated" else "not validated"
+            title = " | ".join(f"{record.case_id}: {record.notes}" for record in matches)
+            cells.append(f'<td class="cell cell-{best}" title="{escape(title)}">{escape(label)}</td>')
+        rows.append(f"<tr><th>{escape(source_tool)}</th>{''.join(cells)}</tr>")
+    return rows
+
+
+def render_precision_rows(records: list[RouteRecord]) -> list[str]:
+    rows = []
+    for record in records:
+        slack_score = score_precision(record.slack_delta_mva)
+        voltage_score = score_precision(record.max_voltage_delta_pu)
+        rows.append(
+            f"""
+            <tr>
+              <td>{escape(record.source_tool)}</td>
+              <td>{escape(record.export_tool)}</td>
+              <td>{escape(record.case_id)}</td>
+              <td>{escape(display_model_type(record.model_type))}</td>
+              <td>{format_metric(record.slack_delta_mva)}</td>
+              <td>{bar_svg(slack_score, '#1d4ed8')}</td>
+              <td>{format_metric(record.max_voltage_delta_pu)}</td>
+              <td>{bar_svg(voltage_score, '#059669')}</td>
+              <td>{record.compared_points if record.compared_points is not None else '-'}</td>
+            </tr>
+            """
+        )
+    return rows
+
+
+def render_detail_rows(records: list[RouteRecord]) -> list[str]:
+    rows = []
+    for record in records:
+        rows.append(
+            f"""
+            <tr>
+              <td>{escape(record.source_tool)}</td>
+              <td>{escape(record.export_tool)}</td>
+              <td>{escape(record.case_id)}</td>
+              <td>{escape(display_model_type(record.model_type))}</td>
+              <td><span class="pill pill-{record.status}">{escape(record.status)}</span></td>
+              <td>{format_metric(record.slack_delta_mva)}</td>
+              <td>{format_metric(record.max_voltage_delta_pu)}</td>
+              <td>{record.compared_points if record.compared_points is not None else '-'}</td>
+              <td>{escape(record.notes)}</td>
+            </tr>
+            """
+        )
+    return rows
 
 
 def score_precision(value: float | None) -> float:

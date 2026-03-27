@@ -3,7 +3,10 @@ from pathlib import Path
 import pandapower.networks as pn
 
 from powermodelconverter.adapters.matpower_adapter import MatpowerImportAdapter
+from powermodelconverter.adapters.opendss_export_adapter import OpenDSSExportAdapter
 from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter
+from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
+from powermodelconverter.adapters.pandapower_import_adapter import PandapowerImportAdapter
 from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
 from powermodelconverter.adapters.pypsa_import_adapter import PypsaImportAdapter
 from powermodelconverter.adapters.simbench_adapter import SimbenchImportAdapter
@@ -51,3 +54,16 @@ def test_pypsa_export_and_import_validate_against_pandapower(tmp_path: Path) -> 
     assert result.details["compared_buses"] == len(case.table("bus"))
     assert pypsa_case.source_format == "pypsa"
     assert len(pypsa_case.table("bus")) == len(case.table("bus"))
+
+
+def test_balanced_pandapower_export_to_opendss(tmp_path: Path) -> None:
+    source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss/minimal_radial.dss"
+    opendss_case = OpenDSSImportAdapter().import_case(source)
+    pp_json = tmp_path / "minimal_radial.pandapower.json"
+    PandapowerAdapter().export_json(opendss_case, pp_json)
+    case = PandapowerImportAdapter().import_case(pp_json)
+
+    export_path = OpenDSSExportAdapter().export_case(case, tmp_path / "minimal_radial_export.dss")
+    reference = OpenDSSImportAdapter().solve_source_case(export_path)
+    result = ValidationService().validate_pandapower_case_against_opendss(case, reference)
+    assert result.passed is True
