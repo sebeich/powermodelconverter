@@ -58,7 +58,7 @@ The detailed route inventory, tested cases, and measured numerical precision are
 - [validation_report.md](/home/seb/powermodelconverter-1/docs/validation_report.md)
 - [validation_report.json](/home/seb/powermodelconverter-1/docs/validation_report.json)
 
-Use those reports when you need the exact signed-off route matrix. The README stays focused on operating the repository with your own networks.
+Use those reports when you need the exact signed-off route matrix. The README stays focused on the researcher workflow: taking a model from one tool, converting it into another, and checking whether that conversion is within the validated scope of this repository.
 
 ## Repository Layout
 
@@ -214,12 +214,9 @@ Included sample files:
 - OpenDSS future target: [IEEE13Nodeckt.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss)
 - pandapower 3-phase: [ieee_european_lv_asymmetric.json](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json)
 
-These samples serve two purposes:
+These samples serve as reference cases for the validated conversion routes and as minimal examples of the supported input structure.
 
-- they are regression cases for the validated routes in the generated reports
-- they are templates for how to structure your own input files when trying a new conversion
-
-## How To Use
+## Researcher Workflow
 
 ### 1. Install the environments
 
@@ -230,19 +227,19 @@ python3 -m venv .venv
 bash scripts/bootstrap_julia_env.sh
 ```
 
-The Python environment runs the adapters and CLI. The Julia environment is required for the `PowerModels` and `PowerModelsDistribution` validation backends.
+The Python environment runs the adapters and CLI. The Julia environment provides the `PowerModels` and `PowerModelsDistribution` validation backends used to verify converted models.
 
-### 2. Check what the current repo claims to support
+### 2. Check whether your source and target tools are in scope
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main capabilities
 ```
 
-Use this before attempting a new route. It is the quick way to see which source and target formats are implemented in this branch.
+Use this first. It is the quick way to see whether the source and target ecosystem you care about are implemented in this branch, and whether the support is balanced, unbalanced, or limited to a subset.
 
-### 3. Run a verified conversion from your own network
+### 3. Run the verified conversion
 
-The main entrypoint is `validate`. You provide a source model, the CLI imports it, exports it through the signed-off backends for that source, and compares load-flow results.
+The main entrypoint is `validate`. You provide a source model, the repository imports it, exports it into the supported target backends for that source family, and checks whether the electrical state remains consistent after conversion.
 
 Typical pattern:
 
@@ -254,7 +251,7 @@ Typical pattern:
 
 Supported source-format values in the current repo include `matpower`, `opendss`, `pandapower`, `cgmes`, and `pypsa` for the currently signed-off subsets.
 
-### 4. Example: validate a MATPOWER network
+### 4. Example: MATPOWER source model
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main validate \
@@ -262,7 +259,7 @@ Supported source-format values in the current repo include `matpower`, `opendss`
   --source src/powermodelconverter/data/samples/matpower/case9.m
 ```
 
-### 5. Example: validate a balanced OpenDSS feeder
+### 5. Example: balanced OpenDSS source model
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main validate \
@@ -270,7 +267,7 @@ Supported source-format values in the current repo include `matpower`, `opendss`
   --source src/powermodelconverter/data/samples/opendss/minimal_radial.dss
 ```
 
-### 6. Example: validate an unbalanced OpenDSS feeder
+### 6. Example: unbalanced OpenDSS source model
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main validate \
@@ -278,7 +275,7 @@ Supported source-format values in the current repo include `matpower`, `opendss`
   --source src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss
 ```
 
-### 7. Example: validate a native pandapower three-phase model
+### 7. Example: native pandapower three-phase source model
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main validate \
@@ -286,7 +283,7 @@ Supported source-format values in the current repo include `matpower`, `opendss`
   --source src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json
 ```
 
-### 8. Example: validate a CGMES/CIM package
+### 8. Example: CGMES/CIM source model
 
 ```bash
 ./.venv/bin/python -m powermodelconverter.cli.main validate \
@@ -294,32 +291,17 @@ Supported source-format values in the current repo include `matpower`, `opendss`
   --source src/powermodelconverter/data/samples/cgmes
 ```
 
-### 9. Regenerate the validation inventory
+### 9. Interpret the conversion result
 
-```bash
-./.venv/bin/python scripts/generate_validation_report.py
-```
+Treat the `validate` output as a conversion certificate.
 
-Do this after adding a new route, changing an adapter, or adding a new test case. It rewrites:
+For a researcher, the practical reading is:
 
-- [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html)
-- [validation_report.md](/home/seb/powermodelconverter-1/docs/validation_report.md)
-- [validation_report.json](/home/seb/powermodelconverter-1/docs/validation_report.json)
-
-### 10. Run the test suite
-
-```bash
-./.venv/bin/python -m pytest -q
-```
-
-### 11. Recommended workflow for your own networks
-
-1. Start with the source tool that authored your network natively.
-2. Run `capabilities` to confirm the route exists in this branch.
-3. Run `validate` on your network file or package.
-4. Inspect the reported slack mismatch and voltage mismatch.
-5. Open [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html) to compare your route against the signed-off reference cases.
-6. If your model uses advanced components, check the limitations section below before trusting the result.
+1. confirm that the expected export artifacts were created
+2. check the slack mismatch to see whether the overall power balance stayed consistent
+3. check the voltage mismatch to see whether the solved state was preserved bus by bus, or phase by phase for unbalanced cases
+4. check the tables and limitations below to confirm that the involved route is actually within the validated subset
+5. consult [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html) when you need the exact signed-off test cases and measured precision for that route
 
 ## CLI Output
 
@@ -354,7 +336,7 @@ Three-phase PowerModelsDistribution routes use:
 - max phase-voltage mismatch tolerance: `5e-3 pu`
 - comparison over all compared phase nodes
 
-Quick interpretation:
+Quick interpretation for researchers:
 
 - small slack mismatch means the overall power balance stayed consistent
 - small voltage mismatch means the converted model preserved the electrical state bus by bus, or phase by phase for unbalanced cases
@@ -362,7 +344,7 @@ Quick interpretation:
 
 ## Supported Abilities And Current Limits
 
-Use this section as the practical trust boundary for your own models.
+Use this section as the practical trust boundary when deciding whether a published or in-house model is inside the validated conversion scope.
 
 ### Balanced routes
 
