@@ -12,6 +12,25 @@ For every supported route, the target is:
 2. Full validation via complex bus voltages
 3. For three-phase models, full validation via phase voltages per bus
 
+## Quickstart
+
+If you only want to translate one model and check whether that route is currently in scope:
+
+```bash
+./scripts/pmc-docker.sh build
+./scripts/pmc-docker.sh precheck --source path/to/model --target-format pandapower
+./scripts/pmc-docker.sh translate --source path/to/model --target-format pandapower
+```
+
+That gives you:
+
+- a pinned runtime without local Julia or Python setup
+- a route-level support check before export
+- one exported target artifact
+- one machine-readable validation result for that requested route
+
+If you want the maintained full route inventory and the measured validation precision across the repo, open [validation_report.html](docs/validation_report.html).
+
 ## Validation Methodology
 
 The repo uses two complementary evidence layers:
@@ -31,7 +50,7 @@ Today the repo can:
 - import pandapower JSON, including native three-phase pandapower models
 - import balanced PyPSA networks for the current supported subset
 - export balanced cases to pandapower JSON
-- export a balanced supported subset to CGMES/CIM and validate it by native pandapower re-import
+- export balanced pandapower cases to CGMES/CIM including lines, transformers, constant-power loads, and multiple source elements, then validate by native pandapower re-import
 - export balanced cases to OpenDSS for the current supported subset
 - export balanced cases to PowerModels JSON
 - export balanced transmission-style cases to PyPSA NetCDF
@@ -44,9 +63,9 @@ Today the repo can:
 
 The full route inventory is tracked in:
 
-- [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html)
-- [validation_report.md](/home/seb/powermodelconverter-1/docs/validation_report.md)
-- [validation_report.json](/home/seb/powermodelconverter-1/docs/validation_report.json)
+- [validation_report.html](docs/validation_report.html)
+- [validation_report.md](docs/validation_report.md)
+- [validation_report.json](docs/validation_report.json)
 
 ## Validation Status
 
@@ -54,35 +73,43 @@ This repository is meant to be used as a verified converter, not just a parser.
 
 The detailed route inventory, tested cases, and measured numerical precision are generated into:
 
-- [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html)
-- [validation_report.md](/home/seb/powermodelconverter-1/docs/validation_report.md)
-- [validation_report.json](/home/seb/powermodelconverter-1/docs/validation_report.json)
+- [validation_report.html](docs/validation_report.html)
+- [validation_report.md](docs/validation_report.md)
+- [validation_report.json](docs/validation_report.json)
 
 Use those reports when you need the exact signed-off route matrix. The README stays focused on the researcher workflow: taking a model from one tool, converting it into another, and checking whether that conversion is within the validated scope of this repository.
 
+If your goal is simpler and more operational, use the `Quickstart` and `User Workflow` sections first. Those are the shortest path from one source file to one validated exported artifact.
+
+When you want the actual result numbers:
+
+- open [validation_report.html](docs/validation_report.html) and read the `Balanced Precision`, `Unbalanced Precision`, and `Route Details` tables
+- open [validation_report.md](docs/validation_report.md) for the same route tables in plain text
+- open [validation_report.json](docs/validation_report.json) for machine-readable `slack_delta_mva`, `max_voltage_delta_pu`, and `compared_points` values per route
+
 ## Repository Layout
 
-- [pyproject.toml](/home/seb/powermodelconverter-1/pyproject.toml)
+- [pyproject.toml](pyproject.toml)
   Python package metadata, dependencies, and CLI entrypoint.
-- [src/powermodelconverter/core](/home/seb/powermodelconverter-1/src/powermodelconverter/core)
+- [src/powermodelconverter/core](src/powermodelconverter/core)
   Canonical case model, capability registry, and shared exceptions.
-- [src/powermodelconverter/adapters](/home/seb/powermodelconverter-1/src/powermodelconverter/adapters)
+- [src/powermodelconverter/adapters](src/powermodelconverter/adapters)
   Import and export logic for MATPOWER, CGMES/CIM, OpenDSS, pandapower, PyPSA, and auxiliary native importers.
-- [src/powermodelconverter/validation](/home/seb/powermodelconverter-1/src/powermodelconverter/validation)
+- [src/powermodelconverter/validation](src/powermodelconverter/validation)
   Balanced and unbalanced validation services.
-- [src/powermodelconverter/cli](/home/seb/powermodelconverter-1/src/powermodelconverter/cli)
+- [src/powermodelconverter/cli](src/powermodelconverter/cli)
   Command-line interface exposed as `pmc`.
-- [src/powermodelconverter/julia](/home/seb/powermodelconverter-1/src/powermodelconverter/julia)
+- [src/powermodelconverter/julia](src/powermodelconverter/julia)
   Local Julia project used for `PowerModels` validation.
-- [src/powermodelconverter/julia_pmd](/home/seb/powermodelconverter-1/src/powermodelconverter/julia_pmd)
+- [src/powermodelconverter/julia_pmd](src/powermodelconverter/julia_pmd)
   Local Julia project used for `PowerModelsDistribution` validation.
-- [src/powermodelconverter/data/samples](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples)
+- [src/powermodelconverter/data/samples](src/powermodelconverter/data/samples)
   Starter model files used for validation and examples.
-- [docs](/home/seb/powermodelconverter-1/docs)
+- [docs](docs)
   Generated validation inventory and future documentation.
-- [tests](/home/seb/powermodelconverter-1/tests)
+- [tests](tests)
   Smoke tests and route-validation tests.
-- [scripts](/home/seb/powermodelconverter-1/scripts)
+- [scripts](scripts)
   Environment bootstrap and report-generation scripts.
 
 ## Canonical Model
@@ -109,19 +136,23 @@ At a high level:
 - `matpower`
   balanced import, balanced export, balanced validation
 - `cgmes`
-  balanced import, balanced export for the current supported subset, balanced validation through native pandapower CGMES loading
+  balanced import, balanced export for the current supported subset (including transformers and multiple sources), balanced validation through native pandapower CGMES loading
 - `pandapower`
   balanced import/export/validation and native unbalanced three-phase import/export/validation
 - `opendss`
   balanced and unbalanced import/export/validation for the currently signed-off subsets
 - `pypsa`
-  balanced import/export/validation for the current transmission-style AC subset
+  balanced import/export/validation for the current transmission-style AC subset, with bus geodata carried into pandapower exports when available
 - `powermodels`
   balanced export and balanced validation
+- `powersystems`
+  balanced MATPOWER-compatible import/export/validation route targeting PowerSystems.jl with PowerSimulations.jl AC power flow
 - `powermodelsdistribution`
   validated as an unbalanced backend for the OpenDSS starter feeder routes and the native pandapower `ieee_european_lv_asymmetric` feeder
+- `pandapower_split`
+  experimental unbalanced OpenDSS-focused phase-split pandapower export path for advanced workflows
 - `pypower`
-  planned
+  balanced import and validation for the current signed-off static network subset
 
 ## Conversion Overview
 
@@ -134,10 +165,10 @@ The detailed signed-off route inventory lives in the generated validation report
 | `pandapower` | Yes | Yes | Yes | Core balanced exchange backend and reference runtime in this repo |
 | `matpower` | Yes | Yes | Yes | Balanced MATPOWER `.m` workflows are signed off |
 | `opendss` | Yes | Yes | Yes | Balanced subset is signed off, not arbitrary OpenDSS semantics |
-| `cgmes` | Yes | Yes | Yes | Export is currently limited to the validated balanced subset |
-| `pypsa` | Yes | Yes | Yes | Signed off for the current line-based AC subset |
+| `cgmes` | Yes | Yes | Yes | Export supports lines, transformers, constant-power loads, and multiple source elements; strict deterministic re-import validation may still show non-zero drift on very large cases |
+| `pypsa` | Yes | Yes | Yes | Signed off for the current line-based AC subset; bus geodata is preserved into pandapower when present |
 | `powermodels` | No | Yes | Yes | Validation/export backend for balanced AC models |
-| `pypower` | No | No | No | Planned |
+| `pypower` | Yes | No | Yes | Balanced Python-case import is supported for the signed-off static network subset |
 
 ### Balanced Conversion Matrix
 
@@ -173,14 +204,54 @@ The detailed signed-off route inventory lives in the generated validation report
 
 | Area | Currently Signed Off | Not Yet Claimed As Generally Validated |
 | --- | --- | --- |
-| Balanced CGMES | Bus-branch style balanced models with one slack source, lines, and constant-power loads | Broader CIM semantics such as transformers, multiple generators, switched topology, and unbalanced CIM |
+| Balanced CGMES | Bus-branch style balanced models with lines, transformers, constant-power loads, and multiple source elements (`ext_grid`/`gen`) | Broader CIM semantics such as switched topology/control-rich assets, unbalanced CIM, and strict zero-drift guarantees on very large imported cases |
 | Balanced OpenDSS | Conservative AC subset used in the signed-off balanced routes | Broader control, switch, regulator, capacitor, and line-code-heavy semantics |
 | Balanced PyPSA | Line-based AC transmission-style models in the validated set | Full PyPSA component space such as links, stores, storage units, and broader transformer/shunt-heavy cases |
 | Unbalanced OpenDSS / PMD / pandapower | Native 3-phase feeder subset exercised by the validated starter and native asymmetric cases | Arbitrary feeder libraries, regulator-heavy cases, and wider advanced component combinations |
 
 ## Installation
 
-### Python environment
+### Recommended: Docker-first runtime
+
+The repository now ships with a pinned container runtime so end users do not need local Python, Julia, MATPOWER, or PowerModels installations.
+
+Build the image once:
+
+```bash
+./scripts/pmc-docker.sh build
+```
+
+Then use the same wrapper for the normal workflow:
+
+```bash
+./scripts/pmc-docker.sh capabilities
+./scripts/pmc-docker.sh precheck --source path/to/model --target-format pypsa
+./scripts/pmc-docker.sh translate --source path/to/model --target-format pandapower
+```
+
+This image pins:
+
+- the Python runtime from the Docker image
+- the Python dependency set declared in [pyproject.toml](pyproject.toml)
+- Julia `1.12.3`
+- the local Julia environments in [src/powermodelconverter/julia](src/powermodelconverter/julia)
+- the local Julia environments in [src/powermodelconverter/julia_pmd](src/powermodelconverter/julia_pmd)
+
+Because the current repository is mounted into the container, users can point at their own model files and the translated outputs are still written next to those source files on the host filesystem.
+
+The Docker wrapper also bind-mounts the host directories passed via `--source` and `--output`, and it runs the container as your current host user so translated files come back on disk with normal ownership. Your input model does not need to live inside this repository.
+
+The Docker wrapper also keeps the paper-validation path available without requiring local tooling:
+
+```bash
+./scripts/pmc-docker.sh test
+./scripts/pmc-docker.sh report
+./scripts/pmc-docker.sh shell
+```
+
+### Native local environment
+
+Native local installation is still possible for development, but Docker is now the preferred path for reproducible end-user execution and version compatibility.
 
 ```bash
 python3 -m venv .venv
@@ -194,116 +265,174 @@ python3 -m venv .venv
 bash scripts/bootstrap_julia_env.sh
 ```
 
-That installs the local Julia dependencies used by the validation scripts in [src/powermodelconverter/julia](/home/seb/powermodelconverter-1/src/powermodelconverter/julia) and [src/powermodelconverter/julia_pmd](/home/seb/powermodelconverter-1/src/powermodelconverter/julia_pmd).
+That installs the local Julia dependencies used by the validation scripts in [src/powermodelconverter/julia](src/powermodelconverter/julia) and [src/powermodelconverter/julia_pmd](src/powermodelconverter/julia_pmd).
 
 ## License
 
-This project is released under the BSD 3-Clause License. See [LICENSE](/home/seb/powermodelconverter-1/LICENSE).
+This project is released under the BSD 3-Clause License. See [LICENSE](LICENSE).
 
-## Sample Cases
+## Sample Cases And Provenance
 
 Included sample files:
 
-- CGMES base case: [CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip)
-- CGMES boundary case: [CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip)
-- MATPOWER: [case9.m](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/matpower/case9.m)
-- OpenDSS starter case: [minimal_radial.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/minimal_radial.dss)
-- OpenDSS balanced chained feeder: [minimal_chain.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/minimal_chain.dss)
-- OpenDSS unbalanced starter feeder: [minimal_unbalanced_3ph.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss)
-- OpenDSS unbalanced branched feeder: [minimal_unbalanced_branch.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/minimal_unbalanced_branch.dss)
-- OpenDSS future target: [IEEE13Nodeckt.dss](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss)
-- pandapower 3-phase: [ieee_european_lv_asymmetric.json](/home/seb/powermodelconverter-1/src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json)
+- CGMES base case: [CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip](src/powermodelconverter/data/samples/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip)
+- CGMES boundary case: [CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip](src/powermodelconverter/data/samples/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip)
+- MATPOWER: [case9.m](src/powermodelconverter/data/samples/matpower/case9.m)
+- OpenDSS starter case: [minimal_radial.dss](src/powermodelconverter/data/samples/opendss/minimal_radial.dss)
+- OpenDSS balanced chained feeder: [minimal_chain.dss](src/powermodelconverter/data/samples/opendss/minimal_chain.dss)
+- OpenDSS unbalanced starter feeder: [minimal_unbalanced_3ph.dss](src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss)
+- OpenDSS unbalanced branched feeder: [minimal_unbalanced_branch.dss](src/powermodelconverter/data/samples/opendss/minimal_unbalanced_branch.dss)
+- OpenDSS future target: [IEEE13Nodeckt.dss](src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss)
+- pandapower 3-phase: [ieee_european_lv_asymmetric.json](src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json)
 
 These samples serve as reference cases for the validated conversion routes and as minimal examples of the supported input structure.
 
-## Researcher Workflow
+The practical provenance split is:
 
-### 1. Install the environments
+- the bundled CGMES ZIPs are official SmallGrid sample files used for pandapower CGMES workflows in the validation report
+- `case9.m` is the standard MATPOWER `case9` reference case
+- `ieee_european_lv_asymmetric.json` is a bundled pandapower-native asymmetric reference case used for the signed-off three-phase route
+- the `minimal_*` OpenDSS cases are small bundled repo examples used to exercise the currently signed-off balanced and unbalanced OpenDSS subsets
+- `IEEE13Nodeckt.dss` is included as a future target and not yet claimed as generally validated in this repo
+
+This repository is intended to include only sample cases that are either standard reference examples, tool-native examples, or small bundled validation fixtures. When in doubt, use your own source files outside the repo and keep generated outputs outside version control.
+
+## User Workflow
+
+### 1. Build the pinned runtime once
 
 ```bash
-python3 -m venv .venv
-./.venv/bin/pip install --upgrade pip setuptools wheel
-./.venv/bin/pip install -e .
-bash scripts/bootstrap_julia_env.sh
+./scripts/pmc-docker.sh build
 ```
 
-The Python environment runs the adapters and CLI. The Julia environment provides the `PowerModels` and `PowerModelsDistribution` validation backends used to verify converted models.
+That container includes the Python runtime, the package dependencies, Julia `1.12.3`, and the local Julia validation environments used by `PowerModels` and `PowerModelsDistribution`.
 
 ### 2. Check whether your source and target tools are in scope
 
 ```bash
-./.venv/bin/python -m powermodelconverter.cli.main capabilities
+./scripts/pmc-docker.sh capabilities
 ```
 
 Use this first. It is the quick way to see whether the source and target ecosystem you care about are implemented in this branch, and whether the support is balanced, unbalanced, or limited to a subset.
 
-### 3. Run the verified conversion
+### 3. Precheck one source-to-target route before exporting
 
-The main entrypoint is `validate`. You provide a source model, the repository imports it, exports it into the supported target backends for that source family, and checks whether the electrical state remains consistent after conversion.
+```bash
+./scripts/pmc-docker.sh precheck \
+  --source src/powermodelconverter/data/samples/matpower/case9.m \
+  --target-format pypsa
+```
+
+This is the lightweight route check for end users. It auto-detects the source format in the common file-based cases, summarizes the populated components, dry-runs the requested export, and reports support blockers before you commit to a conversion.
+
+### 4. Translate to one chosen target and validate that route
+
+The main end-user entrypoint is now `translate`. You provide one source model and one destination format, and the CLI exports only that target and runs the full deterministic validation for that path.
 
 Typical pattern:
 
 ```bash
-./.venv/bin/python -m powermodelconverter.cli.main validate \
-  --source-format <format> \
-  --source <path-to-your-model>
+./scripts/pmc-docker.sh translate \
+  --source <path-to-your-model> \
+  --target-format <target-format>
 ```
 
-Supported source-format values in the current repo include `matpower`, `opendss`, `pandapower`, `cgmes`, and `pypsa` for the currently signed-off subsets.
+Supported `target-format` values in the current repo are `pandapower`, `powermodels`, `powermodelsdistribution`, `pypsa`, `opendss`, and `cgmes` for their currently signed-off subsets.
 
-### 4. Example: MATPOWER source model
+Advanced target formats also exist:
+
+- `powersystems` for the balanced MATPOWER-compatible PowerSystems.jl route
+- `pandapower_split` for the experimental OpenDSS-focused phase-split export path
+
+Those advanced targets are real CLI options, but the main user workflow in this README stays focused on the more established end-user paths first.
+
+By default, the exported file is written next to the source model with the same base name and the target suffix. In the common case, users only need to provide:
+
+- the source path
+- the target format
+
+Absolute host paths outside the repository are supported. The Docker wrapper automatically mounts the source directory and, if needed, the explicit output directory into the container.
+
+Use `--source-format` only when auto-detection is ambiguous, and `--output` only when you want the artifact somewhere else.
+
+### 5. Example: MATPOWER to PyPSA
 
 ```bash
-./.venv/bin/python -m powermodelconverter.cli.main validate \
+./scripts/pmc-docker.sh translate \
+  --source src/powermodelconverter/data/samples/matpower/case9.m \
+  --target-format pypsa
+```
+
+### 6. Example: OpenDSS to pandapower
+
+```bash
+./scripts/pmc-docker.sh translate \
+  --source src/powermodelconverter/data/samples/opendss/minimal_radial.dss \
+  --target-format pandapower
+```
+
+### 7. Example: native pandapower to PowerModelsDistribution
+
+```bash
+./scripts/pmc-docker.sh translate \
+  --source src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json \
+  --target-format powermodelsdistribution
+```
+
+### 8. Run the full maintained route checks after larger internal changes
+
+The maintainer-oriented command is still `validate`. It fans out into the currently supported exports for the selected source family and should still be rerun whenever converter logic changes beyond the outer interface.
+
+```bash
+./scripts/pmc-docker.sh validate \
   --source-format matpower \
   --source src/powermodelconverter/data/samples/matpower/case9.m
 ```
 
-### 5. Example: balanced OpenDSS source model
+For paper-grade regression checks inside the pinned runtime, the same container can also run:
 
 ```bash
-./.venv/bin/python -m powermodelconverter.cli.main validate \
-  --source-format opendss \
-  --source src/powermodelconverter/data/samples/opendss/minimal_radial.dss
-```
-
-### 6. Example: unbalanced OpenDSS source model
-
-```bash
-./.venv/bin/python -m powermodelconverter.cli.main validate \
-  --source-format opendss \
-  --source src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss
-```
-
-### 7. Example: native pandapower three-phase source model
-
-```bash
-./.venv/bin/python -m powermodelconverter.cli.main validate \
-  --source-format pandapower \
-  --source src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json
-```
-
-### 8. Example: CGMES/CIM source model
-
-```bash
-./.venv/bin/python -m powermodelconverter.cli.main validate \
-  --source-format cgmes \
-  --source src/powermodelconverter/data/samples/cgmes
+./scripts/pmc-docker.sh report
+./scripts/pmc-docker.sh test
 ```
 
 ### 9. Interpret the conversion result
 
-Treat the `validate` output as a conversion certificate.
+Treat the `translate` output as the conversion certificate for one route.
 
-For a researcher, the practical reading is:
+For day-to-day use, the practical reading is:
 
-1. confirm that the expected export artifacts were created
-2. check the slack mismatch to see whether the overall power balance stayed consistent
-3. check the voltage mismatch to see whether the solved state was preserved bus by bus, or phase by phase for unbalanced cases
-4. check the tables and limitations below to confirm that the involved route is actually within the validated subset
-5. consult [validation_report.html](/home/seb/powermodelconverter-1/docs/validation_report.html) when you need the exact signed-off test cases and measured precision for that route
+1. confirm that the precheck reported the route as supported
+2. confirm that the requested target artifact was created
+3. check the slack mismatch to see whether the overall power balance stayed consistent
+4. check the voltage mismatch to see whether the solved state was preserved bus by bus, or phase by phase for unbalanced cases
+5. consult [validation_report.html](docs/validation_report.html) when you need the maintained signed-off routes and measured precision
 
 ## CLI Output
+
+The `precheck` command prints JSON with:
+
+- `case_id`
+- `source_format`
+- `target_format`
+- `component_counts`
+- whether the route is currently supported
+- any precheck issues found during dry-run export
+- the validation mode that will be used for the requested target
+
+In the common file-based cases, `source_format` is auto-detected from the input path and file contents.
+
+The `translate` command prints JSON with:
+
+- `case_id`
+- `source_format`
+- `target_format`
+- `precheck`
+- source-side validation result
+- target export path
+- target validation result
+
+If `--output` is not provided, `target_export` defaults to the same directory as the source model with the same base name and the target file extension.
 
 The `validate` command prints JSON with:
 
@@ -315,7 +444,32 @@ The `validate` command prints JSON with:
 - PowerModels validation result when applicable
 - PowerModelsDistribution validation result for supported unbalanced OpenDSS routes
 
-In practice, treat the JSON as the machine-readable certificate for a conversion run: it tells you which exports were produced and how closely the solved electrical state matched after conversion.
+In practice:
+
+- use `translate` as the machine-readable certificate for one requested route
+- use `validate` as the maintainer-side regression command after significant converter changes
+- use the generated validation report when you want the maintained full-route inventory and the per-route numeric result values
+
+## Docker Assets
+
+The repository ships with:
+
+- [Dockerfile](Dockerfile)
+- [docker-compose.yml](docker-compose.yml)
+- [pmc-docker.sh](scripts/pmc-docker.sh)
+
+Together they provide the pinned end-user runtime and keep the full validation pipeline available for maintainers.
+
+The helper script supports:
+
+- `./scripts/pmc-docker.sh build`
+- `./scripts/pmc-docker.sh capabilities`
+- `./scripts/pmc-docker.sh precheck ...`
+- `./scripts/pmc-docker.sh translate ...`
+- `./scripts/pmc-docker.sh validate ...`
+- `./scripts/pmc-docker.sh test`
+- `./scripts/pmc-docker.sh report`
+- `./scripts/pmc-docker.sh shell`
 
 ## Validation Rules
 
@@ -350,13 +504,13 @@ Use this section as the practical trust boundary when deciding whether a publish
 
 Current strengths:
 
-- bus-branch transmission and distribution style AC cases with one clear slack source
-- lines and constant-power loads across the validated subsets
+- bus-branch transmission and distribution style AC cases
+- lines, transformers, and constant-power loads across the validated subsets
 - MATPOWER, pandapower, OpenDSS, CGMES/CIM, PyPSA, and PowerModels on their currently signed-off balanced subsets
 
 Current limits:
 
-- CGMES export is currently conservative and centered on a bus-branch subset
+- CGMES export/import on very large cases can still show small non-zero deterministic drift after re-import validation
 - PyPSA support is aimed at line-based AC models, not the full PyPSA component space
 - broader OpenDSS control semantics are not yet universally signed off
 
@@ -378,7 +532,7 @@ Current limits:
 
 - SimBench is treated as a native pandapower-family import convenience, not as a separate exchange backend.
 - CGMES import relies on pandapower's native CIM/CGMES loader, so fidelity is anchored to pandapower's supported CGMES semantics.
-- CGMES export is currently limited to balanced transformer-free bus-branch models with one slack source, lines, and constant-power loads.
+- CGMES export currently supports balanced lines, transformers, constant-power loads, and multiple source elements; strict zero-drift guarantees are not claimed for very large roundtripped cases.
 - The OpenDSS paths are signed off for the current balanced and three-phase subsets in this repo, not yet for arbitrary OpenDSS models with broader controls, switching, and equipment semantics.
 - The PyPSA path is validated on the current line-based balanced subset and does not yet sign off transformer-, shunt-, link-, store-, or storage-unit-heavy PyPSA models.
 - `PowerModelsDistribution` is validated as an export/solver backend only; import back into the canonical layer is not implemented.
@@ -388,7 +542,7 @@ Current limits:
 - The additional OpenDSS branched unbalanced feeder is validated through `PowerModelsDistribution`, but broader feeder libraries and regulator-heavy models are still outside the signed-off scope.
 - PyPSA validation is currently limited to the transmission-style balanced AC subset represented in the generated report. Transformer-, shunt-, link-, store-, and storage-unit-heavy PyPSA models are not claimed as validated.
 - `PowerModels.jl` is used here as a validation backend and package-native reference source, not yet as a general import backend into the canonical layer.
-- `pypower`, PowerFactory, PSS/E, and PSCAD adapters are not implemented yet.
+- `PowerFactory`, `PSS/E`, and `PSCAD` adapters are not implemented yet. `pypower` now has balanced import plus validation coverage for the current static network subset.
 - The canonical schema is still pandapower-backed rather than a fully neutral multi-phase network model.
 - The generated validation report is the source of truth for what is actually signed off in this branch. If a route is not listed there, it should not be treated as validated.
 

@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 import pandapower as pp
+from pandapower.plotting.geo import convert_geodata_to_geojson
 import pypsa
 
 from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
@@ -83,7 +84,10 @@ class PypsaAdapter:
     def pypsa_to_pandapower(self, network: pypsa.Network) -> Any:
         self._assert_supported_pypsa_network(network)
         snapshot = network.snapshots[0]
-        net = pp.create_empty_network(sn_mva=1.0, f_hz=50.0)
+        net = pp.create_empty_network(
+            sn_mva=float(getattr(network, "sn_mva", 1.0) or 1.0),
+            f_hz=float(getattr(network, "f_hz", 50.0) or 50.0),
+        )
         bus_lookup: dict[str, int] = {}
 
         for bus_name, row in network.buses.iterrows():
@@ -95,22 +99,26 @@ class PypsaAdapter:
             )
             bus_lookup[str(bus_name)] = idx
 
+        self._apply_bus_geodata_from_pypsa(network=network, net=net, bus_lookup=bus_lookup)
+
         for line_name, row in network.lines.iterrows():
             length_km = float(row.length) if "length" in row and float(row.length) > 0 else 1.0
-            c_nf_per_km = float(row.b) / (2 * math.pi * net.f_hz) * 1e9 / length_km if float(row.b) else 0.0
-            g_us_per_km = float(row.g) * 1e6 / length_km if float(row.g) else 0.0
-            max_i_ka = float(row.s_nom) / float(network.buses.loc[row.bus0, "v_nom"]) if float(row.s_nom) else 1.0
+            parallel = max(int(round(float(row.num_parallel))), 1) if "num_parallel" in row else 1
+            c_nf_per_km = float(row.b) / (2 * math.pi * net.f_hz) * 1e9 / (length_km * parallel) if float(row.b) else 0.0
+            g_us_per_km = float(row.g) * 1e6 / (length_km * parallel) if float(row.g) else 0.0
+            max_i_ka_total = float(row.s_nom) / float(network.buses.loc[row.bus0, "v_nom"]) if float(row.s_nom) else 1.0
+            max_i_ka = max_i_ka_total / parallel
             pp.create_line_from_parameters(
                 net,
                 from_bus=bus_lookup[str(row.bus0)],
                 to_bus=bus_lookup[str(row.bus1)],
                 length_km=length_km,
-                r_ohm_per_km=float(row.r) / length_km,
-                x_ohm_per_km=float(row.x) / length_km,
+                r_ohm_per_km=float(row.r) * parallel / length_km,
+                x_ohm_per_km=float(row.x) * parallel / length_km,
                 c_nf_per_km=c_nf_per_km,
                 g_us_per_km=g_us_per_km,
                 max_i_ka=max_i_ka,
-                parallel=max(int(round(float(row.num_parallel))), 1) if "num_parallel" in row else 1,
+                parallel=parallel,
                 name=str(line_name),
             )
 
@@ -120,6 +128,12 @@ class PypsaAdapter:
             z = math.hypot(float(row.r), float(row.x))
             y = math.hypot(float(row.g), float(row.b))
             sn_mva = float(row.s_nom)
+            raw_tap_side = None if "tap_side" not in row or pd.isna(row.tap_side) else str(row.tap_side).strip().lower()
+            tap_side = None
+            if raw_tap_side in {"0", "hv", "high", "high_voltage"}:
+                tap_side = "hv"
+            elif raw_tap_side in {"1", "lv", "low", "low_voltage"}:
+                tap_side = "lv"
             pp.create_transformer_from_parameters(
                 net,
                 hv_bus=bus_lookup[str(row.bus0)],
@@ -127,11 +141,12 @@ class PypsaAdapter:
                 sn_mva=sn_mva,
                 vn_hv_kv=float(network.buses.loc[row.bus0, "v_nom"]),
                 vn_lv_kv=float(network.buses.loc[row.bus1, "v_nom"]),
-                vkr_percent=float(row.r) * 100.0 * sn_mva,
-                vk_percent=z * 100.0 * sn_mva,
-                pfe_kw=float(row.g) * sn_mva * sn_mva * 1000.0,
+                vkr_percent=float(row.r) * 100.0,
+                vk_percent=z * 100.0,
+                pfe_kw=float(row.g) * sn_mva * 1000.0,
                 i0_percent=y * 100.0,
                 shift_degree=float(row.phase_shift) if "phase_shift" in row else 0.0,
+                tap_side=tap_side,
                 name=str(trafo_name),
             )
 
@@ -185,6 +200,48 @@ class PypsaAdapter:
                 )
 
         return net
+
+    def _apply_bus_geodata_from_pypsa(
+        self,
+        *,
+        network: pypsa.Network,
+        net: Any,
+        bus_lookup: dict[str, int],
+    ) -> None:
+        if "x" not in network.buses.columns or "y" not in network.buses.columns:
+            return
+
+        geodata_rows: list[dict[str, float | int]] = []
+        for bus_name in network.buses.index:
+            x_raw = network.buses.at[bus_name, "x"]
+            y_raw = network.buses.at[bus_name, "y"]
+            if pd.isna(x_raw) or pd.isna(y_raw):
+                continue
+            try:
+                x_val = float(x_raw)
+                y_val = float(y_raw)
+            except Exception:
+                continue
+            if not math.isfinite(x_val) or not math.isfinite(y_val):
+                continue
+            geodata_rows.append(
+                {
+                    "bus": int(bus_lookup[str(bus_name)]),
+                    "x": x_val,
+                    "y": y_val,
+                }
+            )
+
+        if not geodata_rows:
+            return
+
+        geodata_df = pd.DataFrame(geodata_rows).drop_duplicates(subset=["bus"]).set_index("bus")
+        net.bus_geodata = geodata_df.reindex(net.bus.index)
+
+        try:
+            convert_geodata_to_geojson(net)
+        except Exception:
+            pass
 
     def run_power_flow(self, case: CanonicalCase) -> PypsaResultSnapshot:
         network = self.to_net(case)

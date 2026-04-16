@@ -60,12 +60,10 @@ class CGMESExportAdapter:
     def _validate_supported_net(self, net: object) -> None:
         ext_grid_count = len(getattr(net, "ext_grid"))
         gen_table = getattr(net, "gen")
-        slack_gen_count = int(gen_table.get("slack", False).fillna(False).sum()) if len(gen_table) else 0
-        if not ((ext_grid_count == 1 and len(gen_table) == 0) or (ext_grid_count == 0 and slack_gen_count == 1 and len(gen_table) == 1)):
-            raise ValueError("CGMES export currently supports either one ext_grid or one slack generator.")
+        if ext_grid_count + len(gen_table) == 0:
+            raise ValueError("CGMES export requires at least one source element (ext_grid or gen).")
         unsupported_tables = {
             "sgen": "static generators",
-            "trafo": "transformers",
             "switch": "switches",
             "shunt": "shunts",
             "impedance": "impedances",
@@ -155,31 +153,143 @@ class CGMESExportAdapter:
                 }
             )
 
-        slack_source = self._slack_source(net, solved_net)
-        slack_bus = slack_source["bus"]
-        p_mw = slack_source["p_mw"]
-        q_mvar = slack_source["q_mvar"]
-        min_p = slack_source["min_p_mw"]
-        max_p = slack_source["max_p_mw"]
-        min_q = slack_source["min_q_mvar"]
-        max_q = slack_source["max_q_mvar"]
-        slack = {
-            "generating_unit_id": self._rdf_id(),
-            "machine_id": self._rdf_id(),
-            "terminal_id": self._rdf_id(),
-            "reg_control_id": self._rdf_id(),
-            "name": slack_source["name"],
-            "bus": slack_bus,
-            "rated_u_kv": float(net.bus.at[slack_bus, "vn_kv"]),
-            "target_vm_kv": float(net.bus.at[slack_bus, "vn_kv"]) * slack_source["target_vm_pu"],
-            "p_mw": p_mw,
-            "q_mvar": q_mvar,
-            "min_p_mw": min_p,
-            "max_p_mw": max_p,
-            "min_q_mvar": min_q,
-            "max_q_mvar": max_q,
-            "rated_s_mva": max(abs(p_mw), abs(q_mvar), abs(max_p), abs(max_q), 1.0),
-        }
+        transformers: list[dict[str, object]] = []
+        for idx, row in net.trafo.iterrows():
+            hv_bus = int(row.hv_bus)
+            lv_bus = int(row.lv_bus)
+            sn_mva = float(row.sn_mva)
+            vn_hv_kv = float(row.vn_hv_kv)
+            vn_lv_kv = float(row.vn_lv_kv)
+            shift_degree = float(row.get("shift_degree", 0.0))
+            vector_group = str(row.get("vector_group", "") or "")
+            r_pu = float(row.vkr_percent) / 100.0
+            z_pu = float(row.vk_percent) / 100.0
+            x_pu = math.sqrt(max(z_pu * z_pu - r_pu * r_pu, 0.0))
+            z_base_hv = (vn_hv_kv * vn_hv_kv) / max(sn_mva, 1e-9)
+            z_base_lv = (vn_lv_kv * vn_lv_kv) / max(sn_mva, 1e-9)
+            r_hv_ohm = 0.5 * r_pu * z_base_hv
+            x_hv_ohm = 0.5 * x_pu * z_base_hv
+            r_lv_ohm = 0.5 * r_pu * z_base_lv
+            x_lv_ohm = 0.5 * x_pu * z_base_lv
+            if abs(r_hv_ohm) < 1e-12 and abs(x_hv_ohm) < 1e-12:
+                x_hv_ohm = 1e-6
+            tap_side = str(row.get("tap_side", "") or "").strip().lower()
+            tap_neutral = self._float_or_none(row.get("tap_neutral", None))
+            tap_min = self._float_or_none(row.get("tap_min", None))
+            tap_max = self._float_or_none(row.get("tap_max", None))
+            tap_step_percent = self._float_or_none(row.get("tap_step_percent", None))
+            tap_pos = self._float_or_none(row.get("tap_pos", None))
+            has_tap_data = (
+                tap_side in {"hv", "lv"}
+                and tap_neutral is not None
+                and tap_min is not None
+                and tap_max is not None
+                and tap_step_percent is not None
+            )
+            transformers.append(
+                {
+                    "rdf_id": self._rdf_id(),
+                    "terminal_hv_id": self._rdf_id(),
+                    "terminal_lv_id": self._rdf_id(),
+                    "end_hv_id": self._rdf_id(),
+                    "end_lv_id": self._rdf_id(),
+                    "tap_changer_id": self._rdf_id() if has_tap_data else None,
+                    "name": self._name(row.get("name"), f"Transformer_{idx}"),
+                    "hv_bus": hv_bus,
+                    "lv_bus": lv_bus,
+                    "in_service": bool(row.get("in_service", True)),
+                    "rated_s_mva": sn_mva,
+                    "rated_u_hv_kv": vn_hv_kv,
+                    "rated_u_lv_kv": vn_lv_kv,
+                    "r_hv_ohm": r_hv_ohm,
+                    "x_hv_ohm": x_hv_ohm,
+                    "r_lv_ohm": r_lv_ohm,
+                    "x_lv_ohm": x_lv_ohm,
+                    "connection_hv": self._winding_connection_symbol(vector_group, side="hv"),
+                    "connection_lv": self._winding_connection_symbol(vector_group, side="lv"),
+                    "phase_angle_clock_hv": 0,
+                    "phase_angle_clock_lv": int(round(shift_degree / 30.0)) % 12,
+                    "tap_side": tap_side,
+                    "tap_neutral": int(round(tap_neutral)) if tap_neutral is not None else 0,
+                    "tap_min": int(round(tap_min)) if tap_min is not None else 0,
+                    "tap_max": int(round(tap_max)) if tap_max is not None else 0,
+                    "tap_step_percent": float(tap_step_percent) if tap_step_percent is not None else 0.0,
+                    "tap_pos": int(round(tap_pos)) if tap_pos is not None else None,
+                    "base_voltage_hv_id": buses[hv_bus]["base_voltage_id"],
+                    "base_voltage_lv_id": buses[lv_bus]["base_voltage_id"],
+                }
+            )
+
+        sources: list[dict[str, object]] = []
+        for idx, row in net.ext_grid.iterrows():
+            bus = int(row.bus)
+            p_res = float(solved_net.res_ext_grid.at[idx, "p_mw"])
+            q_res = float(solved_net.res_ext_grid.at[idx, "q_mvar"])
+            p_mw = -p_res
+            q_mvar = -q_res
+            sources.append(
+                {
+                    "source_kind": "external_network",
+                    "external_network_id": self._rdf_id(),
+                    "terminal_id": self._rdf_id(),
+                    "reg_control_id": self._rdf_id(),
+                    "name": self._name(row.get("name"), f"Slack_{idx}"),
+                    "bus": bus,
+                    "conducting_equipment_id": None,
+                    "is_slack": True,
+                    "target_vm_pu": float(row.get("vm_pu", 1.0)),
+                    "p_mw": p_mw,
+                    "q_mvar": q_mvar,
+                    "min_p_mw": float(row.get("min_p_mw", min(0.0, p_mw))),
+                    "max_p_mw": float(row.get("max_p_mw", max(abs(p_mw) * 1.5, 1.0))),
+                    "min_q_mvar": float(row.get("min_q_mvar", min(-abs(q_mvar) * 2.0, q_mvar, -1.0))),
+                    "max_q_mvar": float(row.get("max_q_mvar", max(abs(q_mvar) * 2.0, q_mvar, 1.0))),
+                    "in_service": bool(row.get("in_service", True)),
+                }
+            )
+
+        for idx, row in net.gen.iterrows():
+            bus = int(row.bus)
+            p_mw = float(solved_net.res_gen.at[idx, "p_mw"])
+            q_mvar = float(solved_net.res_gen.at[idx, "q_mvar"])
+            sources.append(
+                {
+                    "source_kind": "synchronous_machine",
+                    "generating_unit_id": self._rdf_id(),
+                    "machine_id": self._rdf_id(),
+                    "terminal_id": self._rdf_id(),
+                    "reg_control_id": self._rdf_id(),
+                    "name": self._name(row.get("name"), f"Generator_{idx}"),
+                    "bus": bus,
+                    "conducting_equipment_id": None,
+                    "is_slack": bool(row.get("slack", False)),
+                    "target_vm_pu": float(row.get("vm_pu", solved_net.res_bus.at[bus, "vm_pu"])),
+                    "p_mw": p_mw,
+                    "q_mvar": q_mvar,
+                    "min_p_mw": float(row.get("min_p_mw", min(0.0, p_mw))),
+                    "max_p_mw": float(row.get("max_p_mw", max(abs(p_mw) * 1.5, 1.0))),
+                    "min_q_mvar": float(row.get("min_q_mvar", min(-abs(q_mvar) * 2.0, q_mvar, -1.0))),
+                    "max_q_mvar": float(row.get("max_q_mvar", max(abs(q_mvar) * 2.0, q_mvar, 1.0))),
+                    "in_service": bool(row.get("in_service", True)),
+                }
+            )
+
+        sources_sorted = sorted(sources, key=lambda source: (not bool(source["is_slack"]), str(source["name"])))
+        for source in sources_sorted:
+            bus_idx = int(source["bus"])
+            if source["source_kind"] == "external_network":
+                source["conducting_equipment_id"] = source["external_network_id"]
+            else:
+                source["conducting_equipment_id"] = source["machine_id"]
+            source["rated_u_kv"] = float(net.bus.at[bus_idx, "vn_kv"])
+            source["target_vm_kv"] = float(net.bus.at[bus_idx, "vn_kv"]) * float(source["target_vm_pu"])
+            source["rated_s_mva"] = max(
+                abs(float(source["p_mw"])),
+                abs(float(source["q_mvar"])),
+                abs(float(source["max_p_mw"])),
+                abs(float(source["max_q_mvar"])),
+                1.0,
+            )
 
         return {
             "case_id": case_id,
@@ -193,7 +303,8 @@ class CGMESExportAdapter:
             "buses": buses,
             "loads": loads,
             "lines": lines,
-            "slack": slack,
+            "transformers": transformers,
+            "sources": sources_sorted,
         }
 
     def _render_eq(self, case_id: str, profile_ids: dict[str, str], assets: dict[str, object]) -> bytes:
@@ -202,8 +313,9 @@ class CGMESExportAdapter:
         self._append_base_structure(root, assets)
         self._append_terminals_eq(root, assets)
         self._append_line_eq(root, assets)
+        self._append_transformer_eq(root, assets)
         self._append_load_eq(root, assets)
-        self._append_slack_eq(root, assets)
+        self._append_sources_eq(root, assets)
         self._append_limit_type_eq(root, assets)
         return self._xml_bytes(root)
 
@@ -212,7 +324,8 @@ class CGMESExportAdapter:
         self._full_model(root, profile_ids["ssh"], "http://entsoe.eu/CIM/SteadyStateHypothesis/1/1", [profile_ids["eq"]], assets)
         self._append_terminal_states_ssh(root, assets)
         self._append_load_ssh(root, assets)
-        self._append_slack_ssh(root, assets)
+        self._append_sources_ssh(root, assets)
+        self._append_transformer_ssh(root, assets)
         self._append_line_ssh(root, assets)
         return self._xml_bytes(root)
 
@@ -262,10 +375,13 @@ class CGMESExportAdapter:
         for line in assets["lines"]:
             self._terminal_eq(root, line["terminal_from_id"], f"{line['name']}_0", line["rdf_id"], 1)
             self._terminal_eq(root, line["terminal_to_id"], f"{line['name']}_1", line["rdf_id"], 2)
+        for transformer in assets["transformers"]:
+            self._terminal_eq(root, transformer["terminal_hv_id"], f"{transformer['name']}_HV", transformer["rdf_id"], 1)
+            self._terminal_eq(root, transformer["terminal_lv_id"], f"{transformer['name']}_LV", transformer["rdf_id"], 2)
         for load in assets["loads"]:
             self._terminal_eq(root, load["terminal_id"], load["name"], load["rdf_id"], 1)
-        slack = assets["slack"]
-        self._terminal_eq(root, slack["terminal_id"], slack["name"], slack["machine_id"], 1)
+        for source in assets["sources"]:
+            self._terminal_eq(root, source["terminal_id"], source["name"], source["conducting_equipment_id"], 1)
 
     def _append_line_eq(self, root: ET.Element, assets: dict[str, object]) -> None:
         for line in assets["lines"]:
@@ -300,6 +416,67 @@ class CGMESExportAdapter:
                 ET.SubElement(current_limit, self._tag("OperationalLimit.OperationalLimitSet"), {self._rdf("resource"): f"#{limit_id}"})
                 ET.SubElement(current_limit, self._tag("OperationalLimit.OperationalLimitType"), {self._rdf("resource"): f"#{assets['operational_limit_type_id']}"})
 
+    def _append_transformer_eq(self, root: ET.Element, assets: dict[str, object]) -> None:
+        for transformer in assets["transformers"]:
+            element = ET.SubElement(root, self._tag("PowerTransformer"), {self._rdf("ID"): transformer["rdf_id"]})
+            ET.SubElement(element, self._tag("IdentifiedObject.name")).text = str(transformer["name"])
+            ET.SubElement(element, self._tag("Equipment.aggregate")).text = "false"
+            ET.SubElement(
+                element,
+                self._tag("Equipment.EquipmentContainer"),
+                {self._rdf("resource"): f"#{assets['buses'][transformer['hv_bus']]['voltage_level_id']}"},
+            )
+
+            hv_end = ET.SubElement(root, self._tag("PowerTransformerEnd"), {self._rdf("ID"): transformer["end_hv_id"]})
+            ET.SubElement(hv_end, self._tag("IdentifiedObject.name")).text = f"{transformer['name']}_HV"
+            ET.SubElement(hv_end, self._tag("TransformerEnd.endNumber")).text = "1"
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.PowerTransformer"), {self._rdf("resource"): f"#{transformer['rdf_id']}"})
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.Terminal"), {self._rdf("resource"): f"#{transformer['terminal_hv_id']}"})
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.ratedS")).text = f"{transformer['rated_s_mva']:.12g}"
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.ratedU")).text = f"{transformer['rated_u_hv_kv']:.12g}"
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.r")).text = f"{transformer['r_hv_ohm']:.12g}"
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.x")).text = f"{transformer['x_hv_ohm']:.12g}"
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.g")).text = "0"
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.b")).text = "0"
+            ET.SubElement(hv_end, self._tag("TransformerEnd.BaseVoltage"), {self._rdf("resource"): f"#{transformer['base_voltage_hv_id']}"})
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.phaseAngleClock")).text = str(int(transformer["phase_angle_clock_hv"]))
+            ET.SubElement(
+                hv_end,
+                self._tag("PowerTransformerEnd.connectionKind"),
+                {self._rdf("resource"): f"http://iec.ch/TC57/2013/CIM-schema-cim16#WindingConnection.{transformer['connection_hv']}"},
+            )
+
+            lv_end = ET.SubElement(root, self._tag("PowerTransformerEnd"), {self._rdf("ID"): transformer["end_lv_id"]})
+            ET.SubElement(lv_end, self._tag("IdentifiedObject.name")).text = f"{transformer['name']}_LV"
+            ET.SubElement(lv_end, self._tag("TransformerEnd.endNumber")).text = "2"
+            ET.SubElement(lv_end, self._tag("PowerTransformerEnd.PowerTransformer"), {self._rdf("resource"): f"#{transformer['rdf_id']}"})
+            ET.SubElement(lv_end, self._tag("PowerTransformerEnd.Terminal"), {self._rdf("resource"): f"#{transformer['terminal_lv_id']}"})
+            ET.SubElement(lv_end, self._tag("PowerTransformerEnd.ratedS")).text = f"{transformer['rated_s_mva']:.12g}"
+            ET.SubElement(lv_end, self._tag("PowerTransformerEnd.ratedU")).text = f"{transformer['rated_u_lv_kv']:.12g}"
+            ET.SubElement(lv_end, self._tag("PowerTransformerEnd.r")).text = f"{transformer['r_lv_ohm']:.12g}"
+            ET.SubElement(lv_end, self._tag("PowerTransformerEnd.x")).text = f"{transformer['x_lv_ohm']:.12g}"
+            ET.SubElement(lv_end, self._tag("PowerTransformerEnd.g")).text = "0"
+            ET.SubElement(lv_end, self._tag("PowerTransformerEnd.b")).text = "0"
+            ET.SubElement(lv_end, self._tag("TransformerEnd.BaseVoltage"), {self._rdf("resource"): f"#{transformer['base_voltage_lv_id']}"})
+            ET.SubElement(lv_end, self._tag("PowerTransformerEnd.phaseAngleClock")).text = str(int(transformer["phase_angle_clock_lv"]))
+            ET.SubElement(
+                lv_end,
+                self._tag("PowerTransformerEnd.connectionKind"),
+                {self._rdf("resource"): f"http://iec.ch/TC57/2013/CIM-schema-cim16#WindingConnection.{transformer['connection_lv']}"},
+            )
+
+            tap_changer_id = transformer.get("tap_changer_id")
+            if tap_changer_id:
+                tap_end_id = transformer["end_hv_id"] if transformer.get("tap_side") == "hv" else transformer["end_lv_id"]
+                tap = ET.SubElement(root, self._tag("RatioTapChanger"), {self._rdf("ID"): tap_changer_id})
+                ET.SubElement(tap, self._tag("IdentifiedObject.name")).text = f"{transformer['name']}_tap"
+                ET.SubElement(tap, self._tag("TapChanger.lowStep")).text = str(int(transformer["tap_min"]))
+                ET.SubElement(tap, self._tag("TapChanger.highStep")).text = str(int(transformer["tap_max"]))
+                ET.SubElement(tap, self._tag("TapChanger.neutralStep")).text = str(int(transformer["tap_neutral"]))
+                ET.SubElement(tap, self._tag("TapChanger.normalStep")).text = str(int(transformer["tap_neutral"]))
+                ET.SubElement(tap, self._tag("RatioTapChanger.stepVoltageIncrement")).text = f"{float(transformer['tap_step_percent']):.12g}"
+                ET.SubElement(tap, self._tag("RatioTapChanger.TransformerEnd"), {self._rdf("resource"): f"#{tap_end_id}"})
+
     def _append_load_eq(self, root: ET.Element, assets: dict[str, object]) -> None:
         for load in assets["loads"]:
             element = ET.SubElement(root, self._tag("EnergyConsumer"), {self._rdf("ID"): load["rdf_id"]})
@@ -327,52 +504,82 @@ class CGMESExportAdapter:
             ):
                 ET.SubElement(response, self._tag(f"LoadResponseCharacteristic.{field}")).text = value
 
-    def _append_slack_eq(self, root: ET.Element, assets: dict[str, object]) -> None:
-        slack = assets["slack"]
-        generating_unit = ET.SubElement(root, self._tag("ThermalGeneratingUnit"), {self._rdf("ID"): slack["generating_unit_id"]})
-        ET.SubElement(generating_unit, self._tag("IdentifiedObject.name")).text = str(slack["name"])
-        ET.SubElement(generating_unit, self._tag("Equipment.aggregate")).text = "false"
-        ET.SubElement(
-            generating_unit,
-            self._tag("Equipment.EquipmentContainer"),
-            {self._rdf("resource"): f"#{assets['buses'][slack['bus']]['voltage_level_id']}"},
-        )
-        ET.SubElement(generating_unit, self._tag("GeneratingUnit.initialP")).text = f"{max(slack['p_mw'], 0.0):.12g}"
-        ET.SubElement(generating_unit, self._tag("GeneratingUnit.maxOperatingP")).text = f"{slack['max_p_mw']:.12g}"
-        ET.SubElement(generating_unit, self._tag("GeneratingUnit.minOperatingP")).text = f"{slack['min_p_mw']:.12g}"
+    def _append_sources_eq(self, root: ET.Element, assets: dict[str, object]) -> None:
+        for source in assets["sources"]:
+            if source["source_kind"] == "external_network":
+                external = ET.SubElement(root, self._tag("ExternalNetworkInjection"), {self._rdf("ID"): source["external_network_id"]})
+                ET.SubElement(external, self._tag("IdentifiedObject.name")).text = str(source["name"])
+                ET.SubElement(external, self._tag("Equipment.aggregate")).text = "false"
+                ET.SubElement(
+                    external,
+                    self._tag("Equipment.EquipmentContainer"),
+                    {self._rdf("resource"): f"#{assets['buses'][source['bus']]['voltage_level_id']}"},
+                )
+                ET.SubElement(
+                    external,
+                    self._tag("ConductingEquipment.BaseVoltage"),
+                    {self._rdf("resource"): f"#{assets['buses'][source['bus']]['base_voltage_id']}"},
+                )
+                ET.SubElement(external, self._tag("RegulatingCondEq.RegulatingControl"), {self._rdf("resource"): f"#{source['reg_control_id']}"})
+                ET.SubElement(external, self._tag("ExternalNetworkInjection.minP")).text = f"{float(source['min_p_mw']):.12g}"
+                ET.SubElement(external, self._tag("ExternalNetworkInjection.maxP")).text = f"{float(source['max_p_mw']):.12g}"
+                ET.SubElement(external, self._tag("ExternalNetworkInjection.minQ")).text = f"{float(source['min_q_mvar']):.12g}"
+                ET.SubElement(external, self._tag("ExternalNetworkInjection.maxQ")).text = f"{float(source['max_q_mvar']):.12g}"
 
-        machine = ET.SubElement(root, self._tag("SynchronousMachine"), {self._rdf("ID"): slack["machine_id"]})
-        ET.SubElement(machine, self._tag("IdentifiedObject.name")).text = str(slack["name"])
-        ET.SubElement(
-            machine,
-            self._tag("Equipment.EquipmentContainer"),
-            {self._rdf("resource"): f"#{assets['buses'][slack['bus']]['voltage_level_id']}"},
-        )
-        ET.SubElement(machine, self._tag("RegulatingCondEq.RegulatingControl"), {self._rdf("resource"): f"#{slack['reg_control_id']}"})
-        ET.SubElement(machine, self._tag("RotatingMachine.ratedPowerFactor")).text = "1"
-        ET.SubElement(machine, self._tag("RotatingMachine.ratedS")).text = f"{slack['rated_s_mva']:.12g}"
-        ET.SubElement(machine, self._tag("RotatingMachine.ratedU")).text = f"{slack['rated_u_kv']:.12g}"
-        ET.SubElement(machine, self._tag("RotatingMachine.GeneratingUnit"), {self._rdf("resource"): f"#{slack['generating_unit_id']}"})
-        ET.SubElement(machine, self._tag("SynchronousMachine.earthing")).text = "false"
-        ET.SubElement(machine, self._tag("SynchronousMachine.maxQ")).text = f"{slack['max_q_mvar']:.12g}"
-        ET.SubElement(machine, self._tag("SynchronousMachine.minQ")).text = f"{slack['min_q_mvar']:.12g}"
-        ET.SubElement(machine, self._tag("SynchronousMachine.qPercent")).text = "100"
-        for field in ("r0", "r2", "satDirectSubtransX", "r", "x0", "x2"):
-            ET.SubElement(machine, self._tag(f"SynchronousMachine.{field}")).text = "0"
-        ET.SubElement(
-            machine,
-            self._tag("SynchronousMachine.type"),
-            {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#SynchronousMachineKind.generator"},
-        )
+                reg = ET.SubElement(root, self._tag("RegulatingControl"), {self._rdf("ID"): source["reg_control_id"]})
+                ET.SubElement(reg, self._tag("IdentifiedObject.name")).text = str(source["name"])
+                ET.SubElement(
+                    reg,
+                    self._tag("RegulatingControl.mode"),
+                    {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#RegulatingControlModeKind.voltage"},
+                )
+                ET.SubElement(reg, self._tag("RegulatingControl.Terminal"), {self._rdf("resource"): f"#{source['terminal_id']}"})
+                continue
 
-        reg = ET.SubElement(root, self._tag("RegulatingControl"), {self._rdf("ID"): slack["reg_control_id"]})
-        ET.SubElement(reg, self._tag("IdentifiedObject.name")).text = str(slack["name"])
-        ET.SubElement(
-            reg,
-            self._tag("RegulatingControl.mode"),
-            {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#RegulatingControlModeKind.voltage"},
-        )
-        ET.SubElement(reg, self._tag("RegulatingControl.Terminal"), {self._rdf("resource"): f"#{slack['terminal_id']}"})
+            generating_unit = ET.SubElement(root, self._tag("ThermalGeneratingUnit"), {self._rdf("ID"): source["generating_unit_id"]})
+            ET.SubElement(generating_unit, self._tag("IdentifiedObject.name")).text = str(source["name"])
+            ET.SubElement(generating_unit, self._tag("Equipment.aggregate")).text = "false"
+            ET.SubElement(
+                generating_unit,
+                self._tag("Equipment.EquipmentContainer"),
+                {self._rdf("resource"): f"#{assets['buses'][source['bus']]['voltage_level_id']}"},
+            )
+            ET.SubElement(generating_unit, self._tag("GeneratingUnit.initialP")).text = f"{max(float(source['p_mw']), 0.0):.12g}"
+            ET.SubElement(generating_unit, self._tag("GeneratingUnit.maxOperatingP")).text = f"{float(source['max_p_mw']):.12g}"
+            ET.SubElement(generating_unit, self._tag("GeneratingUnit.minOperatingP")).text = f"{float(source['min_p_mw']):.12g}"
+
+            machine = ET.SubElement(root, self._tag("SynchronousMachine"), {self._rdf("ID"): source["machine_id"]})
+            ET.SubElement(machine, self._tag("IdentifiedObject.name")).text = str(source["name"])
+            ET.SubElement(
+                machine,
+                self._tag("Equipment.EquipmentContainer"),
+                {self._rdf("resource"): f"#{assets['buses'][source['bus']]['voltage_level_id']}"},
+            )
+            ET.SubElement(machine, self._tag("RegulatingCondEq.RegulatingControl"), {self._rdf("resource"): f"#{source['reg_control_id']}"})
+            ET.SubElement(machine, self._tag("RotatingMachine.ratedPowerFactor")).text = "1"
+            ET.SubElement(machine, self._tag("RotatingMachine.ratedS")).text = f"{float(source['rated_s_mva']):.12g}"
+            ET.SubElement(machine, self._tag("RotatingMachine.ratedU")).text = f"{float(source['rated_u_kv']):.12g}"
+            ET.SubElement(machine, self._tag("RotatingMachine.GeneratingUnit"), {self._rdf("resource"): f"#{source['generating_unit_id']}"})
+            ET.SubElement(machine, self._tag("SynchronousMachine.earthing")).text = "false"
+            ET.SubElement(machine, self._tag("SynchronousMachine.maxQ")).text = f"{float(source['max_q_mvar']):.12g}"
+            ET.SubElement(machine, self._tag("SynchronousMachine.minQ")).text = f"{float(source['min_q_mvar']):.12g}"
+            ET.SubElement(machine, self._tag("SynchronousMachine.qPercent")).text = "100"
+            for field in ("r0", "r2", "satDirectSubtransX", "r", "x0", "x2"):
+                ET.SubElement(machine, self._tag(f"SynchronousMachine.{field}")).text = "0"
+            ET.SubElement(
+                machine,
+                self._tag("SynchronousMachine.type"),
+                {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#SynchronousMachineKind.generator"},
+            )
+
+            reg = ET.SubElement(root, self._tag("RegulatingControl"), {self._rdf("ID"): source["reg_control_id"]})
+            ET.SubElement(reg, self._tag("IdentifiedObject.name")).text = str(source["name"])
+            ET.SubElement(
+                reg,
+                self._tag("RegulatingControl.mode"),
+                {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#RegulatingControlModeKind.voltage"},
+            )
+            ET.SubElement(reg, self._tag("RegulatingControl.Terminal"), {self._rdf("resource"): f"#{source['terminal_id']}"})
 
     def _append_limit_type_eq(self, root: ET.Element, assets: dict[str, object]) -> None:
         limit_type = ET.SubElement(root, self._tag("OperationalLimitType"), {self._rdf("ID"): assets["operational_limit_type_id"]})
@@ -382,10 +589,12 @@ class CGMESExportAdapter:
         ET.SubElement(limit_type, self._tag("{http://entsoe.eu/CIM/SchemaExtension/3/1#}OperationalLimitType.limitType"), {self._rdf("resource"): "http://entsoe.eu/CIM/SchemaExtension/3/1#LimitTypeKind.patl"})
 
     def _append_terminal_states_ssh(self, root: ET.Element, assets: dict[str, object]) -> None:
-        terminal_ids = [assets["slack"]["terminal_id"]]
+        terminal_ids = [source["terminal_id"] for source in assets["sources"]]
         terminal_ids.extend(load["terminal_id"] for load in assets["loads"])
         for line in assets["lines"]:
             terminal_ids.extend([line["terminal_from_id"], line["terminal_to_id"]])
+        for transformer in assets["transformers"]:
+            terminal_ids.extend([transformer["terminal_hv_id"], transformer["terminal_lv_id"]])
         for terminal_id in terminal_ids:
             terminal = ET.SubElement(root, self._tag("Terminal"), {self._rdf("about"): f"#{terminal_id}"})
             ET.SubElement(terminal, self._tag("ACDCTerminal.connected")).text = "true"
@@ -396,22 +605,48 @@ class CGMESExportAdapter:
             ET.SubElement(element, self._tag("EnergyConsumer.p")).text = f"{load['p_mw']:.12g}"
             ET.SubElement(element, self._tag("EnergyConsumer.q")).text = f"{load['q_mvar']:.12g}"
 
-    def _append_slack_ssh(self, root: ET.Element, assets: dict[str, object]) -> None:
-        slack = assets["slack"]
-        unit = ET.SubElement(root, self._tag("ThermalGeneratingUnit"), {self._rdf("about"): f"#{slack['generating_unit_id']}"})
-        ET.SubElement(unit, self._tag("GeneratingUnit.normalPF")).text = "0"
-        machine = ET.SubElement(root, self._tag("SynchronousMachine"), {self._rdf("about"): f"#{slack['machine_id']}"})
-        ET.SubElement(machine, self._tag("RegulatingCondEq.controlEnabled")).text = "true"
-        ET.SubElement(machine, self._tag("RotatingMachine.p")).text = f"{slack['p_mw']:.12g}"
-        ET.SubElement(machine, self._tag("RotatingMachine.q")).text = f"{slack['q_mvar']:.12g}"
-        ET.SubElement(machine, self._tag("SynchronousMachine.referencePriority")).text = "1"
-        ET.SubElement(machine, self._tag("SynchronousMachine.operatingMode"), {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#SynchronousMachineOperatingMode.generator"})
-        reg = ET.SubElement(root, self._tag("RegulatingControl"), {self._rdf("about"): f"#{slack['reg_control_id']}"})
-        ET.SubElement(reg, self._tag("RegulatingControl.discrete")).text = "false"
-        ET.SubElement(reg, self._tag("RegulatingControl.enabled")).text = "true"
-        ET.SubElement(reg, self._tag("RegulatingControl.targetDeadband")).text = "0"
-        ET.SubElement(reg, self._tag("RegulatingControl.targetValue")).text = f"{slack['target_vm_kv']:.12g}"
-        ET.SubElement(reg, self._tag("RegulatingControl.targetValueUnitMultiplier"), {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#UnitMultiplier.k"})
+    def _append_sources_ssh(self, root: ET.Element, assets: dict[str, object]) -> None:
+        for idx, source in enumerate(assets["sources"]):
+            if source["source_kind"] == "external_network":
+                external = ET.SubElement(root, self._tag("ExternalNetworkInjection"), {self._rdf("about"): f"#{source['external_network_id']}"})
+                ET.SubElement(external, self._tag("RegulatingCondEq.controlEnabled")).text = "true"
+                ET.SubElement(external, self._tag("ExternalNetworkInjection.p")).text = f"{float(source['p_mw']):.12g}"
+                ET.SubElement(external, self._tag("ExternalNetworkInjection.q")).text = f"{float(source['q_mvar']):.12g}"
+                ET.SubElement(external, self._tag("ExternalNetworkInjection.referencePriority")).text = "1" if bool(source["is_slack"]) else str(100 + idx)
+                reg = ET.SubElement(root, self._tag("RegulatingControl"), {self._rdf("about"): f"#{source['reg_control_id']}"})
+                ET.SubElement(reg, self._tag("RegulatingControl.discrete")).text = "false"
+                ET.SubElement(reg, self._tag("RegulatingControl.enabled")).text = "true"
+                ET.SubElement(reg, self._tag("RegulatingControl.targetDeadband")).text = "0"
+                ET.SubElement(reg, self._tag("RegulatingControl.targetValue")).text = f"{float(source['target_vm_kv']):.12g}"
+                ET.SubElement(reg, self._tag("RegulatingControl.targetValueUnitMultiplier"), {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#UnitMultiplier.k"})
+                continue
+
+            unit = ET.SubElement(root, self._tag("ThermalGeneratingUnit"), {self._rdf("about"): f"#{source['generating_unit_id']}"})
+            ET.SubElement(unit, self._tag("GeneratingUnit.normalPF")).text = "0"
+            machine = ET.SubElement(root, self._tag("SynchronousMachine"), {self._rdf("about"): f"#{source['machine_id']}"})
+            ET.SubElement(machine, self._tag("RegulatingCondEq.controlEnabled")).text = "true"
+            ET.SubElement(machine, self._tag("RotatingMachine.p")).text = f"{float(source['p_mw']):.12g}"
+            ET.SubElement(machine, self._tag("RotatingMachine.q")).text = f"{float(source['q_mvar']):.12g}"
+            ET.SubElement(machine, self._tag("SynchronousMachine.referencePriority")).text = "1" if bool(source["is_slack"]) else str(100 + idx)
+            ET.SubElement(machine, self._tag("SynchronousMachine.operatingMode"), {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#SynchronousMachineOperatingMode.generator"})
+            reg = ET.SubElement(root, self._tag("RegulatingControl"), {self._rdf("about"): f"#{source['reg_control_id']}"})
+            ET.SubElement(reg, self._tag("RegulatingControl.discrete")).text = "false"
+            ET.SubElement(reg, self._tag("RegulatingControl.enabled")).text = "true"
+            ET.SubElement(reg, self._tag("RegulatingControl.targetDeadband")).text = "0"
+            ET.SubElement(reg, self._tag("RegulatingControl.targetValue")).text = f"{float(source['target_vm_kv']):.12g}"
+            ET.SubElement(reg, self._tag("RegulatingControl.targetValueUnitMultiplier"), {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#UnitMultiplier.k"})
+
+    def _append_transformer_ssh(self, root: ET.Element, assets: dict[str, object]) -> None:
+        for transformer in assets["transformers"]:
+            tap_changer_id = transformer.get("tap_changer_id")
+            if not tap_changer_id:
+                continue
+            tap = ET.SubElement(root, self._tag("RatioTapChanger"), {self._rdf("about"): f"#{tap_changer_id}"})
+            ET.SubElement(tap, self._tag("TapChanger.controlEnabled")).text = "false"
+            tap_step = transformer.get("tap_pos")
+            if tap_step is None:
+                tap_step = transformer["tap_neutral"]
+            ET.SubElement(tap, self._tag("TapChanger.step")).text = str(int(tap_step))
 
     def _append_line_ssh(self, root: ET.Element, assets: dict[str, object]) -> None:
         for line in assets["lines"]:
@@ -420,6 +655,17 @@ class CGMESExportAdapter:
             for terminal_id in (line["terminal_from_id"], line["terminal_to_id"]):
                 terminal = ET.SubElement(root, self._tag("Terminal"), {self._rdf("about"): f"#{terminal_id}"})
                 ET.SubElement(terminal, self._tag("ACDCTerminal.connected")).text = "false"
+        for transformer in assets["transformers"]:
+            if transformer["in_service"]:
+                continue
+            for terminal_id in (transformer["terminal_hv_id"], transformer["terminal_lv_id"]):
+                terminal = ET.SubElement(root, self._tag("Terminal"), {self._rdf("about"): f"#{terminal_id}"})
+                ET.SubElement(terminal, self._tag("ACDCTerminal.connected")).text = "false"
+        for source in assets["sources"]:
+            if source["in_service"]:
+                continue
+            terminal = ET.SubElement(root, self._tag("Terminal"), {self._rdf("about"): f"#{source['terminal_id']}"})
+            ET.SubElement(terminal, self._tag("ACDCTerminal.connected")).text = "false"
 
     def _append_topology_tp(self, root: ET.Element, assets: dict[str, object]) -> None:
         for bus_index, bus in assets["buses"].items():
@@ -431,9 +677,13 @@ class CGMESExportAdapter:
         for line in assets["lines"]:
             self._terminal_tp(root, line["terminal_from_id"], assets["buses"][line["from_bus"]]["rdf_id"])
             self._terminal_tp(root, line["terminal_to_id"], assets["buses"][line["to_bus"]]["rdf_id"])
+        for transformer in assets["transformers"]:
+            self._terminal_tp(root, transformer["terminal_hv_id"], assets["buses"][transformer["hv_bus"]]["rdf_id"])
+            self._terminal_tp(root, transformer["terminal_lv_id"], assets["buses"][transformer["lv_bus"]]["rdf_id"])
         for load in assets["loads"]:
             self._terminal_tp(root, load["terminal_id"], assets["buses"][load["bus"]]["rdf_id"])
-        self._terminal_tp(root, assets["slack"]["terminal_id"], assets["buses"][assets["slack"]["bus"]]["rdf_id"])
+        for source in assets["sources"]:
+            self._terminal_tp(root, source["terminal_id"], assets["buses"][source["bus"]]["rdf_id"])
 
     def _append_state_variables_sv(self, root: ET.Element, assets: dict[str, object]) -> None:
         for bus in assets["buses"].values():
@@ -486,39 +736,25 @@ class CGMESExportAdapter:
             return fallback
         return numeric
 
-    def _slack_source(self, net: object, solved_net: object) -> dict[str, object]:
-        if len(net.ext_grid):
-            source = net.ext_grid.iloc[0]
-            slack_res = solved_net.res_ext_grid.iloc[0]
-            p_mw = -float(slack_res.p_mw)
-            q_mvar = -float(slack_res.q_mvar)
-            return {
-                "name": self._name(source.get("name"), "Slack"),
-                "bus": int(source.bus),
-                "target_vm_pu": float(source.vm_pu),
-                "p_mw": p_mw,
-                "q_mvar": q_mvar,
-                "min_p_mw": float(source.get("min_p_mw", min(0.0, p_mw))),
-                "max_p_mw": float(source.get("max_p_mw", max(abs(p_mw) * 1.5, 1.0))),
-                "min_q_mvar": float(source.get("min_q_mvar", min(-abs(q_mvar) * 2.0, q_mvar, -1.0))),
-                "max_q_mvar": float(source.get("max_q_mvar", max(abs(q_mvar) * 2.0, q_mvar, 1.0))),
-            }
+    def _float_or_none(self, value: object) -> float | None:
+        if value is None:
+            return None
+        numeric = float(value)
+        if math.isnan(numeric):
+            return None
+        return numeric
 
-        source = net.gen.loc[net.gen["slack"].fillna(False)].iloc[0]
-        bus_idx = int(source.bus)
-        p_mw = float(source.get("p_mw", 0.0))
-        q_mvar = float(solved_net.res_gen.loc[source.name, "q_mvar"])
-        return {
-            "name": self._name(source.get("name"), "Slack"),
-            "bus": bus_idx,
-            "target_vm_pu": float(source.get("vm_pu", solved_net.res_bus.at[bus_idx, "vm_pu"])),
-            "p_mw": p_mw,
-            "q_mvar": q_mvar,
-            "min_p_mw": float(source.get("min_p_mw", min(0.0, p_mw))),
-            "max_p_mw": float(source.get("max_p_mw", max(abs(p_mw) * 1.5, 1.0))),
-            "min_q_mvar": float(source.get("min_q_mvar", min(-abs(q_mvar) * 2.0, q_mvar, -1.0))),
-            "max_q_mvar": float(source.get("max_q_mvar", max(abs(q_mvar) * 2.0, q_mvar, 1.0))),
-        }
+    def _winding_connection_symbol(self, vector_group: str, side: str) -> str:
+        letters = "".join(ch for ch in vector_group if ch.isalpha())
+        if not letters:
+            return "Y"
+        token = letters[0] if side == "hv" else letters[-1]
+        mapped = token.upper()
+        if mapped == "N":
+            mapped = "Y"
+        if mapped not in {"Y", "D", "Z"}:
+            return "Y"
+        return mapped
 
     def _tag(self, name: str) -> str:
         if name.startswith("{"):

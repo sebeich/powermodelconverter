@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
@@ -190,6 +191,77 @@ class ValidationService:
             details={"compared_nodes": compared, "mode": "unbalanced_3ph", "backend": "opendss"},
         )
 
+    def validate_pandapower_split_against_opendss(
+        self,
+        case: CanonicalCase,
+        reference: OpenDSSResultSnapshot,
+        *,
+        slack_tolerance_mva: float = 1e-3,
+        voltage_tolerance_pu: float = 1e-3,
+    ) -> ValidationResult:
+        net_template = self._pandapower.to_net(case)
+        init_vm_pu: list[float] = []
+        init_va_degree: list[float] = []
+        for _, row in net_template.bus.iterrows():
+            bus_key = str(row["name"]).lower()
+            candidate = reference.node_voltages.get(bus_key)
+            if candidate is None:
+                init_vm_pu.append(1.0)
+                init_va_degree.append(0.0)
+                continue
+            init_vm_pu.append(abs(candidate))
+            init_va_degree.append(math.degrees(math.atan2(candidate.imag, candidate.real)))
+
+        net = self._pandapower.run_power_flow(
+            case,
+            algorithm="nr",
+            init="auto",
+            init_vm_pu=init_vm_pu,
+            init_va_degree=init_va_degree,
+            calculate_voltage_angles=True,
+            numba=False,
+            max_iteration=50,
+        )
+        slack_p, slack_q = self._extract_balanced_slack(net)
+        slack_delta = math.hypot(slack_p - reference.slack_p_mw, slack_q - reference.slack_q_mvar)
+
+        max_voltage_delta = 0.0
+        delta_sum = 0.0
+        compared = 0
+        worst_nodes: list[tuple[float, str]] = []
+        for _, row in net.res_bus.iterrows():
+            bus_key = self._bus_key(net, int(row.name)).lower()
+            candidate = reference.node_voltages.get(bus_key)
+            if candidate is None:
+                continue
+            angle_rad = math.radians(float(row.va_degree))
+            actual = complex(float(row.vm_pu) * math.cos(angle_rad), float(row.vm_pu) * math.sin(angle_rad))
+            delta = abs(actual - candidate)
+            max_voltage_delta = max(max_voltage_delta, delta)
+            delta_sum += delta
+            compared += 1
+            worst_nodes.append((delta, bus_key))
+        worst_nodes.sort(reverse=True)
+        mean_voltage_delta = delta_sum / compared if compared else 0.0
+
+        passed = slack_delta <= slack_tolerance_mva and max_voltage_delta <= voltage_tolerance_pu and compared > 0
+        return ValidationResult(
+            case_id=case.case_id,
+            passed=passed,
+            slack_delta_mva=slack_delta,
+            max_voltage_delta_pu=max_voltage_delta,
+            details={
+                "compared_nodes": compared,
+                "backend": "opendss",
+                "mode": "phase_split",
+                "mean_voltage_delta_pu": mean_voltage_delta,
+                "worst_nodes": [
+                    {"node": node, "voltage_delta_pu": delta}
+                    for delta, node in worst_nodes[:10]
+                ],
+            },
+        )
+
     def validate_pandapower_unbalanced_roundtrip(
         self,
         case: CanonicalCase,
@@ -326,6 +398,64 @@ class ValidationService:
             },
         )
 
+    def validate_powersystems_export(
+        self,
+        case: CanonicalCase,
+        *,
+        powersystems_case: Path,
+        julia_binary: str,
+        julia_script: Path,
+        julia_depot: Path,
+        julia_project: Path,
+        slack_tolerance_mva: float = 1e-3,
+        voltage_tolerance_pu: float = 1e-3,
+    ) -> ValidationResult:
+        net = self._pandapower.run_power_flow(case)
+        reference_voltages = {
+            self._normalize_bus_name(self._bus_key(net, int(idx))): complex(
+                float(row.vm_pu) * math.cos(math.radians(float(row.va_degree))),
+                float(row.vm_pu) * math.sin(math.radians(float(row.va_degree))),
+            )
+            for idx, row in net.res_bus.iterrows()
+        }
+        payload = self._run_powersimulations_pf(
+            powersystems_case=powersystems_case,
+            julia_binary=julia_binary,
+            julia_script=julia_script,
+            julia_depot=julia_depot,
+            julia_project=julia_project,
+        )
+
+        max_voltage_delta = 0.0
+        compared = 0
+        for bus_name, values in payload.get("bus_results", {}).items():
+            reference = reference_voltages.get(self._normalize_bus_name(bus_name))
+            if reference is None:
+                continue
+            actual = complex(values["vm_pu_real"], values["vm_pu_imag"])
+            max_voltage_delta = max(max_voltage_delta, abs(actual - reference))
+            compared += 1
+
+        solved = bool(payload.get("solved", False))
+        slack_delta = float(payload.get("slack_delta_mva", 0.0))
+        passed = (
+            solved
+            and slack_delta <= slack_tolerance_mva
+            and max_voltage_delta <= voltage_tolerance_pu
+            and compared > 0
+        )
+        return ValidationResult(
+            case_id=case.case_id,
+            passed=passed,
+            slack_delta_mva=slack_delta,
+            max_voltage_delta_pu=max_voltage_delta,
+            details={
+                "compared_buses": compared,
+                "backend": "powersimulations",
+                "validation_mode": payload.get("validation_mode", "unknown"),
+            },
+        )
+
     def validate_pypsa_export(
         self,
         case: CanonicalCase,
@@ -396,6 +526,34 @@ class ValidationService:
             if candidate.startswith("{"):
                 return json.loads(candidate)
         raise ValidationError(f"PowerModels validation returned no JSON payload: {stdout}")
+
+    def _run_powersimulations_pf(
+        self,
+        *,
+        powersystems_case: Path,
+        julia_binary: str,
+        julia_script: Path,
+        julia_depot: Path,
+        julia_project: Path,
+    ) -> dict[str, Any]:
+        env = {
+            **os.environ,
+            "JULIA_DEPOT_PATH": str(julia_depot),
+            "JULIA_PROJECT": str(julia_project),
+        }
+        command = [julia_binary, str(julia_script), str(powersystems_case)]
+        completed = subprocess.run(command, capture_output=True, text=True, env=env, check=False)
+        if completed.returncode != 0:
+            raise ValidationError(
+                "PowerSystems/PowerSimulations validation failed: "
+                f"{completed.stderr.strip() or completed.stdout.strip() or 'unknown Julia error'}"
+            )
+        stdout = completed.stdout.strip()
+        for line in reversed(stdout.splitlines()):
+            candidate = line.strip()
+            if candidate.startswith("{"):
+                return json.loads(candidate)
+        raise ValidationError(f"PowerSystems/PowerSimulations validation returned no JSON payload: {stdout}")
 
     def _run_powermodelsdistribution_pf(
         self,
@@ -474,3 +632,11 @@ class ValidationService:
                 va = math.radians(float(row[f"va_{phase}_degree"]))
                 node_voltages[f"{bus_key}.{node}"] = complex(vm * math.cos(va), vm * math.sin(va))
         return node_voltages
+
+    def _normalize_bus_name(self, bus_name: str) -> str:
+        normalized = re.sub(r"\s+", "", str(bus_name)).strip().lower()
+        for prefix in ("acbus", "bus"):
+            if normalized.startswith(prefix):
+                normalized = normalized[len(prefix):]
+                break
+        return normalized.lstrip("_-")

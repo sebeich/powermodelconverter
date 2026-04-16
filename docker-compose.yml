@@ -1,0 +1,11 @@
+services:
+  pmc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: powermodelconverter:latest
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      JULIA_DEPOT_PATH: /opt/powermodelconverter/.julia_depot

@@ -10,3 +10,34 @@ __pycache__/
 .DS_Store
 .idea/
 .vscode/
+.codex
+.codex/
+
+# Local input data and generated dataset artifacts.
+input/
+*:Zone.Identifier*
+
+# Generated runtime and experimental helper outputs.
+src/powermodelconverter/runtime/
+src/powermodelconverter/julia_psi/
+
+# Generated network exports and diagnostics that can embed local paths.
+src/powermodelconverter/data/exports/*.validation.json
+src/powermodelconverter/data/exports/*.diagnostic.json
+src/powermodelconverter/data/exports/*.bundle.json
+src/powermodelconverter/data/exports/*.solver_diagnostics.json
+src/powermodelconverter/data/exports/*roundtrip_comparison.json
+src/powermodelconverter/data/exports/*.pf_delta_report.json
+src/powermodelconverter/data/exports/*validation_scope.json
+src/powermodelconverter/data/exports/*voltage_delta_report.json
+src/powermodelconverter/data/exports/*.uniform_failure_diag.json
+src/powermodelconverter/data/exports/*.pf.json
+src/powermodelconverter/data/exports/*.png
+src/powermodelconverter/data/exports/*.cgmes.zip
+src/powermodelconverter/data/exports/*.pandapower.json
+src/powermodelconverter/data/exports/*.pandapower.json.islands.bundle.json
+src/powermodelconverter/data/exports/*.pandapower_islands/
+
+# Generated sample derivatives.
+src/powermodelconverter/data/samples/**/*.pypsa.nc
+src/powermodelconverter/data/samples/**/*.pandapower-split.json
