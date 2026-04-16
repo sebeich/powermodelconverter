@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.mypy_cache
+.idea
+.vscode
+.DS_Store
+docs/validation_report.html
+docs/validation_report.json
+docs/validation_report.md
+src/powermodelconverter/data/exports

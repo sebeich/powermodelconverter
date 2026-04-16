@@ -123,12 +123,12 @@
     <div class="grid">
       <article class="card">
         <h2>Validated Routes</h2>
-        <div class="value">136</div>
+        <div class="value">139</div>
         <div class="sub">Routes with successful measured validation</div>
       </article>
       <article class="card">
         <h2>Pending Routes</h2>
-        <div class="value">8</div>
+        <div class="value">13</div>
         <div class="sub">Tracked explicitly, but not yet signed off</div>
       </article>
       <article class="card">
@@ -143,7 +143,7 @@
       </article>
       <article class="card">
         <h2>Validated 3-Phase Routes</h2>
-        <div class="value">30</div>
+        <div class="value">31</div>
         <div class="sub">Routes using explicit unbalanced three-phase node-voltage checks</div>
       </article>
     </div>
@@ -156,8 +156,12 @@
           <p>Every signed-off route is checked by slack-power agreement first and full complex-voltage agreement second. Native-origin routes provide the strongest fidelity evidence, while canonical common-subset routes demonstrate broad interchangeability. Rows labeled 3-phase unbalanced are validated node by node across explicit phase voltages, not just balanced bus magnitudes.</p>
         </article>
         <article class="analysis-card">
+          <h3>Where To Read The Numbers</h3>
+          <p>The numeric results are listed directly in the Balanced Precision, Unbalanced Precision, and Route Details tables below. The same per-route values are also written to <code>docs/validation_report.json</code> for machine-readable reporting.</p>
+        </article>
+        <article class="analysis-card">
           <h3>Deterministic Coverage</h3>
-          <p>The current report signs off 136 route(s) with deterministic full-voltage comparisons across 9023 matched buses or phase nodes in total. Individual routes compare between 2 and 2721 points.</p>
+          <p>The current report signs off 139 route(s) with deterministic full-voltage comparisons across 9065 matched buses or phase nodes in total. Individual routes compare between 2 and 2721 points.</p>
         </article>
         <article class="analysis-card">
           <h3>Strongest Current Route</h3>
@@ -169,7 +173,7 @@
         </article>
         <article class="analysis-card">
           <h3>Unbalanced Coverage</h3>
-          <p>30 unbalanced route(s) are validated and 3 remain pending. Today that includes native pandapower 3-phase roundtrip validation and an OpenDSS starter feeder validated to both pandapower and PowerModelsDistribution.</p>
+          <p>31 unbalanced route(s) are validated and 3 remain pending. Today that includes native pandapower 3-phase roundtrip validation and an OpenDSS starter feeder validated to both pandapower and PowerModelsDistribution.</p>
         </article>
       </div>
     </section>
@@ -178,10 +182,10 @@
       <h2>Balanced Conversion Matrix</h2>
       <table class="matrix">
         <thead>
-          <tr><th>Source \ Export</th><th>cgmes</th><th>matpower</th><th>opendss</th><th>pandapower</th><th>powermodels</th><th>pypsa</th></tr>
+          <tr><th>Source \ Export</th><th>cgmes</th><th>matpower</th><th>opendss</th><th>pandapower</th><th>powermodels</th><th>powersystems</th><th>pypsa</th></tr>
         </thead>
         <tbody>
-          <tr><th>cgmes</th><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | cgmes: Official pandapower SmallGrid CGMES sample imported through pandapower&#x27;s native CGMES loader.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | cgmes: Official CGMES sample exported onward to PowerModels and validated with Julia AC power flow.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td></tr><tr><th>matpower</th><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9: Official MATPOWER case9 imported through pandapower converter.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9: Balanced export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td></tr><tr><th>opendss</th><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | minimal_radial: Validated against OpenDSS source slack power and bus voltages for the currently supported subset. | minimal_chain: OpenDSS native chained feeder with two loads validated against source bus voltages through pandapower.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | minimal_radial: Balanced-equivalent export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td></tr><tr><th>pandapower</th><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | cgmes_smoke: Transformer-free balanced pandapower subset exported to CGMES and validated by native pandapower CGMES re-import.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | minimal_radial.pandapower: Balanced pandapower re-import of the OpenDSS starter feeder exported back to OpenDSS and validated against pandapower AC power flow.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9_from_matpower.pandapower: Pandapower JSON re-import generated from the validated MATPOWER case9 route.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9_from_matpower.pandapower: Balanced pandapower JSON export validated with Julia PowerModels AC power flow. | case6ww: Pandapower package case6ww validated with Julia PowerModels AC power flow. | case33bw: Pandapower package Baran-Wu 33-bus feeder validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9_from_matpower.pandapower: Balanced line-based pandapower model exported to PyPSA NetCDF and validated against pandapower AC power flow. | case4gs: Pandapower package case4gs validated through PyPSA on the supported balanced AC subset. | case5: Pandapower package case5 validated through PyPSA on the supported balanced AC subset.">validated</td></tr><tr><th>powermodels.jl</th><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-validated" title="case6_powermodels_pkg: PowerModels.jl package MATPOWER case6 validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-empty">-</td></tr><tr><th>pypsa</th><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9_from_matpower.pandapower.pypsa: PyPSA NetCDF re-import validated against PyPSA AC power flow and converted back through pandapower for the current line-based balanced subset. | pypsa_triangle_native: Native PyPSA meshed triangle with one slack, one PV generator, and two loads validated against PyPSA AC power flow through pandapower. | pypsa_radial_native: Native PyPSA radial transmission-style case validated against PyPSA AC power flow through pandapower. | pypsa_five_bus_ring_native: Native PyPSA five-bus ring with distributed load validated against PyPSA AC power flow through pandapower.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td></tr>
+          <tr><th>cgmes</th><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | cgmes: Official pandapower SmallGrid CGMES sample imported through pandapower&#x27;s native CGMES loader.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | cgmes: Official CGMES sample exported onward to PowerModels and validated with Julia AC power flow.">validated</td><td class="cell cell-empty">-</td><td class="cell cell-validated" title="core_bal_star_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.cgmes: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td></tr><tr><th>matpower</th><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9: Official MATPOWER case9 imported through pandapower converter.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9: Balanced export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-empty">-</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td></tr><tr><th>opendss</th><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | minimal_radial: Validated against OpenDSS source slack power and bus voltages for the currently supported subset. | minimal_chain: OpenDSS native chained feeder with two loads validated against source bus voltages through pandapower.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | minimal_radial: Balanced-equivalent export validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-empty">-</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td></tr><tr><th>pandapower</th><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | cgmes_smoke: Transformer-free balanced pandapower subset exported to CGMES and validated by native pandapower CGMES re-import.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | minimal_radial.pandapower: Balanced pandapower re-import of the OpenDSS starter feeder exported back to OpenDSS and validated against pandapower AC power flow.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9_from_matpower.pandapower: Pandapower JSON re-import generated from the validated MATPOWER case9 route.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9_from_matpower.pandapower: Balanced pandapower JSON export validated with Julia PowerModels AC power flow. | case6ww: Pandapower package case6ww validated with Julia PowerModels AC power flow. | case33bw: Pandapower package Baran-Wu 33-bus feeder validated with Julia PowerModels AC power flow.">validated</td><td class="cell cell-empty">-</td><td class="cell cell-validated" title="core_bal_star_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus.pandapower: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9_from_matpower.pandapower: Balanced line-based pandapower model exported to PyPSA NetCDF and validated against pandapower AC power flow. | case4gs: Pandapower package case4gs validated through PyPSA on the supported balanced AC subset. | case5: Pandapower package case5 validated through PyPSA on the supported balanced AC subset.">validated</td></tr><tr><th>pm.jl</th><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-validated" title="case30_pmjl_pkg: pm.jl package-native MATPOWER case30 imported into pandapower and validated against deterministic pandapower AC power flow.">validated</td><td class="cell cell-not_validated" title="case30_pmjl_pkg: pm.jl package-native MATPOWER case30 imported to canonical, exported back to PowerModels JSON, and validated with Julia PowerModels AC power flow.">not validated</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td></tr><tr><th>powersystems.jl</th><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-not_validated" title="case30_powersystems_pkg: MATPOWER case30 imported to canonical, exported through the PowerSystems.jl route, and validated with PowerSimulations.jl AC power flow.">not validated</td><td class="cell cell-empty">-</td></tr><tr><th>pypower</th><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-not_validated" title="DTU7K_26: Skipped strict bilateral validation for DTU7K subnet 26 because one side did not converge: newtonpf() missing 1 required positional argument: &#x27;options&#x27;.">not validated</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td></tr><tr><th>pypsa</th><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | case9_from_matpower.pandapower.pypsa: PyPSA NetCDF re-import validated against PyPSA AC power flow and converted back through pandapower for the current line-based balanced subset. | pypsa_triangle_native: Native PyPSA meshed triangle with one slack, one PV generator, and two loads validated against PyPSA AC power flow through pandapower. | pypsa_radial_native: Native PyPSA radial transmission-style case validated against PyPSA AC power flow through pandapower. | pypsa_five_bus_ring_native: Native PyPSA five-bus ring with distributed load validated against PyPSA AC power flow through pandapower.">validated</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td><td class="cell cell-empty">-</td><td class="cell cell-validated" title="core_bal_star_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_radial_3bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads. | core_bal_ring_4bus: Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.">validated</td></tr><tr><th>pypsa-eur</th><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-validated" title="pypsa_eur_base_synthetic_pf: PyPSA-Eur artifact tracked from `pypsa_eur_base_synthetic_pf.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: PyPSA reference power flow failed: None. | pypsa_eur_full_base_network: PyPSA-Eur artifact tracked from `pypsa_eur_full_base_network.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: Requested by --skip-validation. | pypsa_eur_full_base_pf_validated: PyPSA-Eur artifact tracked from `pypsa_eur_full_base_pf_validated.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: PyPSA reference power flow failed: None. | pypsa_eur_full_base_island_validated: PyPSA-Eur artifact tracked from `pypsa_eur_full_base_island_validated.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata.">validated</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td><td class="cell cell-empty">-</td></tr>
         </tbody>
       </table>
     </section>
@@ -193,7 +197,7 @@
           <tr><th>Source \ Export</th><th>opendss</th><th>pandapower</th><th>powermodelsdistribution</th></tr>
         </thead>
         <tbody>
-          <tr><th>opendss</th><td class="cell cell-validated" title="core_unb_radial_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | minimal_unbalanced_3ph: Unbalanced OpenDSS starter feeder validated against source node voltages with pandapower runpp_3ph.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | minimal_unbalanced_3ph: Unbalanced OpenDSS starter feeder exported to PowerModelsDistribution and validated against source node voltages. | minimal_unbalanced_branch: OpenDSS native branched unbalanced feeder validated against source node voltages through PowerModelsDistribution.">validated</td></tr><tr><th>pandapower</th><td class="cell cell-validated" title="core_unb_radial_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | ieee_european_lv_asymmetric: Native pandapower 3-phase model exported to OpenDSS and validated against runpp_3ph node voltages.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | ieee_european_lv_asymmetric: Native pandapower 3-phase roundtrip validated with runpp_3ph.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | ieee_european_lv_asymmetric: Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages.">validated</td></tr><tr><th>powermodelsdistribution</th><td class="cell cell-validated" title="core_unb_radial_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.">validated</td></tr>
+          <tr><th>opendss</th><td class="cell cell-validated" title="core_unb_radial_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | minimal_unbalanced_3ph: Unbalanced OpenDSS starter feeder validated against source node voltages with pandapower runpp_3ph. | minimal_unbalanced_branch: OpenDSS native branched unbalanced feeder validated against source node voltages through pandapower.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | minimal_unbalanced_3ph: Unbalanced OpenDSS starter feeder exported to PowerModelsDistribution and validated against source node voltages. | minimal_unbalanced_branch: OpenDSS native branched unbalanced feeder validated against source node voltages through PowerModelsDistribution.">validated</td></tr><tr><th>pandapower</th><td class="cell cell-validated" title="core_unb_radial_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | ieee_european_lv_asymmetric: Native pandapower 3-phase model exported to OpenDSS and validated against runpp_3ph node voltages.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | ieee_european_lv_asymmetric: Native pandapower 3-phase roundtrip validated with runpp_3ph.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew.pandapower: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | ieee_european_lv_asymmetric: Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages.">validated</td></tr><tr><th>powermodelsdistribution</th><td class="cell cell-validated" title="core_unb_radial_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.">validated</td><td class="cell cell-validated" title="core_unb_radial_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_branch_loads_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset. | core_unb_phase_skew_pmd: Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.">validated</td></tr>
         </tbody>
       </table>
     </section>
@@ -233,9 +237,9 @@
               <td>matpower</td>
               <td>core_bal_star_3bus.pandapower</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>1.42108547152e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="178" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>9.34248341141e-15</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -305,9 +309,9 @@
               <td>matpower</td>
               <td>core_bal_radial_3bus.pandapower</td>
               <td>Balanced</td>
-              <td>3.35162338134e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="172" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>4.82821412627e-16</td>
+              <td>5.85928550211e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="168" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>1.8900130712e-15</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -377,9 +381,9 @@
               <td>matpower</td>
               <td>core_bal_ring_4bus.pandapower</td>
               <td>Balanced</td>
-              <td>5.78339886065e-12</td>
+              <td>5.12379653438e-12</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="169" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>2.31256028223e-16</td>
+              <td>1.14974321493e-15</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -449,9 +453,9 @@
               <td>opendss</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>0.0911480595758</td>
+              <td>0.0911480597098</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="16" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>3.89769900321e-05</td>
+              <td>3.89769900322e-05</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="66" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -461,9 +465,9 @@
               <td>cgmes</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>4.88519557909e-08</td>
+              <td>4.88541519542e-08</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="110" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>7.62336912265e-12</td>
+              <td>7.62236929052e-12</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="167" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -473,9 +477,9 @@
               <td>pypsa</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>5.55746769635e-07</td>
+              <td>5.5574649058e-07</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="94" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>8.72918302272e-11</td>
+              <td>8.72918101187e-11</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="151" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -485,9 +489,9 @@
               <td>powermodels</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>5.68129867996e-07</td>
+              <td>5.68133236104e-07</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="94" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>8.72917442734e-11</td>
+              <td>8.72918266121e-11</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="151" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -521,7 +525,7 @@
               <td>opendss</td>
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
-              <td>0.0652657923826</td>
+              <td>0.0652657923724</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="18" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
               <td>4.14827587025e-05</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="66" height="10" rx="5" fill="#059669"></rect></svg></td>
@@ -533,9 +537,9 @@
               <td>cgmes</td>
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
-              <td>3.03150794802e-07</td>
+              <td>3.03161130419e-07</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="98" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>4.23772022728e-11</td>
+              <td>4.237946585e-11</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="156" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -545,9 +549,9 @@
               <td>pypsa</td>
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
-              <td>3.03151085703e-07</td>
+              <td>3.03159043946e-07</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="98" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>4.23772791181e-11</td>
+              <td>4.23784154659e-11</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="156" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -557,9 +561,9 @@
               <td>powermodels</td>
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
-              <td>3.0314935095e-07</td>
+              <td>3.03157691487e-07</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="98" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>4.23771849871e-11</td>
+              <td>4.2378401311e-11</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="156" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -593,9 +597,9 @@
               <td>cgmes</td>
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
-              <td>2.31066330384e-08</td>
+              <td>2.30893760588e-08</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="115" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>1.30089905486e-12</td>
+              <td>1.30039305467e-12</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="178" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -605,9 +609,9 @@
               <td>pypsa</td>
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
-              <td>1.9874347205e-07</td>
+              <td>1.98749488531e-07</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="101" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>1.17953835595e-11</td>
+              <td>1.17956555727e-11</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="164" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -617,9 +621,9 @@
               <td>powermodels</td>
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
-              <td>2.03755849249e-07</td>
+              <td>2.0377165996e-07</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="100" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>1.17951598844e-11</td>
+              <td>1.1795377911e-11</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="164" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -641,9 +645,9 @@
               <td>matpower</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>0</td>
+              <td>9.09494701773e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>9.40399181322e-15</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -653,9 +657,9 @@
               <td>opendss</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>0.0911481082074</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="16" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>3.89769900321e-05</td>
+              <td>2.28435937372e-05</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="70" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.9042627192e-05</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="66" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -676,6 +680,222 @@
               <td>opendss</td>
               <td>pypsa</td>
               <td>core_bal_star_3bus</td>
+              <td>Balanced</td>
+              <td>5.93144998496e-07</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="93" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>9.31260115369e-11</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="150" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodels</td>
+              <td>core_bal_star_3bus</td>
+              <td>Balanced</td>
+              <td>6.1449078169e-07</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="93" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>9.3125917725e-11</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="150" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>matpower</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td>5.53224029345e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="169" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>2.47080227765e-15</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>opendss</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td>2.40194881541e-05</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="69" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>4.1594377858e-05</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="66" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>cgmes</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pypsa</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td>3.63797880709e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="172" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>4.54222692694e-16</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodels</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td>2.51862093613e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="174" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>1.16061297877e-16</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>4</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>matpower</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td>2.57243948431e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="174" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>7.34038276892e-16</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>4</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>opendss</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td>3.35706229145e-05</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="67" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>4.85720307424e-05</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="65" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>4</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>cgmes</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td>2.27373675443e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="175" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>1.3791051634e-16</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>4</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pypsa</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td>2.1886290567e-07</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="100" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>1.24962018707e-11</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="164" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>4</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodels</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td>2.25824622544e-07</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="100" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>1.24964323305e-11</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="164" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>4</td>
+            </tr>
+            
+            <tr>
+              <td>cgmes</td>
+              <td>pandapower</td>
+              <td>core_bal_star_3bus.cgmes</td>
+              <td>Balanced</td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>cgmes</td>
+              <td>matpower</td>
+              <td>core_bal_star_3bus.cgmes</td>
+              <td>Balanced</td>
+              <td>3.6662903532e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="172" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>9.36943927174e-15</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>cgmes</td>
+              <td>opendss</td>
+              <td>core_bal_star_3bus.cgmes</td>
+              <td>Balanced</td>
+              <td>0.0911481080385</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="16" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.89769900321e-05</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="66" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>cgmes</td>
+              <td>cgmes</td>
+              <td>core_bal_star_3bus.cgmes</td>
+              <td>Balanced</td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>3</td>
+            </tr>
+            
+            <tr>
+              <td>cgmes</td>
+              <td>pypsa</td>
+              <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
               <td>5.95185931535e-07</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="93" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
@@ -685,215 +905,11 @@
             </tr>
             
             <tr>
-              <td>opendss</td>
-              <td>powermodels</td>
-              <td>core_bal_star_3bus</td>
-              <td>Balanced</td>
-              <td>6.16672171273e-07</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="93" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>9.3450250332e-11</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="150" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>pandapower</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>matpower</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>opendss</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td>0.0652660917301</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="18" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>4.14827587024e-05</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="66" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>cgmes</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>pypsa</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td>1.81898940355e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="176" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>2.3668806386e-16</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>powermodels</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td>2.78067486254e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="173" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>5.76648802965e-16</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>pandapower</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>4</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>matpower</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td>6.10107593502e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="168" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>2.25562523015e-16</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>4</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>cgmes</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td>6.10107593502e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="168" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>2.25562523015e-16</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>4</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>pypsa</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td>2.19793446509e-07</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="100" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>1.25530238875e-11</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="164" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>4</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>powermodels</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td>2.26781462309e-07</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="100" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>1.25525804543e-11</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="164" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>4</td>
-            </tr>
-            
-            <tr>
-              <td>cgmes</td>
-              <td>pandapower</td>
-              <td>core_bal_star_3bus.cgmes</td>
-              <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>cgmes</td>
-              <td>matpower</td>
-              <td>core_bal_star_3bus.cgmes</td>
-              <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>cgmes</td>
-              <td>opendss</td>
-              <td>core_bal_star_3bus.cgmes</td>
-              <td>Balanced</td>
-              <td>0.0911481082074</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="16" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>3.89769900321e-05</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="66" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>cgmes</td>
-              <td>cgmes</td>
-              <td>core_bal_star_3bus.cgmes</td>
-              <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
-              <td>cgmes</td>
-              <td>pypsa</td>
-              <td>core_bal_star_3bus.cgmes</td>
-              <td>Balanced</td>
-              <td>5.95185931535e-07</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="93" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>9.34503397739e-11</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="150" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>3</td>
-            </tr>
-            
-            <tr>
               <td>cgmes</td>
               <td>powermodels</td>
               <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
-              <td>6.16672171273e-07</td>
+              <td>6.16672281563e-07</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="93" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
               <td>9.3450250332e-11</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="150" height="10" rx="5" fill="#059669"></rect></svg></td>
@@ -917,9 +933,9 @@
               <td>matpower</td>
               <td>core_bal_radial_3bus.cgmes</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>5.53224029345e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="169" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.2357740779e-15</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -989,9 +1005,9 @@
               <td>matpower</td>
               <td>core_bal_ring_4bus.cgmes</td>
               <td>Balanced</td>
-              <td>6.10107593502e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="168" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>2.25562523015e-16</td>
+              <td>7.4998854427e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="167" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>6.13810275766e-16</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -1049,9 +1065,9 @@
               <td>matpower</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>3.6662903532e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="172" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>9.36943927174e-15</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -1121,9 +1137,9 @@
               <td>matpower</td>
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>5.53224029345e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="169" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.2357740779e-15</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -1193,9 +1209,9 @@
               <td>matpower</td>
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
-              <td>6.10107593502e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="168" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>2.25562523015e-16</td>
+              <td>7.4998854427e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="167" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>6.13810275766e-16</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -1289,9 +1305,9 @@
               <td>pandapower</td>
               <td>minimal_radial</td>
               <td>Balanced Subset</td>
-              <td>0.000218512564809</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="55" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0.000931524192616</td>
+              <td>0.000239770132898</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="54" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0.000931571971601</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="45" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -1301,9 +1317,9 @@
               <td>powermodels</td>
               <td>minimal_radial</td>
               <td>Balanced Subset</td>
-              <td>6.86639507574e-14</td>
+              <td>2.22328640353e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>6.67036704689e-16</td>
+              <td>1.45864664714e-15</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -1313,9 +1329,9 @@
               <td>opendss</td>
               <td>minimal_radial.pandapower</td>
               <td>Balanced Subset</td>
-              <td>0.000202975151659</td>
+              <td>0.000224237794403</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="55" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0.000135355583611</td>
+              <td>0.00013537808475</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="58" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -1385,9 +1401,9 @@
               <td>pandapower</td>
               <td>minimal_chain</td>
               <td>Balanced Subset</td>
-              <td>0.000197742150586</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="56" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0.000973850493781</td>
+              <td>0.000211267312533</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="55" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>0.000973872409871</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="45" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -1477,15 +1493,27 @@
             </tr>
             
             <tr>
-              <td>powermodels.jl</td>
-              <td>powermodels</td>
-              <td>case6_powermodels_pkg</td>
+              <td>pm.jl</td>
+              <td>pandapower</td>
+              <td>case30_pmjl_pkg</td>
               <td>Balanced</td>
-              <td>4.41223582364e-13</td>
+              <td>0</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>5.11787526652e-16</td>
+              <td>0</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>6</td>
+              <td>30</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa-eur</td>
+              <td>pandapower</td>
+              <td>pypsa_eur_full_base_island_validated</td>
+              <td>Balanced</td>
+              <td>2.10082452811e-08</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="115" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>1.44642076094e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="148" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>5</td>
             </tr>
             
         </tbody>
@@ -1860,6 +1888,18 @@
             
             <tr>
               <td>opendss</td>
+              <td>pandapower</td>
+              <td>minimal_unbalanced_branch</td>
+              <td>3-Phase Unbalanced</td>
+              <td>1.49577897004e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="147" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>8.20082949271e-06</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="76" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>9</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
               <td>powermodelsdistribution</td>
               <td>minimal_unbalanced_branch</td>
               <td>3-Phase Unbalanced</td>
@@ -1915,10 +1955,19 @@
             </article>
             
             <article class="cap-card">
-              <h3>powermodels</h3>
-              <p>Balanced PowerModels JSON export is validated with Julia AC power flow.</p>
+              <h3>pandapower_split</h3>
+              <p>Experimental OpenDSS-focused phase-split pandapower export path. It preserves per-phase buses and standard pandapower ZIP/current loads without modifying the existing pandapower route.</p>
               <ul>
-                <li>Balanced: import=no, export=yes, validation=yes</li>
+                <li>Balanced: import=no, export=no, validation=no</li>
+                <li>Unbalanced: import=no, export=yes, validation=yes</li>
+              </ul>
+            </article>
+            
+            <article class="cap-card">
+              <h3>powermodels</h3>
+              <p>Balanced PowerModels MATPOWER-compatible import and JSON export are validated with Julia AC power flow, including package-native pm.jl test-network routes.</p>
+              <ul>
+                <li>Balanced: import=yes, export=yes, validation=yes</li>
                 <li>Unbalanced: import=no, export=no, validation=no</li>
               </ul>
             </article>
@@ -1933,10 +1982,19 @@
             </article>
             
             <article class="cap-card">
-              <h3>pypower</h3>
-              <p>Planned via the MATPOWER-style balanced exchange contract.</p>
+              <h3>powersystems</h3>
+              <p>Balanced MATPOWER-compatible import/export route targeting PowerSystems.jl with validation via PowerSimulations.jl AC power flow.</p>
               <ul>
-                <li>Balanced: import=no, export=no, validation=no</li>
+                <li>Balanced: import=yes, export=yes, validation=yes</li>
+                <li>Unbalanced: import=no, export=no, validation=no</li>
+              </ul>
+            </article>
+            
+            <article class="cap-card">
+              <h3>pypower</h3>
+              <p>Balanced PYPOWER-style Python case import is supported. Validation currently targets static network import into pandapower for the signed-off balanced subset, including transformer branches represented through the imported branch data.</p>
+              <ul>
+                <li>Balanced: import=yes, export=no, validation=yes</li>
                 <li>Unbalanced: import=no, export=no, validation=no</li>
               </ul>
             </article>
@@ -1989,8 +2047,8 @@
               <td>core_bal_star_3bus.pandapower</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>1.42108547152e-12</td>
+              <td>9.34248341141e-15</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2061,8 +2119,8 @@
               <td>core_bal_radial_3bus.pandapower</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>3.35162338134e-12</td>
-              <td>4.82821412627e-16</td>
+              <td>5.85928550211e-12</td>
+              <td>1.8900130712e-15</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2133,8 +2191,8 @@
               <td>core_bal_ring_4bus.pandapower</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>5.78339886065e-12</td>
-              <td>2.31256028223e-16</td>
+              <td>5.12379653438e-12</td>
+              <td>1.14974321493e-15</td>
               <td>4</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2217,8 +2275,8 @@
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0.0911480595758</td>
-              <td>3.89769900321e-05</td>
+              <td>0.0911480597098</td>
+              <td>3.89769900322e-05</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2229,8 +2287,8 @@
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>4.88519557909e-08</td>
-              <td>7.62336912265e-12</td>
+              <td>4.88541519542e-08</td>
+              <td>7.62236929052e-12</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2241,8 +2299,8 @@
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>5.55746769635e-07</td>
-              <td>8.72918302272e-11</td>
+              <td>5.5574649058e-07</td>
+              <td>8.72918101187e-11</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2253,8 +2311,8 @@
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>5.68129867996e-07</td>
-              <td>8.72917442734e-11</td>
+              <td>5.68133236104e-07</td>
+              <td>8.72918266121e-11</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2289,7 +2347,7 @@
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0.0652657923826</td>
+              <td>0.0652657923724</td>
               <td>4.14827587025e-05</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
@@ -2301,8 +2359,8 @@
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>3.03150794802e-07</td>
-              <td>4.23772022728e-11</td>
+              <td>3.03161130419e-07</td>
+              <td>4.237946585e-11</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2313,8 +2371,8 @@
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>3.03151085703e-07</td>
-              <td>4.23772791181e-11</td>
+              <td>3.03159043946e-07</td>
+              <td>4.23784154659e-11</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2325,8 +2383,8 @@
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>3.0314935095e-07</td>
-              <td>4.23771849871e-11</td>
+              <td>3.03157691487e-07</td>
+              <td>4.2378401311e-11</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2361,236 +2419,236 @@
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-failed">failed</span></td>
-              <td>0.106332156567</td>
-              <td>4.85200664672e-05</td>
-              <td>4</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>matpower</td>
-              <td>cgmes</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>2.31066330384e-08</td>
-              <td>1.30089905486e-12</td>
-              <td>4</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>matpower</td>
-              <td>pypsa</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>1.9874347205e-07</td>
-              <td>1.17953835595e-11</td>
-              <td>4</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>matpower</td>
-              <td>powermodels</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>2.03755849249e-07</td>
-              <td>1.17951598844e-11</td>
-              <td>4</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>pandapower</td>
-              <td>core_bal_star_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>matpower</td>
-              <td>core_bal_star_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>opendss</td>
-              <td>core_bal_star_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>0.0911481082074</td>
-              <td>3.89769900321e-05</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>cgmes</td>
-              <td>core_bal_star_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>pypsa</td>
-              <td>core_bal_star_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>5.95185931535e-07</td>
-              <td>9.34503397739e-11</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>powermodels</td>
-              <td>core_bal_star_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>6.16672171273e-07</td>
-              <td>9.3450250332e-11</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>pandapower</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>matpower</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>opendss</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>0.0652660917301</td>
-              <td>4.14827587024e-05</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>cgmes</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>pypsa</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>1.81898940355e-12</td>
-              <td>2.3668806386e-16</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>powermodels</td>
-              <td>core_bal_radial_3bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>2.78067486254e-12</td>
-              <td>5.76648802965e-16</td>
-              <td>3</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>pandapower</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
-              <td>4</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>matpower</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>6.10107593502e-12</td>
-              <td>2.25562523015e-16</td>
-              <td>4</td>
-              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
-            </tr>
-            
-            <tr>
-              <td>opendss</td>
-              <td>opendss</td>
-              <td>core_bal_ring_4bus</td>
-              <td>Balanced</td>
-              <td><span class="pill pill-failed">failed</span></td>
-              <td>0.106332179496</td>
+              <td>0.106332156627</td>
               <td>4.85200664673e-05</td>
               <td>4</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
             <tr>
+              <td>matpower</td>
+              <td>cgmes</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>2.30893760588e-08</td>
+              <td>1.30039305467e-12</td>
+              <td>4</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>matpower</td>
+              <td>pypsa</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>1.98749488531e-07</td>
+              <td>1.17956555727e-11</td>
+              <td>4</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>matpower</td>
+              <td>powermodels</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>2.0377165996e-07</td>
+              <td>1.1795377911e-11</td>
+              <td>4</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>core_bal_star_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0</td>
+              <td>0</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>matpower</td>
+              <td>core_bal_star_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>9.09494701773e-13</td>
+              <td>9.40399181322e-15</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>opendss</td>
+              <td>core_bal_star_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>2.28435937372e-05</td>
+              <td>3.9042627192e-05</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>cgmes</td>
+              <td>core_bal_star_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0</td>
+              <td>0</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pypsa</td>
+              <td>core_bal_star_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>5.93144998496e-07</td>
+              <td>9.31260115369e-11</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodels</td>
+              <td>core_bal_star_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>6.1449078169e-07</td>
+              <td>9.3125917725e-11</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0</td>
+              <td>0</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>matpower</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>5.53224029345e-12</td>
+              <td>2.47080227765e-15</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>opendss</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>2.40194881541e-05</td>
+              <td>4.1594377858e-05</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>cgmes</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0</td>
+              <td>0</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pypsa</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>3.63797880709e-12</td>
+              <td>4.54222692694e-16</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>powermodels</td>
+              <td>core_bal_radial_3bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>2.51862093613e-12</td>
+              <td>1.16061297877e-16</td>
+              <td>3</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>0</td>
+              <td>0</td>
+              <td>4</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>matpower</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>2.57243948431e-12</td>
+              <td>7.34038276892e-16</td>
+              <td>4</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>opendss</td>
+              <td>core_bal_ring_4bus</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>3.35706229145e-05</td>
+              <td>4.85720307424e-05</td>
+              <td>4</td>
+              <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
+            </tr>
+            
+            <tr>
               <td>opendss</td>
               <td>cgmes</td>
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>6.10107593502e-12</td>
-              <td>2.25562523015e-16</td>
+              <td>2.27373675443e-12</td>
+              <td>1.3791051634e-16</td>
               <td>4</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2601,8 +2659,8 @@
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>2.19793446509e-07</td>
-              <td>1.25530238875e-11</td>
+              <td>2.1886290567e-07</td>
+              <td>1.24962018707e-11</td>
               <td>4</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2613,8 +2671,8 @@
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>2.26781462309e-07</td>
-              <td>1.25525804543e-11</td>
+              <td>2.25824622544e-07</td>
+              <td>1.24964323305e-11</td>
               <td>4</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2637,8 +2695,8 @@
               <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>3.6662903532e-12</td>
+              <td>9.36943927174e-15</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2649,7 +2707,7 @@
               <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0.0911481082074</td>
+              <td>0.0911481080385</td>
               <td>3.89769900321e-05</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
@@ -2685,7 +2743,7 @@
               <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>6.16672171273e-07</td>
+              <td>6.16672281563e-07</td>
               <td>9.3450250332e-11</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
@@ -2709,8 +2767,8 @@
               <td>core_bal_radial_3bus.cgmes</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>5.53224029345e-12</td>
+              <td>3.2357740779e-15</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2781,8 +2839,8 @@
               <td>core_bal_ring_4bus.cgmes</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>6.10107593502e-12</td>
-              <td>2.25562523015e-16</td>
+              <td>7.4998854427e-12</td>
+              <td>6.13810275766e-16</td>
               <td>4</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2853,8 +2911,8 @@
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>3.6662903532e-12</td>
+              <td>9.36943927174e-15</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2925,8 +2983,8 @@
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>5.53224029345e-12</td>
+              <td>3.2357740779e-15</td>
               <td>3</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -2997,8 +3055,8 @@
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>6.10107593502e-12</td>
-              <td>2.25562523015e-16</td>
+              <td>7.4998854427e-12</td>
+              <td>6.13810275766e-16</td>
               <td>4</td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
@@ -3076,6 +3134,18 @@
             </tr>
             
             <tr>
+              <td>pypower</td>
+              <td>pandapower</td>
+              <td>DTU7K_26</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-not_validated">not_validated</span></td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>Skipped strict bilateral validation for DTU7K subnet 26 because one side did not converge: newtonpf() missing 1 required positional argument: &#x27;options&#x27;.</td>
+            </tr>
+            
+            <tr>
               <td>cgmes</td>
               <td>pandapower</td>
               <td>cgmes</td>
@@ -3105,8 +3175,8 @@
               <td>minimal_radial</td>
               <td>Balanced Subset</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0.000218512564809</td>
-              <td>0.000931524192616</td>
+              <td>0.000239770132898</td>
+              <td>0.000931571971601</td>
               <td>3</td>
               <td>Validated against OpenDSS source slack power and bus voltages for the currently supported subset.</td>
             </tr>
@@ -3117,8 +3187,8 @@
               <td>minimal_radial</td>
               <td>Balanced Subset</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>6.86639507574e-14</td>
-              <td>6.67036704689e-16</td>
+              <td>2.22328640353e-13</td>
+              <td>1.45864664714e-15</td>
               <td>3</td>
               <td>Balanced-equivalent export validated with Julia PowerModels AC power flow.</td>
             </tr>
@@ -3129,8 +3199,8 @@
               <td>minimal_radial.pandapower</td>
               <td>Balanced Subset</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0.000202975151659</td>
-              <td>0.000135355583611</td>
+              <td>0.000224237794403</td>
+              <td>0.00013537808475</td>
               <td>3</td>
               <td>Balanced pandapower re-import of the OpenDSS starter feeder exported back to OpenDSS and validated against pandapower AC power flow.</td>
             </tr>
@@ -3201,8 +3271,8 @@
               <td>minimal_chain</td>
               <td>Balanced Subset</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0.000197742150586</td>
-              <td>0.000973850493781</td>
+              <td>0.000211267312533</td>
+              <td>0.000973872409871</td>
               <td>4</td>
               <td>OpenDSS native chained feeder with two loads validated against source bus voltages through pandapower.</td>
             </tr>
@@ -3292,15 +3362,87 @@
             </tr>
             
             <tr>
-              <td>powermodels.jl</td>
-              <td>powermodels</td>
-              <td>case6_powermodels_pkg</td>
+              <td>pm.jl</td>
+              <td>pandapower</td>
+              <td>case30_pmjl_pkg</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>4.41223582364e-13</td>
-              <td>5.11787526652e-16</td>
-              <td>6</td>
-              <td>PowerModels.jl package MATPOWER case6 validated with Julia PowerModels AC power flow.</td>
+              <td>0</td>
+              <td>0</td>
+              <td>30</td>
+              <td>pm.jl package-native MATPOWER case30 imported into pandapower and validated against deterministic pandapower AC power flow.</td>
+            </tr>
+            
+            <tr>
+              <td>pm.jl</td>
+              <td>powermodels</td>
+              <td>case30_pmjl_pkg</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-failed">failed</span></td>
+              <td>1.29536481312</td>
+              <td>0.0249166819527</td>
+              <td>30</td>
+              <td>pm.jl package-native MATPOWER case30 imported to canonical, exported back to PowerModels JSON, and validated with Julia PowerModels AC power flow.</td>
+            </tr>
+            
+            <tr>
+              <td>powersystems.jl</td>
+              <td>powersystems</td>
+              <td>case30_powersystems_pkg</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-failed">failed</span></td>
+              <td>inf</td>
+              <td>inf</td>
+              <td>0</td>
+              <td>MATPOWER case30 imported to canonical, exported through the PowerSystems.jl route, and validated with PowerSimulations.jl AC power flow.</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa-eur</td>
+              <td>pandapower</td>
+              <td>pypsa_eur_base_synthetic_pf</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-not_validated">not_validated</span></td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>PyPSA-Eur artifact tracked from `pypsa_eur_base_synthetic_pf.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: PyPSA reference power flow failed: None.</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa-eur</td>
+              <td>pandapower</td>
+              <td>pypsa_eur_full_base_network</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-not_validated">not_validated</span></td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>PyPSA-Eur artifact tracked from `pypsa_eur_full_base_network.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: Requested by --skip-validation.</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa-eur</td>
+              <td>pandapower</td>
+              <td>pypsa_eur_full_base_pf_validated</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-not_validated">not_validated</span></td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>PyPSA-Eur artifact tracked from `pypsa_eur_full_base_pf_validated.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: PyPSA reference power flow failed: None.</td>
+            </tr>
+            
+            <tr>
+              <td>pypsa-eur</td>
+              <td>pandapower</td>
+              <td>pypsa_eur_full_base_island_validated</td>
+              <td>Balanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>2.10082452811e-08</td>
+              <td>1.44642076094e-10</td>
+              <td>5</td>
+              <td>PyPSA-Eur artifact tracked from `pypsa_eur_full_base_island_validated.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata.</td>
             </tr>
             
         </tbody>
@@ -3707,6 +3849,18 @@
               <td>0.00477785674599</td>
               <td>2721</td>
               <td>Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages.</td>
+            </tr>
+            
+            <tr>
+              <td>opendss</td>
+              <td>pandapower</td>
+              <td>minimal_unbalanced_branch</td>
+              <td>3-Phase Unbalanced</td>
+              <td><span class="pill pill-validated">validated</span></td>
+              <td>1.49577897004e-10</td>
+              <td>8.20082949271e-06</td>
+              <td>9</td>
+              <td>OpenDSS native branched unbalanced feeder validated against source node voltages through pandapower.</td>
             </tr>
             
             <tr>

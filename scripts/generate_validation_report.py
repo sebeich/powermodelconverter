@@ -23,10 +23,13 @@ from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
 from powermodelconverter.adapters.pandapower_import_adapter import PandapowerImportAdapter
 from powermodelconverter.adapters.powermodels_distribution_adapter import PowerModelsDistributionAdapter
 from powermodelconverter.adapters.powermodels_distribution_import_adapter import PowerModelsDistributionImportAdapter
+from powermodelconverter.adapters.powersystems_adapter import PowerSystemsExportAdapter
+from powermodelconverter.adapters.pypower_import_adapter import PypowerImportAdapter
 from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
 from powermodelconverter.adapters.pypsa_import_adapter import PypsaImportAdapter
-from powermodelconverter.core.model import CanonicalCase
 from powermodelconverter.core.capabilities import capability_rows
+from powermodelconverter.core.model import CanonicalCase
+from powermodelconverter.runtime import resolve_julia_binary
 from powermodelconverter.validation.powerflow import ValidationResult, ValidationService
 
 
@@ -35,6 +38,25 @@ DOCS_DIR = REPO_ROOT / "docs"
 JSON_REPORT = DOCS_DIR / "validation_report.json"
 MARKDOWN_REPORT = DOCS_DIR / "validation_report.md"
 HTML_REPORT = DOCS_DIR / "validation_report.html"
+JULIA_BINARY = resolve_julia_binary()
+PYPSA_EUR_VALIDATION_ARTIFACTS = (
+    REPO_ROOT / "src/powermodelconverter/data/exports/pypsa_eur_base_synthetic_pf.validation.json",
+    REPO_ROOT / "src/powermodelconverter/data/exports/pypsa_eur_full_base_network.validation.json",
+    REPO_ROOT / "src/powermodelconverter/data/exports/pypsa_eur_full_base_pf_validated.validation.json",
+    REPO_ROOT / "src/powermodelconverter/data/exports/pypsa_eur_full_base_island_validated.validation.json",
+)
+
+PM_JL_NATIVE_CASE_CANDIDATES = (
+    "case300.m",
+    "case118.m",
+    "case57.m",
+    "case39.m",
+    "case30.m",
+    "case24_ieee_rts.m",
+    "case14.m",
+    "case9.m",
+    "case6.m",
+)
 
 
 def configure_report_logging() -> None:
@@ -50,6 +72,19 @@ def configure_report_logging() -> None:
         "cim.cim2pp.from_cim",
     ):
         logging.getLogger(name).setLevel(logging.WARNING)
+
+
+def find_pm_jl_native_case() -> tuple[str, Path] | None:
+    base = REPO_ROOT / ".julia_depot/packages/PowerModels"
+    if not base.exists():
+        return None
+
+    for filename in PM_JL_NATIVE_CASE_CANDIDATES:
+        matches = sorted(base.glob(f"*/test/data/matpower/{filename}"))
+        if matches:
+            case_id = Path(filename).stem
+            return case_id, matches[0]
+    return None
 
 
 @dataclass(slots=True)
@@ -189,6 +224,44 @@ def main() -> None:
                 notes="Balanced export validated with Julia PowerModels AC power flow.",
             )
         )
+
+        # PYPOWER native balanced sample
+        pypower_source = REPO_ROOT / "input/DTU7K.py"
+        pypower_adapter = PypowerImportAdapter()
+        try:
+            pypower_reference = pypower_adapter.solve_source_case(pypower_source)
+            pypower_case = pypower_adapter.import_case(pypower_source)
+            records.append(
+                validation_record(
+                    case_id=pypower_case.case_id,
+                    source_tool="pypower",
+                    export_tool="pandapower",
+                    model_type="balanced",
+                    result=validator.validate_against_pandapower(
+                        pypower_case,
+                        reference_slack_p_mw=pypower_reference.slack_p_mw,
+                        reference_slack_q_mvar=pypower_reference.slack_q_mvar,
+                        reference_voltages=pypower_reference.voltages,
+                    ),
+                    notes=(
+                        "DTU7K connected-network PYPOWER source execution, defaulting to subnet 26, "
+                        "validated against the source-side solved operating point after import into pandapower."
+                    ),
+                )
+            )
+        except Exception as exc:
+            records.append(
+                unsupported_record(
+                    case_id="DTU7K_26",
+                    source_tool="pypower",
+                    export_tool="pandapower",
+                    model_type="balanced",
+                    notes=(
+                        "Skipped strict bilateral validation for DTU7K subnet 26 because one side did not converge: "
+                        f"{exc}."
+                    ),
+                )
+            )
 
         # CGMES official balanced sample
         cgmes_case = cgmes_import.import_case(
@@ -418,6 +491,12 @@ def main() -> None:
             ),
             (
                 "minimal_unbalanced_branch.dss",
+                "pandapower",
+                validate_opendss_source_to_pandapower,
+                "OpenDSS native branched unbalanced feeder validated against source node voltages through pandapower.",
+            ),
+            (
+                "minimal_unbalanced_branch.dss",
                 "powermodelsdistribution",
                 validate_opendss_source_to_powermodelsdistribution,
                 "OpenDSS native branched unbalanced feeder validated against source node voltages through PowerModelsDistribution.",
@@ -517,26 +596,55 @@ def main() -> None:
                 )
             )
 
-        # PowerModels.jl package-native MATPOWER case
-        for case_id, source, export_tool, notes in [
-            (
-                "case6",
-                REPO_ROOT / ".julia_depot/packages/PowerModels/VCmhH/test/data/matpower/case6.m",
-                "powermodels",
-                "PowerModels.jl package MATPOWER case6 validated with Julia PowerModels AC power flow.",
-            ),
-        ]:
+        # pm.jl package-native MATPOWER case (prefer the most complex available)
+        pmjl_native = find_pm_jl_native_case()
+        if pmjl_native is not None:
+            case_id, source = pmjl_native
             case = MatpowerImportAdapter().import_case(source)
             records.append(
                 validation_record(
-                    case_id=f"{case_id}_powermodels_pkg",
-                    source_tool="powermodels.jl",
-                    export_tool=export_tool,
+                    case_id=f"{case_id}_pmjl_pkg",
+                    source_tool="pm.jl",
+                    export_tool="pandapower",
                     model_type="balanced",
-                    result=validate_powermodels(case, pandapower, validator, tmpdir),
-                    notes=notes,
+                    result=self_validate_balanced(case, pandapower, validator),
+                    notes=(
+                        f"pm.jl package-native MATPOWER {case_id} imported into pandapower "
+                        "and validated against deterministic pandapower AC power flow."
+                    ),
                 )
             )
+            records.append(
+                validation_record(
+                    case_id=f"{case_id}_pmjl_pkg",
+                    source_tool="pm.jl",
+                    export_tool="powermodels",
+                    model_type="balanced",
+                    result=validate_powermodels(case, pandapower, validator, tmpdir),
+                    notes=(
+                        f"pm.jl package-native MATPOWER {case_id} imported to canonical, exported back to "
+                        "PowerModels JSON, and validated with Julia PowerModels AC power flow."
+                    ),
+                )
+            )
+            records.append(
+                validation_record(
+                    case_id=f"{case_id}_powersystems_pkg",
+                    source_tool="powersystems.jl",
+                    export_tool="powersystems",
+                    model_type="balanced",
+                    result=safe_validate_powersystems(case, validator, tmpdir),
+                    notes=(
+                        f"MATPOWER {case_id} imported to canonical, exported through the PowerSystems.jl route, "
+                        "and validated with PowerSimulations.jl AC power flow."
+                    ),
+                )
+            )
+
+        for artifact in PYPSA_EUR_VALIDATION_ARTIFACTS:
+            record = load_pypsa_eur_validation_record(artifact)
+            if record is not None:
+                records.append(record)
 
         summary = build_summary(records)
         payload = {
@@ -582,10 +690,48 @@ def validate_powermodels(
     return validator.validate_powermodels_export(
         case,
         powermodels_json=path,
-        julia_binary=str(Path.home() / ".julia/juliaup/julia-1.12.3+0.x64.linux.gnu/bin/julia"),
+        julia_binary=JULIA_BINARY,
         julia_script=REPO_ROOT / "src/powermodelconverter/julia/run_powermodels_pf.jl",
         julia_depot=REPO_ROOT / ".julia_depot",
     )
+
+
+def validate_powersystems(
+    case: Any,
+    validator: ValidationService,
+    tmpdir: Path,
+) -> ValidationResult:
+    destination = tmpdir / f"{case.case_id}.powersystems.m"
+    path = PowerSystemsExportAdapter().export_case(case, destination)
+    return validator.validate_powersystems_export(
+        case,
+        powersystems_case=path,
+        julia_binary=JULIA_BINARY,
+        julia_script=REPO_ROOT / "src/powermodelconverter/julia_psi/run_powersimulations_pf.jl",
+        julia_depot=REPO_ROOT / ".julia_depot",
+        julia_project=REPO_ROOT / "src/powermodelconverter/julia_psi",
+    )
+
+
+def safe_validate_powersystems(
+    case: Any,
+    validator: ValidationService,
+    tmpdir: Path,
+) -> ValidationResult:
+    try:
+        return validate_powersystems(case, validator, tmpdir)
+    except Exception as exc:
+        return ValidationResult(
+            case_id=case.case_id,
+            passed=False,
+            slack_delta_mva=math.inf,
+            max_voltage_delta_pu=math.inf,
+            details={
+                "compared_buses": 0,
+                "backend": "powersimulations",
+                "error": str(exc),
+            },
+        )
 
 
 def validate_powermodelsdistribution(
@@ -599,7 +745,7 @@ def validate_powermodelsdistribution(
     return validator.validate_powermodelsdistribution_export(
         case,
         pmd_input_path=path,
-        julia_binary=str(Path.home() / ".julia/juliaup/julia-1.12.3+0.x64.linux.gnu/bin/julia"),
+        julia_binary=JULIA_BINARY,
         julia_script=REPO_ROOT / "src/powermodelconverter/julia_pmd/run_powermodels_distribution_pf.jl",
         julia_depot=REPO_ROOT / ".julia_depot",
         julia_project=REPO_ROOT / "src/powermodelconverter/julia_pmd",
@@ -622,7 +768,7 @@ def validate_powermodelsdistribution_from_pandapower(
     return validator.validate_powermodelsdistribution_export(
         case,
         pmd_input_path=path,
-        julia_binary=str(Path.home() / ".julia/juliaup/julia-1.12.3+0.x64.linux.gnu/bin/julia"),
+        julia_binary=JULIA_BINARY,
         julia_script=REPO_ROOT / "src/powermodelconverter/julia_pmd/run_powermodels_distribution_pf.jl",
         julia_depot=REPO_ROOT / ".julia_depot",
         julia_project=REPO_ROOT / "src/powermodelconverter/julia_pmd",
@@ -648,7 +794,7 @@ def validate_matpower_export(
     validator: ValidationService,
     tmpdir: Path,
 ) -> ValidationResult:
-    destination = tmpdir / f"{case.case_id}.mat"
+    destination = tmpdir / f"{case.case_id}.m"
     path = MatpowerExportAdapter().export_case(case, destination)
     reimported = MatpowerImportAdapter().import_case(path)
     reference = PandapowerAdapter().run_power_flow(case)
@@ -686,6 +832,8 @@ def validate_opendss_source_to_pandapower(
     tmpdir: Path,
 ) -> ValidationResult:
     del tmpdir
+    if case.is_unbalanced:
+        return validator.validate_opendss_unbalanced_roundtrip(case, reference)
     return validator.validate_opendss_roundtrip(case, reference)
 
 
@@ -751,7 +899,7 @@ def materialize_balanced_source_case(
         path = pandapower.export_json(case, tmpdir / f"{case.case_id}.pandapower.json")
         return PandapowerImportAdapter().import_case(path)
     if source_tool == "matpower":
-        path = MatpowerExportAdapter().export_case(case, tmpdir / f"{case.case_id}.mat")
+        path = MatpowerExportAdapter().export_case(case, tmpdir / f"{case.case_id}.m")
         return MatpowerImportAdapter().import_case(path)
     if source_tool == "opendss":
         path = OpenDSSExportAdapter().export_case(case, tmpdir / f"{case.case_id}.dss")
@@ -1184,6 +1332,52 @@ def unsupported_record(
     )
 
 
+def load_pypsa_eur_validation_record(path: Path) -> RouteRecord | None:
+    if not path.exists():
+        return None
+    payload = json.loads(path.read_text())
+    validation = payload.get("validation", {})
+    validation_scope = payload.get("validation_scope", "ac_projection_against_pypsa")
+    case_id = path.stem.removesuffix(".validation")
+    notes = (
+        f"PyPSA-Eur artifact tracked from `{path.name}` with scope `{validation_scope}`. "
+        "See the JSON artifact for the full export metadata."
+    )
+    if validation.get("skipped"):
+        reason = validation.get("reason", "validation skipped")
+        return unsupported_record(
+            case_id=case_id,
+            source_tool="pypsa-eur",
+            export_tool="pandapower",
+            model_type="balanced",
+            notes=f"{notes} Validation skipped: {reason}.",
+        )
+    compared_points = None
+    details = validation.get("details", {})
+    for key in ("compared_buses", "compared_nodes", "passed_islands", "total_islands"):
+        value = details.get(key)
+        if value is not None:
+            compared_points = int(value)
+            break
+    if compared_points is None:
+        island_validation = payload.get("pandapower_island_validation", {})
+        total_islands = island_validation.get("total_islands")
+        if total_islands is not None:
+            compared_points = int(total_islands)
+    status = "validated" if validation.get("passed") else "failed"
+    return RouteRecord(
+        case_id=case_id,
+        source_tool="pypsa-eur",
+        export_tool="pandapower",
+        model_type="balanced",
+        status=status,
+        slack_delta_mva=validation.get("slack_delta_mva"),
+        max_voltage_delta_pu=validation.get("max_voltage_delta_pu"),
+        compared_points=compared_points,
+        notes=notes,
+    )
+
+
 def build_summary(records: list[RouteRecord]) -> ValidationSummary:
     validated = [record for record in records if record.status == "validated"]
     compared_counts = [record.compared_points for record in validated if record.compared_points is not None]
@@ -1221,6 +1415,7 @@ def render_markdown(summary: ValidationSummary, records: list[RouteRecord]) -> s
         f"- Largest route comparison set: {summary.max_compared_points}",
         "",
         "Every validated route records both the slack-power mismatch and the maximum deterministic complex-voltage mismatch across all matched buses or phase nodes.",
+        "The result numbers live in the route tables below and in `docs/validation_report.json` for machine-readable use.",
         "",
         "## Methodology",
         "",
@@ -1456,6 +1651,10 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
         <article class="analysis-card">
           <h3>Validation Rule</h3>
           <p>Every signed-off route is checked by slack-power agreement first and full complex-voltage agreement second. Native-origin routes provide the strongest fidelity evidence, while canonical common-subset routes demonstrate broad interchangeability. Rows labeled 3-phase unbalanced are validated node by node across explicit phase voltages, not just balanced bus magnitudes.</p>
+        </article>
+        <article class="analysis-card">
+          <h3>Where To Read The Numbers</h3>
+          <p>The numeric results are listed directly in the Balanced Precision, Unbalanced Precision, and Route Details tables below. The same per-route values are also written to <code>docs/validation_report.json</code> for machine-readable reporting.</p>
         </article>
         <article class="analysis-card">
           <h3>Deterministic Coverage</h3>
