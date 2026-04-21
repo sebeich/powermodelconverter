@@ -6,8 +6,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
 from powermodelconverter.core.model import CanonicalCase
+from powermodelconverter.core.registry import register_target_routes
+from powermodelconverter.validation.tolerances import BALANCED_TOLERANCES
 
 
 class OpenDSSExportAdapter:
@@ -193,3 +195,13 @@ class OpenDSSExportAdapter:
         if math.isnan(numeric):
             return fallback
         return numeric
+
+
+def export_opendss(case: CanonicalCase, output_path: str | Path, **kwargs: object) -> Path:
+    return OpenDSSExportAdapter().export_case(case, output_path, **kwargs)
+
+
+register_target_routes(target_tool="opendss", exporter=export_opendss, tolerances=BALANCED_TOLERANCES)
+
+
+__all__ = ["OpenDSSExportAdapter", "export_opendss"]

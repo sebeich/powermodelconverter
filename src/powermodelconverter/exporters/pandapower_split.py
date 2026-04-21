@@ -8,13 +8,15 @@ from typing import Any
 import opendssdirect as dss
 import pandapower as pp
 
-from powermodelconverter.adapters.opendss_adapter import (
+from powermodelconverter.importers.opendss import (
     _LENGTH_FACTORS_TO_KM,
     _PHASE_BY_NODE,
     OpenDSSImportAdapter,
 )
 from powermodelconverter.core.exceptions import ConversionError
 from powermodelconverter.core.model import CanonicalCase
+from powermodelconverter.core.registry import register_target_routes
+from powermodelconverter.validation.tolerances import UNBALANCED_PP_TOLERANCES
 
 
 class PandapowerSplitExportAdapter:
@@ -275,3 +277,17 @@ class PandapowerSplitExportAdapter:
 
     def _parse_bus_spec(self, value: str) -> tuple[str, list[int]]:
         return self._opendss._parse_bus_spec(value)
+
+
+def export_pandapower_split(case: CanonicalCase, output_path: str | Path, **_: object) -> Path:
+    return PandapowerSplitExportAdapter().export_case(case, output_path)
+
+
+register_target_routes(
+    target_tool="pandapower_split",
+    exporter=export_pandapower_split,
+    tolerances=UNBALANCED_PP_TOLERANCES,
+)
+
+
+__all__ = ["PandapowerSplitExportAdapter", "export_pandapower_split"]

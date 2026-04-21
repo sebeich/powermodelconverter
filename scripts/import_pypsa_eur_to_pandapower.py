@@ -15,8 +15,8 @@ import pandapower as pp
 from pandapower import toolbox as pp_toolbox
 import pypsa
 
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
-from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
+from powermodelconverter.importers.pypsa import PypsaAdapter
 
 
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)

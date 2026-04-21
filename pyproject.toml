@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Validation-first power system model conversion platform"
 readme = "README.md"
 requires-python = ">=3.12"
-license = "BSD-3-Clause"
+license = {text = "BSD-3-Clause"}
 dependencies = [
   "lxml>=6.0",
   "matpowercaseframes>=2.0.3",
@@ -20,6 +20,9 @@ dependencies = [
   "pytest>=9.0",
   "simbench>=1.6.1",
 ]
+
+[project.optional-dependencies]
+dev = []
 
 [project.scripts]
 pmc = "powermodelconverter.cli.main:main"

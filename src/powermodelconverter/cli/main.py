@@ -2,32 +2,51 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import asdict
+import importlib.util
 import json
 import math
 from pathlib import Path
+import re
+import sys
 from tempfile import TemporaryDirectory
+from datetime import datetime, timezone
 from typing import Any
 
-from powermodelconverter.adapters.cgmes_export_adapter import CGMESExportAdapter
-from powermodelconverter.adapters.cgmes_import_adapter import CGMESImportAdapter
-from powermodelconverter.adapters.matpower_adapter import MatpowerImportAdapter
-from powermodelconverter.adapters.opendss_export_adapter import OpenDSSExportAdapter
-from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
-from powermodelconverter.adapters.pandapower_import_adapter import PandapowerImportAdapter
-from powermodelconverter.adapters.pandapower_split_export_adapter import PandapowerSplitExportAdapter
-from powermodelconverter.adapters.powermodels_distribution_adapter import PowerModelsDistributionAdapter
-from powermodelconverter.adapters.powermodels_distribution_import_adapter import PowerModelsDistributionImportAdapter
-from powermodelconverter.adapters.powersystems_adapter import PowerSystemsExportAdapter, PowerSystemsImportAdapter
-from powermodelconverter.adapters.pypower_import_adapter import PypowerImportAdapter
-from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
-from powermodelconverter.adapters.pypsa_import_adapter import PypsaImportAdapter
-from powermodelconverter.adapters.simbench_adapter import SimbenchImportAdapter
+from powermodelconverter.exporters.cgmes import CGMESExportAdapter
+from powermodelconverter.exporters.matpower import MatpowerExportAdapter
+from powermodelconverter.importers.cgmes import CGMESImportAdapter
+from powermodelconverter.importers.matpower import MatpowerImportAdapter
+from powermodelconverter.exporters.opendss import OpenDSSExportAdapter
+from powermodelconverter.importers.opendss import OpenDSSImportAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
+from powermodelconverter.importers.pandapower_json import PandapowerImportAdapter
+from powermodelconverter.exporters.pandapower_split import PandapowerSplitExportAdapter
+from powermodelconverter.exporters.powermodels_distribution import PowerModelsDistributionAdapter
+from powermodelconverter.importers.powermodels_distribution import PowerModelsDistributionImportAdapter
+from powermodelconverter.exporters.powersystems import PowerSystemsExportAdapter
+from powermodelconverter.importers.powersystems import PowerSystemsImportAdapter
+from powermodelconverter.importers.pypower import PypowerImportAdapter
+from powermodelconverter.importers.pypsa import PypsaAdapter
+from powermodelconverter.importers.pypsa import PypsaImportAdapter
+from powermodelconverter.importers.simbench import SimbenchImportAdapter
 from powermodelconverter.core.capabilities import capability_rows
 from powermodelconverter.core.exceptions import ConversionError
 from powermodelconverter.core.model import CanonicalCase
+from powermodelconverter.core.registry import Route, ensure_routes_loaded, get_routes
+from powermodelconverter.report import generate_full_report, list_report_records, merge_partial_results
 from powermodelconverter.runtime import resolve_julia_binary
 from powermodelconverter.validation.powerflow import ValidationResult, ValidationService
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_EXPORT_DIR = REPO_ROOT / "src" / "powermodelconverter" / "data" / "exports"
+DEFAULT_REPORT_PATH = REPO_ROOT / "docs" / "validation_report.json"
+DEFAULT_JULIA_SCRIPT = REPO_ROOT / "src" / "powermodelconverter" / "julia" / "run_powermodels_pf.jl"
+DEFAULT_JULIA_DEPOT = REPO_ROOT / ".julia_depot"
+DEFAULT_JULIA_PSI_SCRIPT = REPO_ROOT / "src" / "powermodelconverter" / "julia_psi" / "run_powersimulations_pf.jl"
+DEFAULT_JULIA_PSI_PROJECT = REPO_ROOT / "src" / "powermodelconverter" / "julia_psi"
+DEFAULT_JULIA_PMD_SCRIPT = REPO_ROOT / "src" / "powermodelconverter" / "julia_pmd" / "run_powermodels_distribution_pf.jl"
+DEFAULT_JULIA_PMD_PROJECT = REPO_ROOT / "src" / "powermodelconverter" / "julia_pmd"
+LEGACY_REPORT_SCRIPT = REPO_ROOT / "scripts" / "generate_validation_report.py"
 
 
 SOURCE_FORMATS = [
@@ -60,10 +79,31 @@ def build_parser() -> argparse.ArgumentParser:
     caps = subparsers.add_parser("capabilities", help="Show supported balanced/unbalanced routes")
     caps.add_argument("--format", choices=["json"], default="json")
 
+    validate_route = subparsers.add_parser("validate-route", help="Validate one registered route/case pair")
+    validate_route.add_argument("--source", required=True)
+    validate_route.add_argument("--target", required=True)
+    validate_route.add_argument("--case", required=True)
+    validate_route.add_argument("--output", required=True)
+    add_runtime_arguments(validate_route)
+
+    validate_batch = subparsers.add_parser("validate-batch", help="Validate a filtered set of registered routes")
+    validate_batch.add_argument("--routes-filter", default="")
+    validate_batch.add_argument("--output", required=True)
+    validate_batch.add_argument("--worker-id", default="")
+    add_runtime_arguments(validate_batch)
+
+    report = subparsers.add_parser("report", help="Generate, inspect, or merge validation reports")
+    report.add_argument("action", nargs="?", choices=["merge"])
+    report.add_argument("--full", action="store_true")
+    report.add_argument("--dry-run", action="store_true")
+    report.add_argument("--input-dir")
+    report.add_argument("--existing", default=str(DEFAULT_REPORT_PATH))
+    report.add_argument("--output", default=str(DEFAULT_REPORT_PATH))
+
     validate = subparsers.add_parser("validate", help="Import, export, and validate all currently supported routes")
     add_source_arguments(validate)
     add_runtime_arguments(validate)
-    validate.add_argument("--export-dir", default="src/powermodelconverter/data/exports")
+    validate.add_argument("--export-dir", default=str(DEFAULT_EXPORT_DIR))
     validate.add_argument("--pypsa-export", action="store_true", help="Export and validate a PyPSA .nc file for balanced cases")
 
     precheck = subparsers.add_parser("precheck", help="Check whether a source case is supported for one target route")
@@ -78,7 +118,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_source_arguments(translate)
     translate.add_argument("--target-format", choices=TARGET_FORMATS, required=True)
     translate.add_argument("--output", help="Optional explicit output path for the chosen target artifact")
-    translate.add_argument("--export-dir", default="src/powermodelconverter/data/exports")
+    translate.add_argument("--export-dir", default=str(DEFAULT_EXPORT_DIR))
     translate.add_argument(
         "--skip-source-validation",
         action="store_true",
@@ -98,12 +138,12 @@ def add_runtime_arguments(parser: argparse.ArgumentParser) -> None:
         "--julia-binary",
         default=resolve_julia_binary(),
     )
-    parser.add_argument("--julia-script", default="src/powermodelconverter/julia/run_powermodels_pf.jl")
-    parser.add_argument("--julia-depot", default=".julia_depot")
-    parser.add_argument("--julia-psi-script", default="src/powermodelconverter/julia_psi/run_powersimulations_pf.jl")
-    parser.add_argument("--julia-psi-project", default="src/powermodelconverter/julia_psi")
-    parser.add_argument("--julia-pmd-script", default="src/powermodelconverter/julia_pmd/run_powermodels_distribution_pf.jl")
-    parser.add_argument("--julia-pmd-project", default="src/powermodelconverter/julia_pmd")
+    parser.add_argument("--julia-script", default=str(DEFAULT_JULIA_SCRIPT))
+    parser.add_argument("--julia-depot", default=str(DEFAULT_JULIA_DEPOT))
+    parser.add_argument("--julia-psi-script", default=str(DEFAULT_JULIA_PSI_SCRIPT))
+    parser.add_argument("--julia-psi-project", default=str(DEFAULT_JULIA_PSI_PROJECT))
+    parser.add_argument("--julia-pmd-script", default=str(DEFAULT_JULIA_PMD_SCRIPT))
+    parser.add_argument("--julia-pmd-project", default=str(DEFAULT_JULIA_PMD_PROJECT))
 
 
 def main() -> None:
@@ -114,12 +154,21 @@ def main() -> None:
         print(json.dumps(capability_rows(), indent=2))
         return
 
+    if args.command == "report":
+        result = run_report_command(args)
+        print(json.dumps(result, indent=2))
+        return
+
     pandapower = PandapowerAdapter()
     pypsa = PypsaAdapter()
     cgmes = CGMESExportAdapter()
     validator = ValidationService()
 
-    if args.command == "validate":
+    if args.command == "validate-route":
+        result = run_validate_route_command(args, pandapower, pypsa, cgmes, validator)
+    elif args.command == "validate-batch":
+        result = run_validate_batch_command(args, pandapower, pypsa, cgmes, validator)
+    elif args.command == "validate":
         result = run_validate_command(args, pandapower, pypsa, cgmes, validator)
     elif args.command == "precheck":
         loaded = load_case_with_reference(args, pandapower, pypsa, validator)
@@ -176,6 +225,312 @@ def main() -> None:
         raise ValueError(f"Unsupported command {args.command}")
 
     print(json.dumps(result, indent=2))
+
+
+def run_report_command(args: argparse.Namespace) -> dict[str, Any]:
+    ensure_routes_loaded()
+    if args.action == "merge":
+        payload = merge_partial_results(
+            input_dir=args.input_dir or ".",
+            output_path=args.output,
+            existing_report=args.existing,
+        )
+        return {
+            "mode": "merge",
+            "output": str(args.output),
+            "records": len(payload.get("records", [])),
+        }
+    if args.full:
+        payload = generate_full_report()
+        return {
+            "mode": "full",
+            "output": "docs/validation_report.json",
+            "records": len(payload.get("records", [])),
+            "summary": payload.get("summary", {}),
+        }
+    if args.dry_run:
+        records = list_report_records(args.existing)
+        index = {
+            (str(record.get("source_tool", "")), str(record.get("export_tool", "")), str(record.get("case_id", ""))): record
+            for record in records
+        }
+        route_rows = []
+        for route in get_routes():
+            case_id = route.test_cases[0] if route.test_cases else ""
+            existing = index.get((route.source_tool, route.target_tool, case_id))
+            staleness = describe_route_staleness(route, existing)
+            route_rows.append(
+                {
+                    "route_id": route.route_id,
+                    "source_tool": route.source_tool,
+                    "target_tool": route.target_tool,
+                    "case_id": case_id,
+                    "model_type": route.model_type,
+                    "requires": route.requires,
+                    "result_present": existing is not None,
+                    "status": None if existing is None else existing.get("status"),
+                    "timestamp": None if existing is None else existing.get("timestamp"),
+                    "stale": staleness["stale"],
+                    "staleness_reason": staleness["reason"],
+                }
+            )
+        return {"mode": "dry-run", "routes": route_rows, "count": len(route_rows)}
+    raise ValueError("Use `report --full`, `report --dry-run`, or `report merge ...`.")
+
+
+def run_validate_route_command(
+    args: argparse.Namespace,
+    pandapower: PandapowerAdapter,
+    pypsa: PypsaAdapter,
+    cgmes: CGMESExportAdapter,
+    validator: ValidationService,
+) -> dict[str, Any]:
+    route = find_registered_route(args.source, args.target, args.case)
+    loaded = load_registered_case_with_reference(route, pandapower, pypsa, cgmes, validator)
+    exported_path, target_validation = export_and_validate_target(
+        loaded["case"],
+        route.target_tool,
+        Path(args.output),
+        loaded["source_reference"],
+        pandapower,
+        pypsa,
+        cgmes,
+        validator,
+        args,
+    )
+    record = validation_result_to_record(
+        case_id=args.case,
+        source_tool=route.source_tool,
+        export_tool=route.target_tool,
+        model_type=route.model_type,
+        notes=route.notes,
+        result=target_validation,
+        worker_id="",
+    )
+    record["output"] = str(exported_path)
+    return record
+
+
+def run_validate_batch_command(
+    args: argparse.Namespace,
+    pandapower: PandapowerAdapter,
+    pypsa: PypsaAdapter,
+    cgmes: CGMESExportAdapter,
+    validator: ValidationService,
+) -> dict[str, Any]:
+    routes = filter_registered_routes(args.routes_filter)
+    records: list[dict[str, Any]] = []
+    for route in routes:
+        case_id = route.test_cases[0] if route.test_cases else ""
+        try:
+            loaded = load_registered_case_with_reference(route, pandapower, pypsa, cgmes, validator)
+            output_path = Path(args.output).parent / f"{route.source_tool}_{route.target_tool}_{sanitize_case_id(case_id)}.artifact"
+            _, target_validation = export_and_validate_target(
+                loaded["case"],
+                route.target_tool,
+                output_path,
+                loaded["source_reference"],
+                pandapower,
+                pypsa,
+                cgmes,
+                validator,
+                args,
+            )
+            records.append(
+                validation_result_to_record(
+                    case_id=case_id,
+                    source_tool=route.source_tool,
+                    export_tool=route.target_tool,
+                    model_type=route.model_type,
+                    notes=route.notes,
+                    result=target_validation,
+                    worker_id=args.worker_id,
+                )
+            )
+        except Exception as exc:
+            records.append(
+                {
+                    "case_id": case_id,
+                    "source_tool": route.source_tool,
+                    "export_tool": route.target_tool,
+                    "model_type": route.model_type,
+                    "status": "error",
+                    "slack_delta_mva": None,
+                    "max_voltage_delta_pu": None,
+                    "compared_points": 0,
+                    "notes": f"{route.notes} Error: {exc}".strip(),
+                    "timestamp": ValidationResult(
+                        case_id=case_id,
+                        passed=False,
+                        slack_delta_mva=0.0,
+                        max_voltage_delta_pu=0.0,
+                    ).timestamp,
+                    "duration_seconds": 0.0,
+                    "worker_id": args.worker_id,
+                }
+            )
+    output_file = Path(args.output)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"records": records}
+    output_file.write_text(json.dumps(payload, indent=2))
+    return {"output": str(output_file), "records": len(records)}
+
+
+def load_registered_case_with_reference(
+    route: Route,
+    pandapower: PandapowerAdapter,
+    pypsa: PypsaAdapter,
+    cgmes: CGMESExportAdapter,
+    validator: ValidationService,
+) -> dict[str, Any]:
+    source_tool = route.source_tool
+    case_id = route.test_cases[0] if route.test_cases else ""
+    normalized_source_tool = {
+        "pm.jl": "matpower",
+        "powersystems.jl": "matpower",
+    }.get(source_tool, source_tool)
+
+    try:
+        source_ref = resolve_registered_case_source(route)
+        return load_case_with_reference(
+            argparse.Namespace(source=str(source_ref), source_format=normalized_source_tool),
+            pandapower,
+            pypsa,
+            validator,
+        )
+    except ValueError:
+        pass
+
+    legacy = load_legacy_report_module()
+
+    def balanced_reference(case: CanonicalCase) -> dict[str, Any]:
+        case.source_path = None
+        reference = pandapower.run_power_flow(case)
+        return {
+            "case": case,
+            "initial_validation": validate_against_pandapower_reference(case, reference, validator),
+            "source_reference": {"backend": "pandapower", "reference_net": reference},
+        }
+
+    def unbalanced_reference(case: CanonicalCase) -> dict[str, Any]:
+        case.source_path = None
+        reference = pandapower.run_power_flow_3ph(case)
+        return {
+            "case": case,
+            "initial_validation": validator.validate_pandapower_unbalanced_roundtrip(case),
+            "source_reference": {"backend": "pandapower_3ph", "reference_net": reference},
+        }
+
+    def find_case(cases: list[CanonicalCase], target_case_id: str) -> CanonicalCase:
+        for candidate in cases:
+            if candidate.case_id == target_case_id:
+                return candidate
+        raise ValueError(f"Legacy case builder could not find case {target_case_id}.")
+
+    with TemporaryDirectory(prefix="pmc_registered_case_") as tmp:
+        tmpdir = Path(tmp)
+
+        if case_id.startswith("core_bal_"):
+            base_case_id = case_id.removesuffix(".cgmes").removesuffix(".pandapower")
+            source_case = find_case(legacy.build_balanced_core_cases(), base_case_id)
+            materialized = legacy.materialize_balanced_source_case(
+                source_case,
+                source_tool=source_tool,
+                pandapower=pandapower,
+                pypsa=pypsa,
+                cgmes_export=cgmes,
+                tmpdir=tmpdir,
+            )
+            return balanced_reference(materialized)
+
+        if case_id.startswith("core_unb_"):
+            base_case_id = case_id.removesuffix(".pandapower").removesuffix("_pmd")
+            source_case = find_case(legacy.build_unbalanced_core_cases(), base_case_id)
+            materialized = legacy.materialize_unbalanced_source_case(
+                source_case,
+                source_tool=source_tool,
+                tmpdir=tmpdir,
+            )
+            return unbalanced_reference(materialized)
+
+        if source_tool == "pandapower":
+            if case_id == "cgmes_smoke":
+                return balanced_reference(legacy.build_cgmes_subset_case())
+            if case_id in {"case4gs", "case5", "case6ww", "case33bw"}:
+                case = CanonicalCase.from_pandapower(
+                    case_id=case_id,
+                    source_format="pandapower",
+                    net=getattr(legacy.pn, case_id)(),
+                )
+                return balanced_reference(case)
+            if case_id == "case9_from_matpower.pandapower":
+                case9 = MatpowerImportAdapter().import_case(REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m")
+                path = pandapower.export_json(case9, tmpdir / f"{case_id}.json")
+                return balanced_reference(PandapowerImportAdapter().import_case(path))
+            if case_id == "minimal_radial.pandapower":
+                imported = OpenDSSImportAdapter().import_case(REPO_ROOT / "src/powermodelconverter/data/samples/opendss/minimal_radial.dss")
+                path = pandapower.export_json(imported, tmpdir / f"{case_id}.json")
+                return balanced_reference(PandapowerImportAdapter().import_case(path))
+
+        if source_tool == "pypsa":
+            if case_id in {"pypsa_triangle_native", "pypsa_radial_native", "pypsa_five_bus_ring_native"}:
+                builders = {
+                    "pypsa_triangle_native": legacy.build_pypsa_triangle_network,
+                    "pypsa_radial_native": legacy.build_pypsa_radial_network,
+                    "pypsa_five_bus_ring_native": legacy.build_pypsa_five_bus_ring_network,
+                }
+                case, snapshot = legacy.build_pypsa_origin_case(case_id, builders[case_id], pypsa, tmpdir)
+                initial_validation = validator.validate_against_pandapower(
+                    case,
+                    reference_slack_p_mw=snapshot.slack_p_mw,
+                    reference_slack_q_mvar=snapshot.slack_q_mvar,
+                    reference_voltages=snapshot.voltages,
+                )
+                case.source_path = None
+                return {
+                    "case": case,
+                    "initial_validation": initial_validation,
+                    "source_reference": {"backend": "pypsa", "snapshot": snapshot},
+                }
+            if case_id == "case9_from_matpower.pandapower.pypsa":
+                case9 = MatpowerImportAdapter().import_case(REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m")
+                pp_path = pandapower.export_json(case9, tmpdir / "case9_from_matpower.pandapower.json")
+                pp_case = PandapowerImportAdapter().import_case(pp_path)
+                pypsa_path = pypsa.export_netcdf(pp_case, tmpdir / f"{case_id}.nc")
+                snapshot = pypsa.solve_source_case(pypsa_path)
+                case = PypsaImportAdapter().import_case(pypsa_path)
+                initial_validation = validator.validate_against_pandapower(
+                    case,
+                    reference_slack_p_mw=snapshot.slack_p_mw,
+                    reference_slack_q_mvar=snapshot.slack_q_mvar,
+                    reference_voltages=snapshot.voltages,
+                )
+                case.source_path = None
+                return {
+                    "case": case,
+                    "initial_validation": initial_validation,
+                    "source_reference": {"backend": "pypsa", "snapshot": snapshot},
+                }
+
+        if source_tool in {"pm.jl", "powersystems.jl"}:
+            pmjl_native = legacy.find_pm_jl_native_case()
+            if pmjl_native is None:
+                raise ValueError("Could not locate a PowerModels.jl package-native MATPOWER case.")
+            _, source = pmjl_native
+            case = MatpowerImportAdapter().import_case(source)
+            return balanced_reference(case)
+
+        raise ValueError(f"No registered-case materializer is defined for route {route.route_id}.")
+
+
+def load_legacy_report_module() -> Any:
+    spec = importlib.util.spec_from_file_location("pmc_legacy_generate_validation_report", LEGACY_REPORT_SCRIPT)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Could not load legacy report generator at {LEGACY_REPORT_SCRIPT}.")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def run_validate_command(
@@ -483,6 +838,49 @@ def detect_json_source_format(source_path: Path) -> str:
     )
 
 
+def describe_route_staleness(route: Route, existing: dict[str, Any] | None) -> dict[str, Any]:
+    if existing is None:
+        return {"stale": True, "reason": "missing result"}
+    timestamp_text = existing.get("timestamp")
+    if not timestamp_text:
+        return {"stale": None, "reason": "record has no timestamp"}
+    try:
+        validated_at = datetime.fromisoformat(str(timestamp_text).replace("Z", "+00:00"))
+    except ValueError:
+        return {"stale": None, "reason": f"invalid timestamp {timestamp_text}"}
+
+    source_files = route_source_files(route)
+    if not source_files:
+        return {"stale": None, "reason": "no importer/exporter source files available"}
+
+    latest_path = max(source_files, key=lambda path: path.stat().st_mtime)
+    latest_mtime = datetime.fromtimestamp(latest_path.stat().st_mtime, tz=timezone.utc)
+    if latest_mtime > validated_at.astimezone(timezone.utc):
+        return {
+            "stale": True,
+            "reason": f"{latest_path.name} modified after validation",
+        }
+    return {"stale": False, "reason": None}
+
+
+def route_source_files(route: Route) -> list[Path]:
+    files: list[Path] = []
+    for callable_obj in (route.importer, route.exporter):
+        if callable_obj is None:
+            continue
+        code = getattr(callable_obj, "__code__", None)
+        if code is None:
+            continue
+        path = Path(code.co_filename)
+        if path.exists():
+            files.append(path)
+    unique_files: list[Path] = []
+    for path in files:
+        if path not in unique_files:
+            unique_files.append(path)
+    return unique_files
+
+
 def build_precheck_result(
     case: CanonicalCase,
     target_format: str,
@@ -625,6 +1023,15 @@ def export_and_validate_target(
             return exported_path, None
         target_case = PandapowerImportAdapter().import_case(exported_path)
         target_validation = validate_pandapower_target(case, target_case, source_reference, pandapower, validator)
+        return exported_path, target_validation
+
+    if target_format == "matpower":
+        exported_path = MatpowerExportAdapter().export_case(case, output_path)
+        if not validate_target:
+            return exported_path, None
+        target_case = MatpowerImportAdapter().import_case(exported_path)
+        reference_net = pandapower.run_power_flow(case)
+        target_validation = validate_against_pandapower_reference(target_case, reference_net, validator)
         return exported_path, target_validation
 
     if target_format == "pandapower_split":
@@ -783,6 +1190,130 @@ def validate_powermodelsdistribution_target(
         reference_slack_q_mvar=reference_slack_q_mvar,
         reference_node_voltages=reference_node_voltages,
     )
+
+
+def find_registered_route(source_tool: str, target_tool: str, case_id: str) -> Route:
+    ensure_routes_loaded()
+    for route in get_routes(source=source_tool, target=target_tool):
+        if route.test_cases and route.test_cases[0] == case_id:
+            return route
+    raise ValueError(f"No registered route found for {source_tool} -> {target_tool} case {case_id}.")
+
+
+def filter_registered_routes(expression: str) -> list[Route]:
+    ensure_routes_loaded()
+    routes = get_routes()
+    expr = (expression or "").strip()
+    if not expr:
+        return routes
+    if expr == "not julia":
+        return [route for route in routes if not any(req.startswith("julia") for req in route.requires)]
+    filtered = routes
+    for part in [segment.strip() for segment in expr.split(",") if segment.strip()]:
+        if "!=" in part:
+            key, value = [item.strip() for item in part.split("!=", 1)]
+            if key == "target":
+                filtered = [route for route in filtered if route.target_tool != value]
+            elif key == "source":
+                filtered = [route for route in filtered if route.source_tool != value]
+            elif key == "model_type":
+                filtered = [route for route in filtered if route.model_type != value]
+            elif key == "requires":
+                filtered = [route for route in filtered if value not in route.requires]
+        elif "=" in part:
+            key, value = [item.strip() for item in part.split("=", 1)]
+            if key == "target":
+                filtered = [route for route in filtered if route.target_tool == value]
+            elif key == "source":
+                filtered = [route for route in filtered if route.source_tool == value]
+            elif key == "model_type":
+                filtered = [route for route in filtered if route.model_type == value]
+            elif key == "requires":
+                filtered = [route for route in filtered if value in route.requires]
+        elif part == "julia":
+            filtered = [route for route in filtered if any(req.startswith("julia") for req in route.requires)]
+    return filtered
+
+
+def resolve_registered_case_source(route: Route) -> str | Path:
+    case_id = route.test_cases[0] if route.test_cases else ""
+    sample_root = REPO_ROOT / "src" / "powermodelconverter" / "data" / "samples"
+    if route.source_tool == "matpower" and case_id == "case9":
+        return sample_root / "matpower/case9.m"
+    if route.source_tool == "opendss":
+        known = {
+            "minimal_radial": sample_root / "opendss/minimal_radial.dss",
+            "minimal_chain": sample_root / "opendss/minimal_chain.dss",
+            "minimal_unbalanced_3ph": sample_root / "opendss/minimal_unbalanced_3ph.dss",
+            "minimal_unbalanced_branch": sample_root / "opendss/minimal_unbalanced_branch.dss",
+            "IEEE13Nodeckt": sample_root / "opendss/IEEE13Nodeckt.dss",
+        }
+        if case_id in known:
+            return known[case_id]
+    if route.source_tool == "pandapower":
+        known = {
+            "ieee_european_lv_asymmetric": sample_root / "pandapower/ieee_european_lv_asymmetric.json",
+        }
+        if case_id in known:
+            return known[case_id]
+    if route.source_tool == "cgmes" and case_id == "cgmes":
+        return sample_root / "cgmes"
+    if route.source_tool == "pypsa" and case_id in {"case9", "case9_from_matpower.pandapower"}:
+        return sample_root / "matpower/case9.pypsa.nc"
+    if route.source_tool == "pypower":
+        if "26" in case_id:
+            return str(REPO_ROOT / "input" / "DTU7K.py") + "::26"
+        return REPO_ROOT / "input" / "DTU7K.py"
+    if route.source_tool == "simbench":
+        return "1-HV-mixed--0-no_sw"
+    if route.source_tool == "powersystems":
+        return sample_root / "matpower/case9.m"
+    if route.source_tool == "powermodelsdistribution":
+        return sample_root / "opendss/minimal_unbalanced_3ph.dss"
+    raise ValueError(f"No concrete source resolver is defined for route {route.route_id}.")
+
+
+def sanitize_case_id(case_id: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", case_id)
+
+
+def validation_result_to_record(
+    *,
+    case_id: str,
+    source_tool: str,
+    export_tool: str,
+    model_type: str,
+    notes: str,
+    result: ValidationResult | None,
+    worker_id: str,
+) -> dict[str, Any]:
+    compared_points = 0
+    if result is not None:
+        compared_points = int(
+            result.details.get("compared_buses")
+            or result.details.get("compared_nodes")
+            or result.details.get("compared_points")
+            or 0
+        )
+    return {
+        "case_id": case_id,
+        "source_tool": source_tool,
+        "export_tool": export_tool,
+        "model_type": model_type,
+        "status": "validated" if result and result.passed else "failed",
+        "slack_delta_mva": None if result is None else result.slack_delta_mva,
+        "max_voltage_delta_pu": None if result is None else result.max_voltage_delta_pu,
+        "compared_points": compared_points,
+        "notes": notes,
+        "timestamp": ValidationResult(
+            case_id=case_id,
+            passed=False,
+            slack_delta_mva=0.0,
+            max_voltage_delta_pu=0.0,
+        ).timestamp if result is None else result.timestamp,
+        "duration_seconds": 0.0 if result is None else result.duration_seconds,
+        "worker_id": worker_id,
+    }
 
 
 if __name__ == "__main__":

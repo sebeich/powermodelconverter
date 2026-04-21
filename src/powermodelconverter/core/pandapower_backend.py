@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import math
+from copy import deepcopy
 from typing import Any
 
 import numpy as np
@@ -33,12 +34,7 @@ class PandapowerAdapter:
         )
 
     def to_net(self, case: CanonicalCase) -> Any:
-        if "pandapower_json" in case.metadata:
-            return pp.from_json_string(case.metadata["pandapower_json"])
-        net = pp.create_empty_network(sn_mva=case.base_mva, f_hz=case.frequency_hz)
-        for name, table in case.tables.items():
-            setattr(net, name, table.copy())
-        return net
+        return deepcopy(case.net)
 
     def run_power_flow(self, case: CanonicalCase, **kwargs: Any) -> Any:
         net = self.to_net(case)

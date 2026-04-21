@@ -13,8 +13,8 @@ from typing import Any
 import opendssdirect as dss
 import pandapower as pp
 
-from powermodelconverter.adapters.base import ImportAdapter
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
+from powermodelconverter.core.contracts import ImportAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
 from powermodelconverter.core.exceptions import ConversionError
 from powermodelconverter.core.model import CanonicalCase
 
@@ -31,6 +31,7 @@ _LENGTH_FACTORS_TO_KM = {
 }
 
 _PHASE_BY_NODE = {1: "a", 2: "b", 3: "c"}
+_DSS_PATH_COMMAND = re.compile(r"^\s*(redirect|compile)\s+(.+?)\s*$", re.IGNORECASE)
 
 
 @dataclass(slots=True)
@@ -70,14 +71,15 @@ class OpenDSSImportAdapter(ImportAdapter):
         with self._prepared_source_path(path) as prepared:
             self._compile(prepared)
             dss.Solution.Solve()
-            net = self._build_pandapower_net(case_id=path.stem)
+            is_unbalanced = self._is_unbalanced_circuit()
+            net = self._build_pandapower_net(case_id=path.stem, is_unbalanced=is_unbalanced)
         return self._pandapower.to_canonical(
             net,
             case_id=path.stem,
             source_format=self.source_format,
             metadata={
                 "import_backend": "opendssdirect",
-                "is_unbalanced": self._is_unbalanced_circuit(),
+                "is_unbalanced": is_unbalanced,
                 "phase_count": 3,
             },
             source_path=path,
@@ -135,11 +137,11 @@ class OpenDSSImportAdapter(ImportAdapter):
                 if not requested.exists():
                     requested.symlink_to(resolved)
 
-    def _build_pandapower_net(self, case_id: str) -> Any:
+    def _build_pandapower_net(self, case_id: str, *, is_unbalanced: bool) -> Any:
         net = pp.create_empty_network(sn_mva=1.0, f_hz=60.0, name=case_id)
         bus_lookup = self._create_buses(net)
         self._create_ext_grids(net, bus_lookup)
-        self._create_lines(net, bus_lookup)
+        self._create_lines(net, bus_lookup, is_unbalanced=is_unbalanced)
         self._create_transformers(net, bus_lookup)
         self._create_capacitors(net, bus_lookup)
         self._create_loads(net, bus_lookup)
@@ -182,7 +184,7 @@ class OpenDSSImportAdapter(ImportAdapter):
             if not dss.Vsources.Next():
                 break
 
-    def _create_lines(self, net: Any, bus_lookup: dict[str, int]) -> None:
+    def _create_lines(self, net: Any, bus_lookup: dict[str, int], *, is_unbalanced: bool) -> None:
         if not dss.Lines.First():
             return
         while True:
@@ -200,6 +202,28 @@ class OpenDSSImportAdapter(ImportAdapter):
             x0_ohm = float(dss.Lines.X0()) * length
             c0_nf = float(dss.Lines.C0()) * length
             if self._is_switch_like_line(name, r_ohm, x_ohm, c_nf):
+                if is_unbalanced:
+                    # runpp_3ph cannot robustly solve through zero-impedance bus-bus switches,
+                    # so represent OpenDSS switch-like links as tiny physical lines instead.
+                    tiny_length_km = 0.001
+                    tiny_series_ohm = 1e-6
+                    pp.create_line_from_parameters(
+                        net,
+                        from_bus=bus_lookup[bus1],
+                        to_bus=bus_lookup[bus2],
+                        length_km=tiny_length_km,
+                        r_ohm_per_km=tiny_series_ohm / tiny_length_km,
+                        x_ohm_per_km=tiny_series_ohm / tiny_length_km,
+                        c_nf_per_km=0.0,
+                        max_i_ka=max(float(dss.Lines.NormAmps()) / 1000.0, 0.001),
+                        name=name,
+                        r0_ohm_per_km=tiny_series_ohm / tiny_length_km,
+                        x0_ohm_per_km=tiny_series_ohm / tiny_length_km,
+                        c0_nf_per_km=0.0,
+                    )
+                    if not dss.Lines.Next():
+                        break
+                    continue
                 pp.create_switch(
                     net,
                     bus=bus_lookup[bus1],
@@ -310,7 +334,7 @@ class OpenDSSImportAdapter(ImportAdapter):
                     tap_max=float(tap_max),
                     tap_step_percent=tap_step_percent,
                     phase_count=phase_count,
-                    is_regulator=bool(re.match(r"reg\d+[a-z]$", name, re.IGNORECASE)),
+                    is_regulator=bool(re.match(r"reg\d+[a-z]?$", name, re.IGNORECASE)),
                 )
             )
             if not dss.Transformers.Next():
@@ -335,7 +359,6 @@ class OpenDSSImportAdapter(ImportAdapter):
                     sn_mva=sum(item.sn_mva for item in group),
                     vn_hv_kv=first.vn_hv_kv,
                     vn_lv_kv=first.vn_lv_kv,
-                    # Small regulator impedances make pandapower's 3ph solver singular once taps are active.
                     vk_percent=max(max(item.vk_percent for item in group), 0.3),
                     vkr_percent=max(max(item.vkr_percent for item in group), 0.003),
                     tap_pos=sum(item.tap_pos for item in group) / len(group),
@@ -512,7 +535,12 @@ class OpenDSSImportAdapter(ImportAdapter):
         return bus_name, nodes
 
 
-_DSS_PATH_COMMAND = re.compile(r"^\s*(redirect|compile)\s+(.+?)\s*$", re.IGNORECASE)
+def import_opendss(path: str | Path, **kwargs: Any) -> CanonicalCase:
+    return OpenDSSImportAdapter().import_case(path, **kwargs)
+
+
+def solve_opendss_reference(path: str | Path) -> OpenDSSResultSnapshot:
+    return OpenDSSImportAdapter().solve_source_case(path)
 
 
 def _extract_dss_path_references(contents: str) -> list[str]:
@@ -544,3 +572,15 @@ def _resolve_case_insensitive_path(base_dir: Path, reference: str) -> Path | Non
         except StopIteration:
             return None
     return current
+
+
+__all__ = [
+    "OpenDSSImportAdapter",
+    "OpenDSSResultSnapshot",
+    "_TransformerSpec",
+    "_extract_dss_path_references",
+    "_is_absolute_dss_reference",
+    "_resolve_case_insensitive_path",
+    "import_opendss",
+    "solve_opendss_reference",
+]

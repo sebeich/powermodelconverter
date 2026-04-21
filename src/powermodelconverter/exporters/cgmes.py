@@ -7,8 +7,10 @@ from collections import OrderedDict
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
 from powermodelconverter.core.model import CanonicalCase
+from powermodelconverter.core.registry import register_target_routes
+from powermodelconverter.validation.tolerances import BALANCED_TOLERANCES
 
 
 RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -776,3 +778,13 @@ class CGMESExportAdapter:
 
     def _bus_name(self, value: object, fallback_idx: int) -> str:
         return self._name(value, f"BUS_{fallback_idx}")
+
+
+def export_cgmes(case: CanonicalCase, output_path: str | Path, **_: object) -> Path:
+    return CGMESExportAdapter().export_case(case, output_path)
+
+
+register_target_routes(target_tool="cgmes", exporter=export_cgmes, tolerances=BALANCED_TOLERANCES)
+
+
+__all__ = ["CGMESExportAdapter", "export_cgmes"]

@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter
-from powermodelconverter.adapters.powermodels_distribution_adapter import PowerModelsDistributionAdapter
+from powermodelconverter.importers.opendss import OpenDSSImportAdapter
+from powermodelconverter.exporters.powermodels_distribution import PowerModelsDistributionAdapter
 from powermodelconverter.runtime import resolve_julia_binary
 from powermodelconverter.validation.powerflow import ValidationService
 

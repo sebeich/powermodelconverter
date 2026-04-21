@@ -6,8 +6,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
 from powermodelconverter.core.model import CanonicalCase
+from powermodelconverter.core.registry import register_target_routes
+from powermodelconverter.validation.tolerances import UNBALANCED_PMD_TOLERANCES
 
 
 class PowerModelsDistributionAdapter:
@@ -153,3 +155,17 @@ class PowerModelsDistributionAdapter:
     def _voltage_bases(self, values: pd.Series) -> list[str]:
         unique = sorted({float(value) for value in values if float(value) > 0})
         return [f"{value:.12g}" for value in unique]
+
+
+def export_powermodels_distribution(case: CanonicalCase, output_path: str | Path, **_: object) -> Path:
+    return PowerModelsDistributionAdapter().export_input(case, output_path)
+
+
+register_target_routes(
+    target_tool="powermodelsdistribution",
+    exporter=export_powermodels_distribution,
+    tolerances=UNBALANCED_PMD_TOLERANCES,
+)
+
+
+__all__ = ["PowerModelsDistributionAdapter", "export_powermodels_distribution"]

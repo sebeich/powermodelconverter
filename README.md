@@ -50,7 +50,7 @@ Today the repo can:
 - import pandapower JSON, including native three-phase pandapower models
 - import balanced PyPSA networks for the current supported subset
 - export balanced cases to pandapower JSON
-- export balanced pandapower cases to CGMES/CIM including lines, transformers, constant-power loads, and multiple source elements, then validate by native pandapower re-import
+- export balanced pandapower cases to CGMES/CIM including lines, transformers, constant-power loads, and one slack source, then validate by native pandapower re-import
 - export balanced cases to OpenDSS for the current supported subset
 - export balanced cases to PowerModels JSON
 - export balanced transmission-style cases to PyPSA NetCDF
@@ -93,10 +93,14 @@ When you want the actual result numbers:
   Python package metadata, dependencies, and CLI entrypoint.
 - [src/powermodelconverter/core](src/powermodelconverter/core)
   Canonical case model, capability registry, and shared exceptions.
-- [src/powermodelconverter/adapters](src/powermodelconverter/adapters)
-  Import and export logic for MATPOWER, CGMES/CIM, OpenDSS, pandapower, PyPSA, and auxiliary native importers.
+- [src/powermodelconverter/importers](src/powermodelconverter/importers)
+  Source-format import logic that produces `CanonicalCase` instances backed by pandapower.
+- [src/powermodelconverter/exporters](src/powermodelconverter/exporters)
+  Target-format export logic that reads only from the canonical pandapower-backed case.
 - [src/powermodelconverter/validation](src/powermodelconverter/validation)
-  Balanced and unbalanced validation services.
+  Solver runners, comparison logic, and balanced/unbalanced validation services.
+- [src/powermodelconverter/report](src/powermodelconverter/report)
+  Report loading, merge, and artifact generation helpers.
 - [src/powermodelconverter/cli](src/powermodelconverter/cli)
   Command-line interface exposed as `pmc`.
 - [src/powermodelconverter/julia](src/powermodelconverter/julia)
@@ -116,12 +120,12 @@ When you want the actual result numbers:
 
 The canonical representation is intentionally pragmatic at this stage:
 
-- normalized element tables are stored in the `CanonicalCase`
-- a lossless pandapower serialization is stored in metadata
-- balanced versus unbalanced mode is tracked in metadata
-- phase count is tracked so validation and export logic can branch cleanly
+- `CanonicalCase.net` is a pandapower network and is the canonical representation
+- importers translate source models into pandapower tables plus explicit case metadata
+- exporters read from that canonical pandapower net rather than carrying tool-specific side data
+- balanced versus unbalanced mode, phase count, provenance, and reference power-flow metadata are tracked on the case object
 
-That means the repo is already organized around adapters and validation contracts, while still keeping the implementation compact enough to evolve quickly.
+That means the repo is organized around a pragmatic pandapower-backed hub-and-spoke architecture: import into a canonical pandapower net, then export outward and validate against the target solver.
 
 ## Supported Tools
 
@@ -136,7 +140,7 @@ At a high level:
 - `matpower`
   balanced import, balanced export, balanced validation
 - `cgmes`
-  balanced import, balanced export for the current supported subset (including transformers and multiple sources), balanced validation through native pandapower CGMES loading
+  balanced import, balanced export for the current supported subset (including lines, transformers, constant-power loads, and one slack source), balanced validation through native pandapower CGMES loading
 - `pandapower`
   balanced import/export/validation and native unbalanced three-phase import/export/validation
 - `opendss`
@@ -146,7 +150,7 @@ At a high level:
 - `powermodels`
   balanced export and balanced validation
 - `powersystems`
-  balanced MATPOWER-compatible import/export/validation route targeting PowerSystems.jl with PowerSimulations.jl AC power flow
+  balanced MATPOWER-compatible advanced import/export path exists in the CLI, but it is not currently part of the maintained solver-validated route inventory
 - `powermodelsdistribution`
   validated as an unbalanced backend for the OpenDSS starter feeder routes and the native pandapower `ieee_european_lv_asymmetric` feeder
 - `pandapower_split`
@@ -165,7 +169,7 @@ The detailed signed-off route inventory lives in the generated validation report
 | `pandapower` | Yes | Yes | Yes | Core balanced exchange backend and reference runtime in this repo |
 | `matpower` | Yes | Yes | Yes | Balanced MATPOWER `.m` workflows are signed off |
 | `opendss` | Yes | Yes | Yes | Balanced subset is signed off, not arbitrary OpenDSS semantics |
-| `cgmes` | Yes | Yes | Yes | Export supports lines, transformers, constant-power loads, and multiple source elements; strict deterministic re-import validation may still show non-zero drift on very large cases |
+| `cgmes` | Yes | Yes | Yes | Export supports lines, transformers, constant-power loads, and one slack source; strict deterministic re-import validation may still show non-zero drift on very large cases |
 | `pypsa` | Yes | Yes | Yes | Signed off for the current line-based AC subset; bus geodata is preserved into pandapower when present |
 | `powermodels` | No | Yes | Yes | Validation/export backend for balanced AC models |
 | `pypower` | Yes | No | Yes | Balanced Python-case import is supported for the signed-off static network subset |
@@ -204,7 +208,7 @@ The detailed signed-off route inventory lives in the generated validation report
 
 | Area | Currently Signed Off | Not Yet Claimed As Generally Validated |
 | --- | --- | --- |
-| Balanced CGMES | Bus-branch style balanced models with lines, transformers, constant-power loads, and multiple source elements (`ext_grid`/`gen`) | Broader CIM semantics such as switched topology/control-rich assets, unbalanced CIM, and strict zero-drift guarantees on very large imported cases |
+| Balanced CGMES | Bus-branch style balanced models with lines, transformers, constant-power loads, and one slack source | Broader CIM semantics such as switched topology/control-rich assets, unbalanced CIM, and strict zero-drift guarantees on very large imported cases |
 | Balanced OpenDSS | Conservative AC subset used in the signed-off balanced routes | Broader control, switch, regulator, capacitor, and line-code-heavy semantics |
 | Balanced PyPSA | Line-based AC transmission-style models in the validated set | Full PyPSA component space such as links, stores, storage units, and broader transformer/shunt-heavy cases |
 | Unbalanced OpenDSS / PMD / pandapower | Native 3-phase feeder subset exercised by the validated starter and native asymmetric cases | Arbitrary feeder libraries, regulator-heavy cases, and wider advanced component combinations |
@@ -282,7 +286,7 @@ Included sample files:
 - OpenDSS balanced chained feeder: [minimal_chain.dss](src/powermodelconverter/data/samples/opendss/minimal_chain.dss)
 - OpenDSS unbalanced starter feeder: [minimal_unbalanced_3ph.dss](src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss)
 - OpenDSS unbalanced branched feeder: [minimal_unbalanced_branch.dss](src/powermodelconverter/data/samples/opendss/minimal_unbalanced_branch.dss)
-- OpenDSS future target: [IEEE13Nodeckt.dss](src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss)
+- OpenDSS IEEE benchmark feeder: [IEEE13Nodeckt.dss](src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss)
 - pandapower 3-phase: [ieee_european_lv_asymmetric.json](src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json)
 
 These samples serve as reference cases for the validated conversion routes and as minimal examples of the supported input structure.
@@ -293,7 +297,7 @@ The practical provenance split is:
 - `case9.m` is the standard MATPOWER `case9` reference case
 - `ieee_european_lv_asymmetric.json` is a bundled pandapower-native asymmetric reference case used for the signed-off three-phase route
 - the `minimal_*` OpenDSS cases are small bundled repo examples used to exercise the currently signed-off balanced and unbalanced OpenDSS subsets
-- `IEEE13Nodeckt.dss` is included as a future target and not yet claimed as generally validated in this repo
+- `IEEE13Nodeckt.dss` is the bundled IEEE 13-node OpenDSS feeder kept for heavier unbalanced importer smoke coverage and route-development work
 
 This repository is intended to include only sample cases that are either standard reference examples, tool-native examples, or small bundled validation fixtures. When in doubt, use your own source files outside the repo and keep generated outputs outside version control.
 
@@ -313,7 +317,7 @@ That container includes the Python runtime, the package dependencies, Julia `1.1
 ./scripts/pmc-docker.sh capabilities
 ```
 
-Use this first. It is the quick way to see whether the source and target ecosystem you care about are implemented in this branch, and whether the support is balanced, unbalanced, or limited to a subset.
+Use this first. It is the quick way to see whether the source and target ecosystem you care about are implemented in this branch, and whether the support is balanced, unbalanced, or limited to a subset. The maintained report in this branch currently contains `174` validated route records and no pending entries.
 
 ### 3. Precheck one source-to-target route before exporting
 
@@ -532,16 +536,17 @@ Current limits:
 
 - SimBench is treated as a native pandapower-family import convenience, not as a separate exchange backend.
 - CGMES import relies on pandapower's native CIM/CGMES loader, so fidelity is anchored to pandapower's supported CGMES semantics.
-- CGMES export currently supports balanced lines, transformers, constant-power loads, and multiple source elements; strict zero-drift guarantees are not claimed for very large roundtripped cases.
+- CGMES export currently supports balanced lines, transformers, constant-power loads, and one slack source; strict zero-drift guarantees are not claimed for very large roundtripped cases.
 - The OpenDSS paths are signed off for the current balanced and three-phase subsets in this repo, not yet for arbitrary OpenDSS models with broader controls, switching, and equipment semantics.
 - The PyPSA path is validated on the current line-based balanced subset and does not yet sign off transformer-, shunt-, link-, store-, or storage-unit-heavy PyPSA models.
-- `PowerModelsDistribution` is validated as an export/solver backend only; import back into the canonical layer is not implemented.
+- `PowerModelsDistribution` support is validated for the current DSS-compatible unbalanced subset, but not yet for arbitrary feeder libraries or every possible PMD-authored workflow.
 - OpenDSS import currently targets a conservative subset:
   `Vsource`, `bus`, `line`, `transformer`, and `load`.
 - `PowerModelsDistribution` is currently validated for the OpenDSS starter feeders and the native pandapower `ieee_european_lv_asymmetric` feeder, not yet for every possible unbalanced topology.
 - The additional OpenDSS branched unbalanced feeder is validated through `PowerModelsDistribution`, but broader feeder libraries and regulator-heavy models are still outside the signed-off scope.
 - PyPSA validation is currently limited to the transmission-style balanced AC subset represented in the generated report. Transformer-, shunt-, link-, store-, and storage-unit-heavy PyPSA models are not claimed as validated.
 - `PowerModels.jl` is used here as a validation backend and package-native reference source, not yet as a general import backend into the canonical layer.
+- `PowerSystems.jl` support currently exists as an advanced CLI path, but it is not claimed as part of the maintained solver-validated route inventory in the generated report.
 - `PowerFactory`, `PSS/E`, and `PSCAD` adapters are not implemented yet. `pypower` now has balanced import plus validation coverage for the current static network subset.
 - The canonical schema is still pandapower-backed rather than a fully neutral multi-phase network model.
 - The generated validation report is the source of truth for what is actually signed off in this branch. If a route is not listed there, it should not be treated as validated.
