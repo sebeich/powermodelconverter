@@ -3,11 +3,11 @@ from pathlib import Path
 import pandapower as pp
 import pandapower.networks as pn
 
-from powermodelconverter.adapters.opendss_export_adapter import OpenDSSExportAdapter
-from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
-from powermodelconverter.adapters.pandapower_import_adapter import PandapowerImportAdapter
-from powermodelconverter.adapters.powermodels_distribution_adapter import PowerModelsDistributionAdapter
+from powermodelconverter.exporters.opendss import OpenDSSExportAdapter
+from powermodelconverter.importers.opendss import OpenDSSImportAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
+from powermodelconverter.importers.pandapower_json import PandapowerImportAdapter
+from powermodelconverter.exporters.powermodels_distribution import PowerModelsDistributionAdapter
 from powermodelconverter.runtime import resolve_julia_binary
 from powermodelconverter.validation.powerflow import ValidationService
 

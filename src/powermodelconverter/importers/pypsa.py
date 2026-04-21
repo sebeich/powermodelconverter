@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from pathlib import Path
-import tempfile
 from typing import Any
 
 import pandas as pd
@@ -11,7 +10,8 @@ import pandapower as pp
 from pandapower.plotting.geo import convert_geodata_to_geojson
 import pypsa
 
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
+from powermodelconverter.core.contracts import ImportAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
 from powermodelconverter.core.model import CanonicalCase
 
 
@@ -83,7 +83,6 @@ class PypsaAdapter:
 
     def pypsa_to_pandapower(self, network: pypsa.Network) -> Any:
         self._assert_supported_pypsa_network(network)
-        snapshot = network.snapshots[0]
         net = pp.create_empty_network(
             sn_mva=float(getattr(network, "sn_mva", 1.0) or 1.0),
             f_hz=float(getattr(network, "f_hz", 50.0) or 50.0),
@@ -311,3 +310,30 @@ class PypsaAdapter:
         if suffix in {".h5", ".hdf5"}:
             return "hdf5"
         return suffix.lstrip(".") or "unknown"
+
+
+class PypsaImportAdapter(ImportAdapter):
+    source_format = "pypsa"
+
+    def __init__(self) -> None:
+        self._pypsa = PypsaAdapter()
+
+    def import_case(self, source: str | Path, **kwargs: Any) -> CanonicalCase:
+        return self._pypsa.import_case(source)
+
+
+def import_pypsa(path: str | Path, **kwargs: Any) -> CanonicalCase:
+    return PypsaImportAdapter().import_case(path, **kwargs)
+
+
+def solve_pypsa_reference(path: str | Path) -> PypsaResultSnapshot:
+    return PypsaAdapter().solve_source_case(path)
+
+
+__all__ = [
+    "PypsaAdapter",
+    "PypsaImportAdapter",
+    "PypsaResultSnapshot",
+    "import_pypsa",
+    "solve_pypsa_reference",
+]

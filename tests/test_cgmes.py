@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pandapower as pp
 
-from powermodelconverter.adapters.cgmes_export_adapter import CGMESExportAdapter
-from powermodelconverter.adapters.cgmes_import_adapter import CGMESImportAdapter
+from powermodelconverter.exporters.cgmes import CGMESExportAdapter
+from powermodelconverter.importers.cgmes import CGMESImportAdapter
 from powermodelconverter.core.model import CanonicalCase
 from powermodelconverter.validation.powerflow import ValidationService
 

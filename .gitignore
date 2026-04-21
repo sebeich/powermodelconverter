@@ -12,6 +12,7 @@ __pycache__/
 .vscode/
 .codex
 .codex/
+.claude/
 
 # Local input data and generated dataset artifacts.
 input/

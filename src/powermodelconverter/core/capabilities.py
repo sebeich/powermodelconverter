@@ -34,7 +34,7 @@ CAPABILITY_MATRIX: dict[str, ToolCapability] = {
         unbalanced_import=False,
         unbalanced_export=False,
         unbalanced_validation=False,
-        notes="Native pandapower CGMES/CIM import is wrapped for balanced models, and balanced export is validated by re-importing the generated CGMES package through pandapower. Current export scope is the supported bus-branch subset with one slack source, lines, and constant-power loads.",
+        notes="Native pandapower CGMES/CIM import is wrapped for balanced models, and balanced export is validated by re-importing the generated CGMES package through pandapower. Current export scope is the supported bus-branch subset with one slack source, lines, transformers, and constant-power loads.",
     ),
     "opendss": ToolCapability(
         tool="opendss",
@@ -80,11 +80,11 @@ CAPABILITY_MATRIX: dict[str, ToolCapability] = {
         tool="powersystems",
         balanced_import=True,
         balanced_export=True,
-        balanced_validation=True,
+        balanced_validation=False,
         unbalanced_import=False,
         unbalanced_export=False,
         unbalanced_validation=False,
-        notes="Balanced MATPOWER-compatible import/export route targeting PowerSystems.jl with validation via PowerSimulations.jl AC power flow.",
+        notes="Balanced MATPOWER-compatible import/export path exists as an advanced route, but it is not currently listed as a maintained solver-validated route in the generated validation report.",
     ),
     "powermodelsdistribution": ToolCapability(
         tool="powermodelsdistribution",

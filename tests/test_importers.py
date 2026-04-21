@@ -5,18 +5,19 @@ import sys
 
 import pandapower.networks as pn
 
-from powermodelconverter.adapters.matpower_adapter import MatpowerImportAdapter
-from powermodelconverter.adapters.matpower_adapter import MatpowerExportAdapter
-from powermodelconverter.adapters.opendss_export_adapter import OpenDSSExportAdapter
-from powermodelconverter.adapters.opendss_adapter import OpenDSSImportAdapter, _TransformerSpec
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
-from powermodelconverter.adapters.pandapower_import_adapter import PandapowerImportAdapter
-from powermodelconverter.adapters.pandapower_split_export_adapter import PandapowerSplitExportAdapter
-from powermodelconverter.adapters.pypower_import_adapter import PypowerImportAdapter
-from powermodelconverter.adapters.powersystems_adapter import PowerSystemsExportAdapter, PowerSystemsImportAdapter
-from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
-from powermodelconverter.adapters.pypsa_import_adapter import PypsaImportAdapter
-from powermodelconverter.adapters.simbench_adapter import SimbenchImportAdapter
+from powermodelconverter.importers.matpower import MatpowerImportAdapter
+from powermodelconverter.exporters.matpower import MatpowerExportAdapter
+from powermodelconverter.exporters.opendss import OpenDSSExportAdapter
+from powermodelconverter.importers.opendss import OpenDSSImportAdapter, _TransformerSpec
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
+from powermodelconverter.importers.pandapower_json import PandapowerImportAdapter
+from powermodelconverter.exporters.pandapower_split import PandapowerSplitExportAdapter
+from powermodelconverter.importers.pypower import PypowerImportAdapter
+from powermodelconverter.exporters.powersystems import PowerSystemsExportAdapter
+from powermodelconverter.importers.powersystems import PowerSystemsImportAdapter
+from powermodelconverter.importers.pypsa import PypsaAdapter
+from powermodelconverter.importers.pypsa import PypsaImportAdapter
+from powermodelconverter.importers.simbench import SimbenchImportAdapter
 from powermodelconverter.core.model import CanonicalCase
 from powermodelconverter.validation.powerflow import ValidationService
 
@@ -205,6 +206,25 @@ def test_pypower_dtu7k_connected_network_default_and_explicit_subnet() -> None:
     assert len(subnet_27_case.table("bus")) != 0
 
 
+def test_pypower_dtu7k_subnet_27_validates_against_source_snapshot() -> None:
+    adapter = PypowerImportAdapter()
+    validator = ValidationService()
+    source = f"{REPO_ROOT / 'input/DTU7K.py'}::27"
+
+    case = adapter.import_case(source)
+    snapshot = adapter.solve_source_case(source)
+    result = validator.validate_against_pandapower(
+        case,
+        reference_slack_p_mw=snapshot.slack_p_mw,
+        reference_slack_q_mvar=snapshot.slack_q_mvar,
+        reference_voltages=snapshot.voltages,
+    )
+
+    assert case.case_id == "DTU7K_27"
+    assert result.passed is True
+    assert result.details["compared_buses"] == 195
+
+
 def test_opendss_import_and_validation() -> None:
     source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss/minimal_radial.dss"
     adapter = OpenDSSImportAdapter()
@@ -213,6 +233,18 @@ def test_opendss_import_and_validation() -> None:
     result = ValidationService().validate_opendss_roundtrip(case, reference)
     assert result.passed is True
     assert result.details["compared_buses"] == len(reference.voltages)
+
+
+def test_opendss_ieee13_import_smoke() -> None:
+    source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss"
+    adapter = OpenDSSImportAdapter()
+    case = adapter.import_case(source)
+
+    assert case.source_format == "opendss"
+    assert case.is_unbalanced is True
+    assert len(case.table("bus")) >= 10
+    assert len(case.table("line")) >= 10
+    assert len(case.table("asymmetric_load")) >= 10
 
 
 def test_opendss_import_handles_case_mismatched_redirects(tmp_path: Path) -> None:
@@ -406,3 +438,21 @@ def test_balanced_pandapower_export_to_opendss(tmp_path: Path) -> None:
     reference = OpenDSSImportAdapter().solve_source_case(export_path)
     result = ValidationService().validate_pandapower_case_against_opendss(case, reference)
     assert result.passed is True
+
+
+def test_report_generator_surfaces_pypsa_eur_island_records() -> None:
+    from powermodelconverter.report.generator import _load_generator_module
+
+    module = _load_generator_module()
+    records = module.load_pypsa_eur_validation_records(
+        REPO_ROOT / "src/powermodelconverter/data/exports/pypsa_eur_full_base_island_validated.validation.json"
+    )
+
+    aggregate = next(record for record in records if record.case_id == "pypsa_eur_full_base_island_validated")
+    island_zero = next(record for record in records if record.case_id.endswith("::island_0"))
+    island_one = next(record for record in records if record.case_id.endswith("::island_1"))
+
+    assert aggregate.status == "validated"
+    assert island_zero.status == "validated"
+    assert island_zero.compared_points == 620
+    assert island_one.compared_points == 5283

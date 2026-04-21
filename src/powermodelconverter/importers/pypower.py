@@ -17,8 +17,8 @@ from pandapower.pypower.idx_brch import BR_B, BR_R, BR_STATUS, BR_X, F_BUS, RATE
 from pandapower.pypower.idx_bus import BASE_KV, BS, BUS_I, BUS_TYPE, GS, PD, PQ, QD, REF, VA, VM, VMAX, VMIN
 from pandapower.pypower.idx_gen import GEN_BUS, GEN_STATUS, PG, PMAX, PMIN, QG, QMAX, QMIN, VG
 
-from powermodelconverter.adapters.base import ImportAdapter
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
+from powermodelconverter.core.contracts import ImportAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
 from powermodelconverter.core.model import CanonicalCase
 
 
@@ -588,12 +588,103 @@ class PypowerImportAdapter(ImportAdapter):
             api_module = types.ModuleType("pypower.api")
             api_module.ppoption = sys.modules["pypower.ppoption"].ppoption
             sys.modules["pypower.api"] = api_module
+        self._install_legacy_newtonpf_compat()
+        self._install_legacy_pfsoln_compat()
         self._install_legacy_pypower_helpers()
+
+    def _install_legacy_newtonpf_compat(self) -> None:
+        module = sys.modules.get("pypower.newtonpf")
+        if module is None:
+            return
+
+        modern_newtonpf = getattr(module, "newtonpf", None)
+        if modern_newtonpf is None:
+            return
+
+        def legacy_newtonpf(Ybus: Any, Sbus: Any, V0: Any, ref: Any, pv: Any, pq: Any, ppopt: Any | None = None):
+            ppopt_dict = dict(ppopt or {})
+            ppci = {
+                "baseMVA": 100.0,
+                "bus": np.zeros((len(V0), 16), dtype=float),
+                "bus_dc": np.zeros((0, 64), dtype=float),
+                "gen": np.zeros((0, 32), dtype=float),
+                "branch": np.zeros((0, self._REQUIRED_PYPOWER_BRANCH_COLS), dtype=float),
+                "branch_dc": np.zeros((0, 64), dtype=float),
+                "tcsc": np.zeros((0, 64), dtype=float),
+                "svc": np.zeros((0, 64), dtype=float),
+                "ssc": np.zeros((0, 64), dtype=float),
+                "vsc": np.zeros((0, 64), dtype=float),
+                "source_dc": np.zeros((0, 64), dtype=float),
+                "internal": {},
+            }
+            options = {
+                "tolerance_mva": float(ppopt_dict.get("PF_TOL", 1e-8)),
+                "max_iteration": int(ppopt_dict.get("PF_MAX_IT", 10)),
+                "numba": False,
+                "algorithm": "nr",
+                "voltage_depend_loads": False,
+                "distributed_slack": False,
+                "v_debug": False,
+                "use_umfpack": True,
+                "permc_spec": None,
+                "tdpf": False,
+            }
+            result = modern_newtonpf(Ybus, Sbus, V0, ref, pv, pq, ppci, options)
+            return result[0], result[1], result[2]
+
+        module.newtonpf = legacy_newtonpf
+
+    def _install_legacy_pfsoln_compat(self) -> None:
+        module = sys.modules.get("pypower.pfsoln")
+        if module is None:
+            return
+
+        modern_pfsoln = getattr(module, "pfsoln", None)
+        if modern_pfsoln is None:
+            return
+
+        def legacy_pfsoln(
+            baseMVA: float,
+            bus: Any,
+            gen: Any,
+            branch: Any,
+            Ybus: Any,
+            Yf: Any,
+            Yt: Any,
+            V: Any,
+            ref: Any,
+            pv: Any,
+            pq: Any,
+        ):
+            ref_buses = {int(value) for value in np.asarray(ref, dtype=int).tolist()}
+            on = np.where(np.asarray(gen)[:, GEN_STATUS] > 0)[0]
+            ref_gens = np.array(
+                [idx for idx in on if int(round(float(gen[idx, GEN_BUS]))) in ref_buses],
+                dtype=int,
+            )
+            return modern_pfsoln(
+                baseMVA,
+                bus,
+                gen,
+                branch,
+                np.zeros((0, 64), dtype=float),
+                np.zeros((0, 64), dtype=float),
+                np.zeros((0, 64), dtype=float),
+                np.zeros((0, 64), dtype=float),
+                Ybus,
+                Yf,
+                Yt,
+                V,
+                np.asarray(ref, dtype=int),
+                ref_gens,
+            )
+
+        module.pfsoln = legacy_pfsoln
 
     def _install_legacy_pypower_helpers(self) -> None:
         helper_builders: dict[str, Any] = {
-            "pypower.ext2int": lambda: self._simple_callable_module("pypower.ext2int", "ext2int", lambda value: value),
-            "pypower.int2ext": lambda: self._simple_callable_module("pypower.int2ext", "int2ext", lambda value: value),
+            "pypower.ext2int": lambda: self._simple_callable_module("pypower.ext2int", "ext2int", self._ext2int_compat),
+            "pypower.int2ext": lambda: self._simple_callable_module("pypower.int2ext", "int2ext", self._int2ext_compat),
             "pypower.loadcase": lambda: self._simple_callable_module("pypower.loadcase", "loadcase", self._loadcase_compat),
             "pypower.savecase": lambda: self._simple_callable_module("pypower.savecase", "savecase", self._savecase_compat),
         }
@@ -610,6 +701,23 @@ class PypowerImportAdapter(ImportAdapter):
         if isinstance(value, dict):
             return value
         raise RuntimeError(f"loadcase compatibility shim only supports in-memory case dicts, got {type(value)!r}")
+
+    def _ext2int_compat(self, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        result = dict(value)
+        result.setdefault(
+            "order",
+            {
+                "bus": {"status": {"off": np.array([], dtype=int)}},
+                "gen": {"status": {"off": np.array([], dtype=int)}},
+                "branch": {"status": {"off": np.array([], dtype=int)}},
+            },
+        )
+        return result
+
+    def _int2ext_compat(self, value: Any) -> Any:
+        return self._ext2int_compat(value)
 
     def _savecase_compat(self, *args: Any, **kwargs: Any) -> None:
         raise RuntimeError("savecase is not available in this environment")
@@ -651,3 +759,19 @@ class PypowerImportAdapter(ImportAdapter):
             return f"BUS{bus_idx}"
         text = str(value).strip()
         return text if text else f"BUS{bus_idx}"
+
+
+def import_pypower(path: str | Path, **kwargs: Any) -> CanonicalCase:
+    return PypowerImportAdapter().import_case(path, **kwargs)
+
+
+def solve_pypower_reference(path: str | Path, **kwargs: Any) -> PypowerResultSnapshot:
+    return PypowerImportAdapter().solve_source_case(path, **kwargs)
+
+
+__all__ = [
+    "PypowerImportAdapter",
+    "PypowerResultSnapshot",
+    "import_pypower",
+    "solve_pypower_reference",
+]

@@ -5,8 +5,8 @@ from typing import Any
 
 import pandapower as pp
 
-from powermodelconverter.adapters.base import ImportAdapter
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
+from powermodelconverter.core.contracts import ImportAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
 from powermodelconverter.core.model import CanonicalCase
 
 
@@ -26,3 +26,10 @@ class PandapowerImportAdapter(ImportAdapter):
             metadata={"import_backend": "pandapower.from_json"},
             source_path=path,
         )
+
+
+def import_pandapower(path: str | Path, **kwargs: Any) -> CanonicalCase:
+    return PandapowerImportAdapter().import_case(path, **kwargs)
+
+
+__all__ = ["PandapowerImportAdapter", "import_pandapower"]

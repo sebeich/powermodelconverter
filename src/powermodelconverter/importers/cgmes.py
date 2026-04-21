@@ -5,8 +5,8 @@ from typing import Any
 
 from pandapower.converter.cim import from_cim
 
-from powermodelconverter.adapters.base import ImportAdapter
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
+from powermodelconverter.core.contracts import ImportAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
 from powermodelconverter.core.model import CanonicalCase
 
 
@@ -44,3 +44,10 @@ class CGMESImportAdapter(ImportAdapter):
             if files:
                 return files
         raise ValueError(f"No CGMES .zip or .xml files found at {source_path}")
+
+
+def import_cgmes(path: str | Path, **kwargs: Any) -> CanonicalCase:
+    return CGMESImportAdapter().import_case(path, **kwargs)
+
+
+__all__ = ["CGMESImportAdapter", "import_cgmes"]
