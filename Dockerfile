@@ -32,10 +32,12 @@ COPY src /opt/powermodelconverter/src
 COPY scripts /opt/powermodelconverter/scripts
 COPY tests /opt/powermodelconverter/tests
 COPY docs /opt/powermodelconverter/docs
+COPY input /opt/powermodelconverter/input
 COPY LICENSE CITATION.cff /opt/powermodelconverter/
 
 RUN python -m pip install --upgrade pip setuptools wheel \
-    && python -m pip install .
+    && python -m pip install -e ".[dev,ding0]" \
+    && python -m pip install --no-deps "ding0==0.2.1"
 
 RUN bash scripts/bootstrap_julia_env.sh
 
@@ -43,5 +45,5 @@ COPY docker/entrypoint.sh /usr/local/bin/powermodelconverter-entrypoint
 RUN chmod +x /usr/local/bin/powermodelconverter-entrypoint
 
 WORKDIR /workspace
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/powermodelconverter-entrypoint"]
-CMD ["pmc", "--help"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/powermodelconverter-entrypoint", "pmc"]
+CMD ["--help"]

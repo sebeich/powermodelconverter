@@ -30,13 +30,14 @@ function main()
     ref_buses = Set(
         bus_id for (bus_id, bus_data) in data["bus"] if Int(bus_data["bus_type"]) == 3
     )
+    base_mva = Float64(get(data, "baseMVA", 1.0))
     slack_p = 0.0
     slack_q = 0.0
     for (gen_id, gen_solution) in solution["gen"]
         gen_bus = string(data["gen"][gen_id]["gen_bus"])
         if gen_bus in ref_buses
-            slack_p += Float64(get(gen_solution, "pg", 0.0))
-            slack_q += Float64(get(gen_solution, "qg", 0.0))
+            slack_p += Float64(get(gen_solution, "pg", 0.0)) * base_mva
+            slack_q += Float64(get(gen_solution, "qg", 0.0)) * base_mva
         end
     end
 

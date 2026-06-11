@@ -10,7 +10,14 @@ __pycache__
 .idea
 .vscode
 .DS_Store
-docs/validation_report.html
-docs/validation_report.json
-docs/validation_report.md
+.env.ding0
+.env*.local
+input
+resources
+artifacts
+out_*
+.julia_depot
+.julia
+.juliaup
+docs/generated
 src/powermodelconverter/data/exports

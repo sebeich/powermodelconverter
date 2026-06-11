@@ -15,8 +15,8 @@ import pandapower as pp
 from pandapower import toolbox as pp_toolbox
 import pypsa
 
-from powermodelconverter.adapters.pandapower_adapter import PandapowerAdapter
-from powermodelconverter.adapters.pypsa_adapter import PypsaAdapter
+from powermodelconverter.core.pandapower_backend import PandapowerAdapter
+from powermodelconverter.importers.pypsa import PypsaAdapter
 
 
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
@@ -36,6 +36,12 @@ def build_parser() -> argparse.ArgumentParser:
         )
     )
     parser.add_argument("--source", required=True, help="PyPSA source (.nc/.netcdf/.h5/.hdf5 or CSV folder)")
+    parser.add_argument(
+        "--min-source-buses",
+        type=int,
+        default=0,
+        help="Fail before conversion if the loaded PyPSA source has fewer buses than this.",
+    )
     parser.add_argument(
         "--output",
         default=None,
@@ -88,6 +94,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-validation",
         action="store_true",
         help="Skip source-vs-target power-flow validation and only perform the conversion.",
+    )
+    parser.add_argument(
+        "--synthetic-pf-mode",
+        choices=["degree-weighted", "toy-load-pv"],
+        default="degree-weighted",
+        help=(
+            "Synthetic injection model used when validating topology-only PyPSA-Eur base networks. "
+            "'toy-load-pv' mirrors the documented smoke-test pattern: one slack at the highest-voltage "
+            "bus, one toy load, and one PV generator per AC island."
+        ),
     )
     parser.add_argument(
         "--lpf-fallback",
@@ -468,6 +484,124 @@ def inject_fixed_small_pq_validation_case(
         "added_pv_generators": int(total_pv_generators),
         "added_loads": total_loads,
         "added_slacks": total_slacks,
+        "configured_islands": configured_islands,
+        "degenerate_islands": degenerate_islands,
+    }
+
+
+def inject_toy_load_pv_validation_case(
+    network: pypsa.Network,
+    *,
+    load_mw_per_island: float = 50.0,
+) -> dict[str, Any]:
+    if hasattr(network, "loads") and len(network.loads):
+        if hasattr(network, "mremove"):
+            network.mremove("Load", network.loads.index)
+        else:
+            for item in list(network.loads.index):
+                network.remove("Load", item)
+
+    if hasattr(network, "generators") and len(network.generators):
+        if hasattr(network, "mremove"):
+            network.mremove("Generator", network.generators.index)
+        else:
+            for item in list(network.generators.index):
+                network.remove("Generator", item)
+
+    network.determine_network_topology()
+    ac_subnets = network.sub_networks[network.sub_networks.carrier == "AC"]
+    bus_degrees = _collect_bus_degrees(network)
+
+    configured_islands: list[dict[str, Any]] = []
+    degenerate_islands: list[dict[str, Any]] = []
+    total_slacks = 0
+    total_loads = 0
+    total_pv_generators = 0
+
+    for subnet_id, row in ac_subnets.iterrows():
+        buses = _subnetwork_buses(row)
+        connected_buses = [bus for bus in buses if bus_degrees.get(str(bus), 0) > 0]
+        if not connected_buses:
+            degenerate_islands.append(
+                {
+                    "subnetwork": str(subnet_id),
+                    "bus_count": int(len(buses)),
+                    "reason": "no_line_or_transformer_connections",
+                }
+            )
+            continue
+
+        slack_bus = str(network.buses.loc[connected_buses, "v_nom"].astype(float).idxmax())
+        slack_name = f"pmc_val_slack_{_sanitize_name(str(subnet_id))}"
+        while slack_name in network.generators.index:
+            slack_name += "_x"
+        network.add(
+            "Generator",
+            slack_name,
+            bus=slack_bus,
+            control="Slack",
+            p_set=0.0,
+            q_set=0.0,
+            p_nom=max(10.0 * float(load_mw_per_island), 1.0),
+            p_nom_min=0.0,
+            p_nom_max=max(10.0 * float(load_mw_per_island), 1.0),
+            p_min_pu=-1.0,
+            p_max_pu=1.0,
+            vm_pu=1.0,
+        )
+        total_slacks += 1
+
+        load_bus = None
+        if len(connected_buses) > 1:
+            for candidate in connected_buses:
+                if str(candidate) != slack_bus:
+                    load_bus = str(candidate)
+                    break
+            if load_bus is None:
+                load_bus = str(connected_buses[0])
+
+            load_name = f"pmc_val_load_{_sanitize_name(str(subnet_id))}"
+            while load_name in network.loads.index:
+                load_name += "_x"
+            network.add("Load", load_name, bus=load_bus, p_set=float(load_mw_per_island), q_set=0.0)
+            total_loads += 1
+
+            pv_name = f"pmc_val_pv_{_sanitize_name(str(subnet_id))}"
+            while pv_name in network.generators.index:
+                pv_name += "_x"
+            network.add(
+                "Generator",
+                pv_name,
+                bus=slack_bus,
+                control="PV",
+                p_set=float(load_mw_per_island),
+                q_set=0.0,
+                p_nom=max(4.0 * float(load_mw_per_island), 1.0),
+                p_nom_min=0.0,
+                p_nom_max=max(4.0 * float(load_mw_per_island), 1.0),
+                p_min_pu=0.0,
+                p_max_pu=1.0,
+                vm_pu=1.0,
+            )
+            total_pv_generators += 1
+
+        configured_islands.append(
+            {
+                "subnetwork": str(subnet_id),
+                "connected_bus_count": int(len(connected_buses)),
+                "slack_bus": slack_bus,
+                "load_bus": load_bus,
+                "load_p_mw": float(load_mw_per_island) if load_bus is not None else 0.0,
+                "pv_p_mw": float(load_mw_per_island) if load_bus is not None else 0.0,
+            }
+        )
+
+    return {
+        "mode": "toy_load_pv_per_ac_island",
+        "load_mw_per_island": float(load_mw_per_island),
+        "added_loads": int(total_loads),
+        "added_slacks": int(total_slacks),
+        "added_pv_generators": int(total_pv_generators),
         "configured_islands": configured_islands,
         "degenerate_islands": degenerate_islands,
     }
@@ -2308,6 +2442,11 @@ def run(args: argparse.Namespace) -> int:
     pypsa_adapter = PypsaAdapter()
     pandapower_adapter = PandapowerAdapter()
     network = pypsa_adapter.load_network(source)
+    if int(args.min_source_buses) > 0 and len(network.buses) < int(args.min_source_buses):
+        raise ValueError(
+            f"Loaded PyPSA source has only {len(network.buses)} buses, "
+            f"below --min-source-buses={int(args.min_source_buses)}."
+        )
     snapshot = select_snapshot(network, args.snapshot)
 
     removed_components = {
@@ -2332,12 +2471,16 @@ def run(args: argparse.Namespace) -> int:
     synthetic_pf: dict[str, Any] | None = None
     approach_used = "none"
     if not args.skip_validation:
-        synthetic_pf = inject_fixed_small_pq_validation_case(
-            network_for_conversion,
-            total_target_mw_per_island=0.1,
-            use_distributed_pv_support=False,
-        )
-        approach_used = "A_near_zero_single_slack"
+        if args.synthetic_pf_mode == "toy-load-pv":
+            synthetic_pf = inject_toy_load_pv_validation_case(network_for_conversion)
+            approach_used = "toy_load_pv_per_ac_island"
+        else:
+            synthetic_pf = inject_fixed_small_pq_validation_case(
+                network_for_conversion,
+                total_target_mw_per_island=0.1,
+                use_distributed_pv_support=False,
+            )
+            approach_used = "A_near_zero_single_slack"
 
     validation_error: str | None = None
     validation_payload: dict[str, Any] | None = None
@@ -2376,7 +2519,7 @@ def run(args: argparse.Namespace) -> int:
             or "1" in excluded_non_convergent
         )
 
-        if needs_distributed_pv:
+        if needs_distributed_pv and args.synthetic_pf_mode == "degree-weighted":
             validation_error = None
             network_for_conversion = base_network_for_conversion.copy()
             synthetic_pf = inject_fixed_small_pq_validation_case(

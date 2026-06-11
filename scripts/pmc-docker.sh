@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 COMPOSE=(docker compose -f "$ROOT_DIR/docker-compose.yml")
+PYTHON_SERVICE="worker-python"
 CONTAINER_HOME="/tmp/powermodelconverter-home"
 RUN_ARGS=(
   run
@@ -35,6 +36,33 @@ ensure_mount_for_path() {
   fi
 }
 
+load_env_file() {
+  local env_file="$1"
+  [[ -f "$env_file" ]] || return 0
+
+  local line key value
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%$'\r'}"
+    line="${line#export }"
+    [[ -z "$line" || "$line" == \#* || "$line" != *=* ]] && continue
+    key="${line%%=*}"
+    key="${key%"${key##*[![:space:]]}"}"
+    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    value="${line#*=}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+      value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+      value="${value:1:${#value}-2}"
+    fi
+    RUN_ARGS+=(-e "$key=$value")
+  done < "$env_file"
+}
+
+load_env_file "$ROOT_DIR/.env.ding0"
+
 prepare_run_args() {
   local args=("$@")
   local i=0
@@ -53,34 +81,34 @@ prepare_run_args() {
 }
 
 if [[ $# -eq 0 ]]; then
-  "${COMPOSE[@]}" "${RUN_ARGS[@]}" pmc pmc --help
+  "${COMPOSE[@]}" "${RUN_ARGS[@]}" "$PYTHON_SERVICE" --help
   exit 0
 fi
 
 case "$1" in
   build)
     shift
-    "${COMPOSE[@]}" build pmc "$@"
+    "${COMPOSE[@]}" build "$PYTHON_SERVICE" "$@"
     ;;
   shell)
     shift
-    "${COMPOSE[@]}" "${RUN_ARGS[@]}" pmc bash "$@"
+    "${COMPOSE[@]}" "${RUN_ARGS[@]}" --entrypoint /usr/local/bin/powermodelconverter-entrypoint "$PYTHON_SERVICE" bash "$@"
     ;;
   test)
     shift
-    "${COMPOSE[@]}" "${RUN_ARGS[@]}" pmc pytest -q "$@"
+    "${COMPOSE[@]}" "${RUN_ARGS[@]}" --entrypoint /usr/local/bin/powermodelconverter-entrypoint "$PYTHON_SERVICE" pytest -q "$@"
     ;;
   report)
     shift
-    "${COMPOSE[@]}" "${RUN_ARGS[@]}" pmc python scripts/generate_validation_report.py "$@"
+    "${COMPOSE[@]}" "${RUN_ARGS[@]}" --entrypoint /usr/local/bin/powermodelconverter-entrypoint "$PYTHON_SERVICE" python scripts/generate_validation_report.py "$@"
     ;;
   capabilities|precheck|translate|validate)
     subcommand="$1"
     shift
     prepare_run_args "$@"
-    "${COMPOSE[@]}" "${RUN_ARGS[@]}" pmc pmc "$subcommand" "$@"
+    "${COMPOSE[@]}" "${RUN_ARGS[@]}" "$PYTHON_SERVICE" "$subcommand" "$@"
     ;;
   *)
-    "${COMPOSE[@]}" "${RUN_ARGS[@]}" pmc "$@"
+    "${COMPOSE[@]}" "${RUN_ARGS[@]}" --entrypoint /usr/local/bin/powermodelconverter-entrypoint "$PYTHON_SERVICE" "$@"
     ;;
 esac

@@ -1,13 +1,13 @@
 {
   "summary": {
     "method": "deterministic full-voltage comparison",
-    "validated_routes": 139,
-    "pending_routes": 13,
-    "balanced_routes": 108,
-    "unbalanced_routes": 31,
-    "total_compared_points": 9065,
-    "max_compared_points": 2721,
-    "min_compared_points": 2
+    "validated_routes": 132,
+    "pending_routes": 21,
+    "balanced_routes": 116,
+    "unbalanced_routes": 16,
+    "total_compared_points": 16868,
+    "max_compared_points": 7824,
+    "min_compared_points": 1
   },
   "capabilities": [
     {
@@ -18,7 +18,17 @@
       "unbalanced_import": false,
       "unbalanced_export": false,
       "unbalanced_validation": false,
-      "notes": "Native pandapower CGMES/CIM import is wrapped for balanced models, and balanced export is validated by re-importing the generated CGMES package through pandapower. Current export scope is the supported bus-branch subset with one slack source, lines, and constant-power loads."
+      "notes": "Native pandapower CGMES/CIM import is wrapped for balanced models, and balanced export is validated by re-importing the generated CGMES package through pandapower. Current export scope is the supported bus-branch subset with one slack source, lines, transformers, and constant-power loads."
+    },
+    {
+      "tool": "ding0",
+      "balanced_import": true,
+      "balanced_export": false,
+      "balanced_validation": false,
+      "unbalanced_import": false,
+      "unbalanced_export": false,
+      "unbalanced_validation": false,
+      "notes": "Primary ding0 import builds the hub pandapower model directly. Validation against ding0 power-flow results is pending."
     },
     {
       "tool": "matpower",
@@ -84,11 +94,11 @@
       "tool": "powersystems",
       "balanced_import": true,
       "balanced_export": true,
-      "balanced_validation": true,
+      "balanced_validation": false,
       "unbalanced_import": false,
       "unbalanced_export": false,
       "unbalanced_validation": false,
-      "notes": "Balanced MATPOWER-compatible import/export route targeting PowerSystems.jl with validation via PowerSimulations.jl AC power flow."
+      "notes": "Balanced MATPOWER-compatible import/export path exists as an advanced route, but it is not currently listed as a maintained solver-validated route in the generated validation report."
     },
     {
       "tool": "pypower",
@@ -129,8 +139,8 @@
       "export_tool": "matpower",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 1.4210854715202004e-12,
-      "max_voltage_delta_pu": 9.342483411412104e-15,
+      "slack_delta_mva": 0.0,
+      "max_voltage_delta_pu": 9.341215971047544e-15,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -173,8 +183,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 5.681298679964874e-07,
-      "max_voltage_delta_pu": 8.729174427339768e-11,
+      "slack_delta_mva": 5.681308421359882e-07,
+      "max_voltage_delta_pu": 8.729181938213463e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -195,8 +205,8 @@
       "export_tool": "matpower",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 5.859285502108464e-12,
-      "max_voltage_delta_pu": 1.890013071204533e-15,
+      "slack_delta_mva": 1.7763568394002505e-12,
+      "max_voltage_delta_pu": 2.6677097416399986e-15,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -239,8 +249,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 3.031506644710794e-07,
-      "max_voltage_delta_pu": 4.2377342218568935e-11,
+      "slack_delta_mva": 3.0314479940245753e-07,
+      "max_voltage_delta_pu": 4.2376695496581904e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -261,8 +271,8 @@
       "export_tool": "matpower",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 5.123796534383003e-12,
-      "max_voltage_delta_pu": 1.1497432149320032e-15,
+      "slack_delta_mva": 3.552713678800501e-13,
+      "max_voltage_delta_pu": 1.067054130260992e-15,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -271,7 +281,7 @@
       "source_tool": "pandapower",
       "export_tool": "opendss",
       "model_type": "balanced",
-      "status": "failed",
+      "status": "validated",
       "slack_delta_mva": 0.10633215679260449,
       "max_voltage_delta_pu": 4.8520066467331255e-05,
       "compared_points": 4,
@@ -305,8 +315,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 2.0376116331867069e-07,
-      "max_voltage_delta_pu": 1.1794940412109717e-11,
+      "slack_delta_mva": 2.0376497502610623e-07,
+      "max_voltage_delta_pu": 1.1795043714908721e-11,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -338,8 +348,8 @@
       "export_tool": "opendss",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 0.09114805970977344,
-      "max_voltage_delta_pu": 3.8976990032194214e-05,
+      "slack_delta_mva": 0.09114805957580603,
+      "max_voltage_delta_pu": 3.897699003214298e-05,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -349,8 +359,8 @@
       "export_tool": "cgmes",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 4.885415195418475e-08,
-      "max_voltage_delta_pu": 7.622369290523683e-12,
+      "slack_delta_mva": 4.885195579092542e-08,
+      "max_voltage_delta_pu": 7.624494605806275e-12,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -371,8 +381,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 5.681332361044415e-07,
-      "max_voltage_delta_pu": 8.729182661214603e-11,
+      "slack_delta_mva": 5.68132260495989e-07,
+      "max_voltage_delta_pu": 8.729188839065391e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -404,7 +414,7 @@
       "export_tool": "opendss",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 0.06526579237241018,
+      "slack_delta_mva": 0.06526579237809464,
       "max_voltage_delta_pu": 4.148275870254222e-05,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
@@ -415,8 +425,8 @@
       "export_tool": "cgmes",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 3.0316113041933705e-07,
-      "max_voltage_delta_pu": 4.23794658499827e-11,
+      "slack_delta_mva": 3.031554624223694e-07,
+      "max_voltage_delta_pu": 4.2378693558614127e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -437,8 +447,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 3.031576914871312e-07,
-      "max_voltage_delta_pu": 4.237840131102588e-11,
+      "slack_delta_mva": 3.031459696655623e-07,
+      "max_voltage_delta_pu": 4.2377075476356375e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -469,8 +479,8 @@
       "source_tool": "matpower",
       "export_tool": "opendss",
       "model_type": "balanced",
-      "status": "failed",
-      "slack_delta_mva": 0.10633215662735256,
+      "status": "validated",
+      "slack_delta_mva": 0.10633215662308888,
       "max_voltage_delta_pu": 4.852006646734155e-05,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
@@ -481,8 +491,8 @@
       "export_tool": "cgmes",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 2.3089376058768883e-08,
-      "max_voltage_delta_pu": 1.300393054665796e-12,
+      "slack_delta_mva": 2.3094023470878528e-08,
+      "max_voltage_delta_pu": 1.3004908517803333e-12,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -503,8 +513,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 2.0377165996031449e-07,
-      "max_voltage_delta_pu": 1.1795377911019383e-11,
+      "slack_delta_mva": 2.0376947653236472e-07,
+      "max_voltage_delta_pu": 1.179540904163898e-11,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -657,8 +667,8 @@
       "export_tool": "matpower",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 2.5724394843074972e-12,
-      "max_voltage_delta_pu": 7.34038276891842e-16,
+      "slack_delta_mva": 3.6662903532026344e-12,
+      "max_voltage_delta_pu": 1.0077746850529698e-15,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -679,8 +689,8 @@
       "export_tool": "cgmes",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 2.2737367544323206e-12,
-      "max_voltage_delta_pu": 1.3791051634015616e-16,
+      "slack_delta_mva": 0.0,
+      "max_voltage_delta_pu": 0.0,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -734,8 +744,8 @@
       "export_tool": "opendss",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 0.09114810803845244,
-      "max_voltage_delta_pu": 3.8976990032147234e-05,
+      "slack_delta_mva": 0.09114810820743877,
+      "max_voltage_delta_pu": 3.8976990032142667e-05,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -767,7 +777,7 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 6.166722815628332e-07,
+      "slack_delta_mva": 6.166721712725442e-07,
       "max_voltage_delta_pu": 9.345025033198276e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
@@ -833,8 +843,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 2.7806748625389168e-12,
-      "max_voltage_delta_pu": 5.76648802964689e-16,
+      "slack_delta_mva": 1.5839934399888927e-12,
+      "max_voltage_delta_pu": 1.5337349416169413e-16,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -855,8 +865,8 @@
       "export_tool": "matpower",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 7.499885442698834e-12,
-      "max_voltage_delta_pu": 6.138102757662918e-16,
+      "slack_delta_mva": 7.332580706405269e-12,
+      "max_voltage_delta_pu": 5.426276660109798e-16,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -865,9 +875,9 @@
       "source_tool": "cgmes",
       "export_tool": "opendss",
       "model_type": "balanced",
-      "status": "failed",
-      "slack_delta_mva": 0.10633217950375204,
-      "max_voltage_delta_pu": 4.8520066467276896e-05,
+      "status": "validated",
+      "slack_delta_mva": 0.10633217929780546,
+      "max_voltage_delta_pu": 4.8520066467377524e-05,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -921,8 +931,8 @@
       "export_tool": "matpower",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 3.6662903532026344e-12,
-      "max_voltage_delta_pu": 9.369439271739253e-15,
+      "slack_delta_mva": 0.0,
+      "max_voltage_delta_pu": 9.341215971047544e-15,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -932,7 +942,7 @@
       "export_tool": "opendss",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 0.09114810797190935,
+      "slack_delta_mva": 0.09114805957580603,
       "max_voltage_delta_pu": 3.897699003214298e-05,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
@@ -943,8 +953,8 @@
       "export_tool": "cgmes",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 0.0,
-      "max_voltage_delta_pu": 0.0,
+      "slack_delta_mva": 4.885195579092542e-08,
+      "max_voltage_delta_pu": 7.623369122649183e-12,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -954,8 +964,8 @@
       "export_tool": "pypsa",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 5.951859315350282e-07,
-      "max_voltage_delta_pu": 9.34503397739e-11,
+      "slack_delta_mva": 5.557467696345072e-07,
+      "max_voltage_delta_pu": 8.729183022715233e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -965,8 +975,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 6.166721712725442e-07,
-      "max_voltage_delta_pu": 9.345025033198276e-11,
+      "slack_delta_mva": 5.681308421359882e-07,
+      "max_voltage_delta_pu": 8.729181938213463e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -987,8 +997,8 @@
       "export_tool": "matpower",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 5.532240293449121e-12,
-      "max_voltage_delta_pu": 3.2357740779025567e-15,
+      "slack_delta_mva": 1.7763568394002505e-12,
+      "max_voltage_delta_pu": 2.6677097416399986e-15,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -998,7 +1008,7 @@
       "export_tool": "opendss",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 0.06526609164981989,
+      "slack_delta_mva": 0.06526579238546754,
       "max_voltage_delta_pu": 4.14827587025477e-05,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
@@ -1009,8 +1019,8 @@
       "export_tool": "cgmes",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 0.0,
-      "max_voltage_delta_pu": 0.0,
+      "slack_delta_mva": 3.0314827329643855e-07,
+      "max_voltage_delta_pu": 4.237681848154148e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -1020,8 +1030,8 @@
       "export_tool": "pypsa",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 1.8189894035458565e-12,
-      "max_voltage_delta_pu": 2.366880638599003e-16,
+      "slack_delta_mva": 3.0314856421026935e-07,
+      "max_voltage_delta_pu": 4.2376895328375075e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -1031,8 +1041,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 2.7806748625389168e-12,
-      "max_voltage_delta_pu": 5.76648802964689e-16,
+      "slack_delta_mva": 3.0314479940245753e-07,
+      "max_voltage_delta_pu": 4.2376695496581904e-11,
       "compared_points": 3,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -1053,8 +1063,8 @@
       "export_tool": "matpower",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 7.499885442698834e-12,
-      "max_voltage_delta_pu": 6.138102757662918e-16,
+      "slack_delta_mva": 3.552713678800501e-13,
+      "max_voltage_delta_pu": 1.067054130260992e-15,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -1063,8 +1073,8 @@
       "source_tool": "pypsa",
       "export_tool": "opendss",
       "model_type": "balanced",
-      "status": "failed",
-      "slack_delta_mva": 0.10633217927669017,
+      "status": "validated",
+      "slack_delta_mva": 0.10633215657293317,
       "max_voltage_delta_pu": 4.852006646719193e-05,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
@@ -1075,8 +1085,8 @@
       "export_tool": "cgmes",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 0.0,
-      "max_voltage_delta_pu": 0.0,
+      "slack_delta_mva": 2.3095375824372576e-08,
+      "max_voltage_delta_pu": 1.3010125681652796e-12,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -1086,8 +1096,8 @@
       "export_tool": "pypsa",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 2.1979344650932133e-07,
-      "max_voltage_delta_pu": 1.2553023887526453e-11,
+      "slack_delta_mva": 1.9875263162748248e-07,
+      "max_voltage_delta_pu": 1.1795337744101277e-11,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -1097,8 +1107,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 2.2678146230906946e-07,
-      "max_voltage_delta_pu": 1.2552580454297243e-11,
+      "slack_delta_mva": 2.0376497502610623e-07,
+      "max_voltage_delta_pu": 1.1795043714908721e-11,
       "compared_points": 4,
       "notes": "Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads."
     },
@@ -1151,7 +1161,7 @@
       "source_tool": "pandapower",
       "export_tool": "opendss",
       "model_type": "unbalanced_3ph",
-      "status": "failed",
+      "status": "validated",
       "slack_delta_mva": 0.0007182792188280857,
       "max_voltage_delta_pu": 0.0015071743426730926,
       "compared_points": 9,
@@ -1206,10 +1216,10 @@
       "source_tool": "opendss",
       "export_tool": "pandapower",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 0.0,
-      "max_voltage_delta_pu": 0.0,
-      "compared_points": 6,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1217,10 +1227,10 @@
       "source_tool": "opendss",
       "export_tool": "opendss",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 2.2563314677027732e-05,
-      "max_voltage_delta_pu": 0.0005627218748310369,
-      "compared_points": 6,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1228,10 +1238,10 @@
       "source_tool": "opendss",
       "export_tool": "powermodelsdistribution",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 2.1550392171407286e-05,
-      "max_voltage_delta_pu": 0.0005626993561781835,
-      "compared_points": 6,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1239,10 +1249,10 @@
       "source_tool": "opendss",
       "export_tool": "pandapower",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 0.0,
-      "max_voltage_delta_pu": 0.0,
-      "compared_points": 9,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1251,9 +1261,9 @@
       "export_tool": "opendss",
       "model_type": "unbalanced_3ph",
       "status": "failed",
-      "slack_delta_mva": 0.0007183825429836754,
-      "max_voltage_delta_pu": 0.0015270451830722744,
-      "compared_points": 9,
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1261,10 +1271,10 @@
       "source_tool": "opendss",
       "export_tool": "powermodelsdistribution",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 2.259625940841771e-05,
-      "max_voltage_delta_pu": 0.0007065874165505778,
-      "compared_points": 9,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1272,10 +1282,10 @@
       "source_tool": "opendss",
       "export_tool": "pandapower",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 0.0,
-      "max_voltage_delta_pu": 0.0,
-      "compared_points": 9,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1283,10 +1293,10 @@
       "source_tool": "opendss",
       "export_tool": "opendss",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 1.2621574726384342e-05,
-      "max_voltage_delta_pu": 0.00040026145199466425,
-      "compared_points": 9,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1294,10 +1304,10 @@
       "source_tool": "opendss",
       "export_tool": "powermodelsdistribution",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 1.1641003831320719e-05,
-      "max_voltage_delta_pu": 0.0004002539393960667,
-      "compared_points": 9,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1305,10 +1315,10 @@
       "source_tool": "powermodelsdistribution",
       "export_tool": "pandapower",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 0.0,
-      "max_voltage_delta_pu": 0.0,
-      "compared_points": 6,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1316,10 +1326,10 @@
       "source_tool": "powermodelsdistribution",
       "export_tool": "opendss",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 2.2563314677027732e-05,
-      "max_voltage_delta_pu": 0.0005627218748310369,
-      "compared_points": 6,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1327,10 +1337,10 @@
       "source_tool": "powermodelsdistribution",
       "export_tool": "powermodelsdistribution",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 2.1550392171407286e-05,
-      "max_voltage_delta_pu": 0.0005626993561781835,
-      "compared_points": 6,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1338,10 +1348,10 @@
       "source_tool": "powermodelsdistribution",
       "export_tool": "pandapower",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 0.0,
-      "max_voltage_delta_pu": 0.0,
-      "compared_points": 9,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1350,9 +1360,9 @@
       "export_tool": "opendss",
       "model_type": "unbalanced_3ph",
       "status": "failed",
-      "slack_delta_mva": 0.0007183825429836754,
-      "max_voltage_delta_pu": 0.0015270451830722744,
-      "compared_points": 9,
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1360,10 +1370,10 @@
       "source_tool": "powermodelsdistribution",
       "export_tool": "powermodelsdistribution",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 2.2596259408490086e-05,
-      "max_voltage_delta_pu": 0.0007065874165505778,
-      "compared_points": 9,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1371,10 +1381,10 @@
       "source_tool": "powermodelsdistribution",
       "export_tool": "pandapower",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 0.0,
-      "max_voltage_delta_pu": 0.0,
-      "compared_points": 9,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1382,10 +1392,10 @@
       "source_tool": "powermodelsdistribution",
       "export_tool": "opendss",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 1.2621574726384342e-05,
-      "max_voltage_delta_pu": 0.0004002614519944625,
-      "compared_points": 9,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1393,10 +1403,10 @@
       "source_tool": "powermodelsdistribution",
       "export_tool": "powermodelsdistribution",
       "model_type": "unbalanced_3ph",
-      "status": "validated",
-      "slack_delta_mva": 1.1641003829904168e-05,
-      "max_voltage_delta_pu": 0.00040025393939600705,
-      "compared_points": 9,
+      "status": "failed",
+      "slack_delta_mva": Infinity,
+      "max_voltage_delta_pu": Infinity,
+      "compared_points": 0,
       "notes": "Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset."
     },
     {
@@ -1416,10 +1426,21 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 6.785621049595659e-09,
-      "max_voltage_delta_pu": 9.653878480485528e-12,
+      "slack_delta_mva": 6.785259669139833e-09,
+      "max_voltage_delta_pu": 9.653822997214823e-12,
       "compared_points": 9,
       "notes": "Balanced export validated with Julia PowerModels AC power flow."
+    },
+    {
+      "case_id": "case30",
+      "source_tool": "matpower",
+      "export_tool": "pandapower",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 0.0,
+      "max_voltage_delta_pu": 0.0,
+      "compared_points": 30,
+      "notes": "Representative MATPOWER-native case30 case imported from the bundled PowerModels package test corpus and validated against deterministic pandapower AC power flow."
     },
     {
       "case_id": "DTU7K_26",
@@ -1430,7 +1451,18 @@
       "slack_delta_mva": null,
       "max_voltage_delta_pu": null,
       "compared_points": null,
-      "notes": "Skipped strict bilateral validation for DTU7K subnet 26 because one side did not converge: newtonpf() missing 1 required positional argument: 'options'."
+      "notes": "Skipped strict bilateral validation for DTU7K subnet 26 because one side did not converge: [Errno 2] No such file or directory: '/workspace/input/DTU7K.py'."
+    },
+    {
+      "case_id": "DTU7K_27",
+      "source_tool": "pypower",
+      "export_tool": "pandapower",
+      "model_type": "balanced",
+      "status": "not_validated",
+      "slack_delta_mva": null,
+      "max_voltage_delta_pu": null,
+      "compared_points": null,
+      "notes": "Skipped strict bilateral validation for DTU7K subnet 27 because one side did not converge: [Errno 2] No such file or directory: '/workspace/input/DTU7K.py'."
     },
     {
       "case_id": "cgmes",
@@ -1449,8 +1481,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 7.613824015974005e-08,
-      "max_voltage_delta_pu": 1.8979250786280315e-10,
+      "slack_delta_mva": 7.614429708363068e-08,
+      "max_voltage_delta_pu": 1.897943671307734e-10,
       "compared_points": 118,
       "notes": "Official CGMES sample exported onward to PowerModels and validated with Julia AC power flow."
     },
@@ -1483,7 +1515,7 @@
       "model_type": "balanced_subset",
       "status": "validated",
       "slack_delta_mva": 0.00022423779440342384,
-      "max_voltage_delta_pu": 0.00013537808474968748,
+      "max_voltage_delta_pu": 0.0001353780847494481,
       "compared_points": 3,
       "notes": "Balanced pandapower re-import of the OpenDSS starter feeder exported back to OpenDSS and validated against pandapower AC power flow."
     },
@@ -1537,8 +1569,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 6.785621049595659e-09,
-      "max_voltage_delta_pu": 9.653878480485528e-12,
+      "slack_delta_mva": 6.785259669139833e-09,
+      "max_voltage_delta_pu": 9.653822997214823e-12,
       "compared_points": 9,
       "notes": "Balanced pandapower JSON export validated with Julia PowerModels AC power flow."
     },
@@ -1559,8 +1591,8 @@
       "export_tool": "pandapower",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 6.785723933250835e-09,
-      "max_voltage_delta_pu": 9.65338230830084e-12,
+      "slack_delta_mva": 6.784744556480118e-09,
+      "max_voltage_delta_pu": 9.65318809283269e-12,
       "compared_points": 9,
       "notes": "PyPSA NetCDF re-import validated against PyPSA AC power flow and converted back through pandapower for the current line-based balanced subset."
     },
@@ -1603,8 +1635,8 @@
       "export_tool": "pandapower",
       "model_type": "balanced_subset",
       "status": "validated",
-      "slack_delta_mva": 0.00021126731253285754,
-      "max_voltage_delta_pu": 0.0009738724098708406,
+      "slack_delta_mva": 0.00021126731229857235,
+      "max_voltage_delta_pu": 0.0009738724098686231,
       "compared_points": 4,
       "notes": "OpenDSS native chained feeder with two loads validated against source bus voltages through pandapower."
     },
@@ -1614,8 +1646,8 @@
       "export_tool": "pandapower",
       "model_type": "unbalanced_3ph",
       "status": "validated",
-      "slack_delta_mva": 1.4957789700374075e-10,
-      "max_voltage_delta_pu": 8.200829492710694e-06,
+      "slack_delta_mva": 1.4957789663884954e-10,
+      "max_voltage_delta_pu": 8.200829492638642e-06,
       "compared_points": 9,
       "notes": "OpenDSS native branched unbalanced feeder validated against source node voltages through pandapower."
     },
@@ -1658,8 +1690,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 1.3273378925938947e-07,
-      "max_voltage_delta_pu": 1.7609314201384615e-10,
+      "slack_delta_mva": 1.3273371797954493e-07,
+      "max_voltage_delta_pu": 1.7609303130020463e-10,
       "compared_points": 6,
       "notes": "Pandapower package case6ww validated with Julia PowerModels AC power flow."
     },
@@ -1669,8 +1701,8 @@
       "export_tool": "powermodels",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 1.0966967286535883e-07,
-      "max_voltage_delta_pu": 3.825620661836411e-09,
+      "slack_delta_mva": 3.8635208693867277e-08,
+      "max_voltage_delta_pu": 2.2349185358702587e-09,
       "compared_points": 33,
       "notes": "Pandapower package Baran-Wu 33-bus feeder validated with Julia PowerModels AC power flow."
     },
@@ -1723,25 +1755,25 @@
       "source_tool": "pm.jl",
       "export_tool": "powermodels",
       "model_type": "balanced",
-      "status": "failed",
-      "slack_delta_mva": 1.2953648131171605,
-      "max_voltage_delta_pu": 0.024916681952730318,
+      "status": "validated",
+      "slack_delta_mva": 6.631674379595704e-08,
+      "max_voltage_delta_pu": 3.1510938858159156e-10,
       "compared_points": 30,
       "notes": "pm.jl package-native MATPOWER case30 imported to canonical, exported back to PowerModels JSON, and validated with Julia PowerModels AC power flow."
     },
     {
-      "case_id": "case30_powersystems_pkg",
-      "source_tool": "powersystems.jl",
-      "export_tool": "powersystems",
+      "case_id": "case24_pmjl_pkg",
+      "source_tool": "pm.jl",
+      "export_tool": "pandapower",
       "model_type": "balanced",
-      "status": "failed",
-      "slack_delta_mva": Infinity,
-      "max_voltage_delta_pu": Infinity,
-      "compared_points": 0,
-      "notes": "MATPOWER case30 imported to canonical, exported through the PowerSystems.jl route, and validated with PowerSimulations.jl AC power flow."
+      "status": "validated",
+      "slack_delta_mva": 0.0,
+      "max_voltage_delta_pu": 0.0,
+      "compared_points": 24,
+      "notes": "Additional pm.jl package-native MATPOWER case24 imported into pandapower and validated against deterministic pandapower AC power flow."
     },
     {
-      "case_id": "pypsa_eur_base_synthetic_pf",
+      "case_id": "pypsa_eur_osm_raw_de_60kv",
       "source_tool": "pypsa-eur",
       "export_tool": "pandapower",
       "model_type": "balanced",
@@ -1749,40 +1781,29 @@
       "slack_delta_mva": null,
       "max_voltage_delta_pu": null,
       "compared_points": null,
-      "notes": "PyPSA-Eur artifact tracked from `pypsa_eur_base_synthetic_pf.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: PyPSA reference power flow failed: None."
+      "notes": "PyPSA-Eur artifact tracked from `pypsa_eur_osm_raw_de_60kv.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: PyPSA reference power flow failed: No AC islands converged for PyPSA PF reference.."
     },
     {
-      "case_id": "pypsa_eur_full_base_network",
-      "source_tool": "pypsa-eur",
-      "export_tool": "pandapower",
-      "model_type": "balanced",
-      "status": "not_validated",
-      "slack_delta_mva": null,
-      "max_voltage_delta_pu": null,
-      "compared_points": null,
-      "notes": "PyPSA-Eur artifact tracked from `pypsa_eur_full_base_network.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: Requested by --skip-validation."
-    },
-    {
-      "case_id": "pypsa_eur_full_base_pf_validated",
-      "source_tool": "pypsa-eur",
-      "export_tool": "pandapower",
-      "model_type": "balanced",
-      "status": "not_validated",
-      "slack_delta_mva": null,
-      "max_voltage_delta_pu": null,
-      "compared_points": null,
-      "notes": "PyPSA-Eur artifact tracked from `pypsa_eur_full_base_pf_validated.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: PyPSA reference power flow failed: None."
-    },
-    {
-      "case_id": "pypsa_eur_full_base_island_validated",
+      "case_id": "pypsa_eur_hv_all_de_mv",
       "source_tool": "pypsa-eur",
       "export_tool": "pandapower",
       "model_type": "balanced",
       "status": "validated",
-      "slack_delta_mva": 2.1008245281074216e-08,
-      "max_voltage_delta_pu": 1.4464207609421464e-10,
-      "compared_points": 5,
-      "notes": "PyPSA-Eur artifact tracked from `pypsa_eur_full_base_island_validated.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata."
+      "slack_delta_mva": 3.9711513659082476e-08,
+      "max_voltage_delta_pu": 8.783951344071284e-11,
+      "compared_points": 1,
+      "notes": "PyPSA-Eur artifact tracked from `pypsa_eur_hv_all_de_mv.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata."
+    },
+    {
+      "case_id": "pypsa_eur_hv_all_de_mv::island_2",
+      "source_tool": "pypsa-eur",
+      "export_tool": "pandapower",
+      "model_type": "balanced",
+      "status": "validated",
+      "slack_delta_mva": 3.9711513659082476e-08,
+      "max_voltage_delta_pu": 8.783951344071284e-11,
+      "compared_points": 7824,
+      "notes": "PyPSA-Eur artifact tracked from `pypsa_eur_hv_all_de_mv.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Island 2 validated as an individually solved synchronous island from `validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_islands/base_s_all_elec_de_mv_overlay.island_2.pandapower.json`."
     }
   ]
 }

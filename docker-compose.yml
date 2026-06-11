@@ -1,11 +1,62 @@
 services:
-  pmc:
+  worker-python:
     build:
       context: .
       dockerfile: Dockerfile
-    image: powermodelconverter:latest
+    image: pmc:latest
     working_dir: /workspace
     volumes:
       - .:/workspace
+      - pmc-results:/results
     environment:
       JULIA_DEPOT_PATH: /opt/powermodelconverter/.julia_depot
+      MPLCONFIGDIR: /tmp/matplotlib
+    command:
+      - capabilities
+
+  worker-julia-pm:
+    image: pmc:latest
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - pmc-results:/results
+    environment:
+      JULIA_DEPOT_PATH: /opt/powermodelconverter/.julia_depot
+      MPLCONFIGDIR: /tmp/matplotlib
+    command:
+      - capabilities
+
+  worker-julia-pmd:
+    image: pmc:latest
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - pmc-results:/results
+    environment:
+      JULIA_DEPOT_PATH: /opt/powermodelconverter/.julia_depot
+      MPLCONFIGDIR: /tmp/matplotlib
+    command:
+      - capabilities
+
+  merge:
+    image: pmc:latest
+    working_dir: /workspace
+    depends_on:
+      worker-python:
+        condition: service_completed_successfully
+      worker-julia-pm:
+        condition: service_completed_successfully
+      worker-julia-pmd:
+        condition: service_completed_successfully
+    volumes:
+      - .:/workspace
+      - pmc-results:/results
+    environment:
+      JULIA_DEPOT_PATH: /opt/powermodelconverter/.julia_depot
+      MPLCONFIGDIR: /tmp/matplotlib
+    command:
+      - report
+      - --full
+
+volumes:
+  pmc-results:

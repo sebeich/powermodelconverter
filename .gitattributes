@@ -1,0 +1,8 @@
+validation_cases/**/*.nc filter=lfs diff=lfs merge=lfs -text
+validation_cases/**/*.zip filter=lfs diff=lfs merge=lfs -text
+validation_cases/**/*.pandapower.json filter=lfs diff=lfs merge=lfs -text
+validation_cases/**/*.powermodels.json filter=lfs diff=lfs merge=lfs -text
+validation_cases/**/*.png filter=lfs diff=lfs merge=lfs -text
+validation_cases/**/*.html filter=lfs diff=lfs merge=lfs -text
+validation_cases/**/*.xlsx filter=lfs diff=lfs merge=lfs -text
+validation_cases/**/*_master.dss filter=lfs diff=lfs merge=lfs -text
