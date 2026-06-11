@@ -1,8 +1,0 @@
-{
-  "timestamp": "2026-06-09T18:41:46.073228+00:00",
-  "source": "validation_cases/pypsa-eur/hv_all_de_mv/source/base_s_all_elec_de_mv_overlay.nc",
-  "output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower.json",
-  "pandapower_trafo_model": "t",
-  "diagnostic": null,
-  "phase3_smallest_island": null
-}

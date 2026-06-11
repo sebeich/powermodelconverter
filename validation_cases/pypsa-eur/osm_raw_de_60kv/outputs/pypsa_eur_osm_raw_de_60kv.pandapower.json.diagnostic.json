@@ -1,8 +1,0 @@
-{
-  "timestamp": "2026-06-06T14:11:43.570146+00:00",
-  "source": "validation_cases/pypsa-eur/osm_raw_de_60kv/source/base.nc",
-  "output": "validation_cases/pypsa-eur/osm_raw_de_60kv/outputs/pypsa_eur_osm_raw_de_60kv.pandapower.json",
-  "pandapower_trafo_model": "t",
-  "diagnostic": null,
-  "phase3_smallest_island": null
-}
