@@ -76,9 +76,154 @@ class PypsaAdapter:
             raise ValueError("PyPSA export is only supported for balanced cases.")
         net = self._pandapower.to_net(case)
         normalized = self._normalize_pandapower_names(net)
-        network = pypsa.Network()
-        network.import_from_pandapower_net(normalized, extra_line_data=True)
+        network = self.pandapower_to_pypsa(normalized)
         self._assert_supported_pypsa_network(network)
+        return network
+
+    def pandapower_to_pypsa(self, net: Any) -> pypsa.Network:
+        network = pypsa.Network()
+        network.set_snapshots(["now"])
+        network.name = str(getattr(net, "name", "") or "Unnamed Network")
+        network.f_hz = float(getattr(net, "f_hz", 50.0) or 50.0)
+        network.sn_mva = float(getattr(net, "sn_mva", 1.0) or 1.0)
+
+        bus_names: dict[int, str] = {}
+        for bus_idx, row in net.bus.iterrows():
+            bus_name = str(row["name"])
+            network.add(
+                "Bus",
+                bus_name,
+                v_nom=float(row.vn_kv),
+                type="" if "type" not in row or pd.isna(row.type) else str(row.type),
+                carrier="AC",
+                v_mag_pu_set=1.0,
+                v_mag_pu_min=0.0,
+                v_mag_pu_max=float("inf"),
+            )
+            bus_names[int(bus_idx)] = bus_name
+
+        if hasattr(net, "bus_geodata") and net.bus_geodata is not None and not net.bus_geodata.empty:
+            for bus_idx, row in net.bus_geodata.iterrows():
+                if bus_idx not in bus_names:
+                    continue
+                if "x" in row and pd.notna(row.x):
+                    network.buses.at[bus_names[int(bus_idx)], "x"] = float(row.x)
+                if "y" in row and pd.notna(row.y):
+                    network.buses.at[bus_names[int(bus_idx)], "y"] = float(row.y)
+
+        for line_name, row in net.line.iterrows():
+            parallel = max(int(row.parallel), 1) if "parallel" in row and pd.notna(row.parallel) else 1
+            length_km = float(row.length_km) if float(row.length_km) > 0 else 1.0
+            b = 2.0 * math.pi * network.f_hz * float(row.c_nf_per_km) * 1e-9 * length_km * parallel
+            g = float(row.g_us_per_km) * 1e-6 * length_km * parallel if "g_us_per_km" in row and pd.notna(row.g_us_per_km) else 0.0
+            max_i_ka = float(row.max_i_ka) if "max_i_ka" in row and pd.notna(row.max_i_ka) else 1.0
+            v_nom = float(net.bus.at[int(row.from_bus), "vn_kv"])
+            network.add(
+                "Line",
+                str(row["name"]),
+                bus0=bus_names[int(row.from_bus)],
+                bus1=bus_names[int(row.to_bus)],
+                r=float(row.r_ohm_per_km) * length_km / parallel,
+                x=float(row.x_ohm_per_km) * length_km / parallel,
+                b=b,
+                g=g,
+                s_nom=max_i_ka * v_nom * parallel,
+                num_parallel=float(parallel),
+                length=length_km,
+            )
+
+        for _, row in net.trafo.iterrows():
+            vk_pu = float(row.vk_percent) / 100.0
+            vkr_pu = float(row.vkr_percent) / 100.0
+            x_pu = math.sqrt(max(vk_pu * vk_pu - vkr_pu * vkr_pu, 0.0))
+            g_pu = float(row.pfe_kw) / (float(row.sn_mva) * 1000.0) if float(row.sn_mva) > 0 else 0.0
+            i0_pu = float(row.i0_percent) / 100.0
+            b_pu = math.sqrt(max(i0_pu * i0_pu - g_pu * g_pu, 0.0))
+            tap_ratio = 1.0
+            if "tap_step_percent" in row and pd.notna(row.tap_step_percent) and abs(float(row.tap_step_percent)) > 0.0:
+                tap_pos = float(row.tap_pos) if "tap_pos" in row and pd.notna(row.tap_pos) else 0.0
+                tap_neutral = float(row.tap_neutral) if "tap_neutral" in row and pd.notna(row.tap_neutral) else 0.0
+                tap_ratio = 1.0 + (tap_pos - tap_neutral) * float(row.tap_step_percent) / 100.0
+            tap_side = row.tap_side if "tap_side" in row and pd.notna(row.tap_side) else None
+            if tap_side is None:
+                pypsa_tap_side = 0
+            else:
+                pypsa_tap_side = 0 if str(tap_side).strip().lower() == "hv" else 1
+            network.add(
+                "Transformer",
+                str(row["name"]),
+                bus0=bus_names[int(row.hv_bus)],
+                bus1=bus_names[int(row.lv_bus)],
+                model="t",
+                s_nom=float(row.sn_mva),
+                r=vkr_pu,
+                x=x_pu,
+                g=g_pu,
+                b=b_pu,
+                tap_ratio=tap_ratio,
+                tap_side=pypsa_tap_side,
+                phase_shift=float(row.shift_degree) if "shift_degree" in row and pd.notna(row.shift_degree) else 0.0,
+            )
+
+        for _, row in net.shunt.iterrows() if hasattr(net, "shunt") else []:
+            vn_kv = float(row.vn_kv) if "vn_kv" in row and pd.notna(row.vn_kv) and float(row.vn_kv) > 0 else float(net.bus.at[int(row.bus), "vn_kv"])
+            base = vn_kv * vn_kv
+            network.add(
+                "ShuntImpedance",
+                str(row["name"]),
+                bus=bus_names[int(row.bus)],
+                g=float(row.p_mw) / base,
+                b=float(row.q_mvar) / base,
+            )
+
+        for _, row in net.load.iterrows():
+            network.add(
+                "Load",
+                str(row["name"]),
+                bus=bus_names[int(row.bus)],
+                p_set=float(row.p_mw),
+                q_set=float(row.q_mvar),
+            )
+
+        for _, row in net.ext_grid.iterrows():
+            generator_name = str(row["name"])
+            bus_name = bus_names[int(row.bus)]
+            network.add(
+                "Generator",
+                generator_name,
+                bus=bus_name,
+                control="Slack",
+                p_nom=max(float(row.max_p_mw), 0.0) if "max_p_mw" in row and pd.notna(row.max_p_mw) else 0.0,
+                p_set=0.0,
+                q_set=0.0,
+            )
+            network.buses.at[bus_name, "v_mag_pu_set"] = float(row.vm_pu) if "vm_pu" in row and pd.notna(row.vm_pu) else 1.0
+
+        for _, row in net.gen.iterrows():
+            generator_name = str(row["name"])
+            bus_name = bus_names[int(row.bus)]
+            network.add(
+                "Generator",
+                generator_name,
+                bus=bus_name,
+                control="PV",
+                p_nom=max(float(row.max_p_mw), abs(float(row.p_mw)), 0.0) if "max_p_mw" in row and pd.notna(row.max_p_mw) else abs(float(row.p_mw)),
+                p_set=float(row.p_mw),
+                q_set=0.0,
+            )
+            network.buses.at[bus_name, "v_mag_pu_set"] = float(row.vm_pu) if "vm_pu" in row and pd.notna(row.vm_pu) else 1.0
+
+        for _, row in net.sgen.iterrows():
+            network.add(
+                "Generator",
+                str(row["name"]),
+                bus=bus_names[int(row.bus)],
+                control="PQ",
+                p_nom=max(abs(float(row.p_mw)), 1e-9),
+                p_set=float(row.p_mw),
+                q_set=float(row.q_mvar),
+            )
+
         return network
 
     def pypsa_to_pandapower(self, network: pypsa.Network) -> Any:

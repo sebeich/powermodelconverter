@@ -14,6 +14,7 @@ dependencies = [
   "matpowercaseframes>=2.0.3",
   "numpy>=2.3",
   "opendssdirect.py>=0.9.4",
+  "openpyxl>=3.1",
   "pandas>=2.3",
   "pandapower>=3.4.0",
   "pypsa>=1.1.2",
@@ -23,6 +24,15 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = []
+ding0 = [
+  "egoio>=0.4.8",
+  "geopy>=2.1",
+  "geopandas",
+  "oedialect==0.0.10",
+  "requests",
+  "shapely",
+  "sqlalchemy<1.4",
+]
 
 [project.scripts]
 pmc = "powermodelconverter.cli.main:main"

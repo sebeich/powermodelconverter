@@ -13,8 +13,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_cgmes_import_official_smallgrid_runs_and_validates() -> None:
-    source = REPO_ROOT / "src/powermodelconverter/data/samples/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip"
-    boundary = REPO_ROOT / "src/powermodelconverter/data/samples/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip"
+    source = REPO_ROOT / "validation_cases/native/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip"
+    boundary = REPO_ROOT / "validation_cases/native/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip"
     case = CGMESImportAdapter().import_case(source.parent)
     assert case.source_format == "cgmes"
     assert len(case.table("bus")) > 0

@@ -1,0 +1,52 @@
+{
+  "artifacts": {
+    "expansion_csv": "validation_cases/use_cases/uc2/expansion.csv",
+    "pandapower_json": "validation_cases/use_cases/uc2/minimal_radial.pandapower.json",
+    "pypsa_netcdf": "validation_cases/use_cases/uc2/minimal_radial.pypsa.nc"
+  },
+  "case_id": "minimal_radial",
+  "cost_basis": {
+    "bess": 450000,
+    "heat_pump": 300000,
+    "pv": 700000
+  },
+  "input": "validation_cases/native/opendss/minimal_radial.dss",
+  "planning_mode": "deterministic_screening_proxy",
+  "script": "docs/examples/uc2_opendss_to_pypsa.py",
+  "use_case": "uc2",
+  "validations": {
+    "opendss_to_pandapower": {
+      "case_id": "minimal_radial",
+      "details": {
+        "compared_buses": 3
+      },
+      "duration_seconds": 0.0,
+      "export_tool": null,
+      "max_voltage_delta_pu": 0.0009315719716007842,
+      "model_type": null,
+      "notes": "",
+      "passed": true,
+      "slack_delta_mva": 0.0002397701328984566,
+      "source_tool": null,
+      "status": "validated",
+      "timestamp": "2026-04-22T16:10:03Z"
+    },
+    "pandapower_to_pypsa": {
+      "case_id": "minimal_radial",
+      "details": {
+        "backend": "pypsa",
+        "compared_buses": 3
+      },
+      "duration_seconds": 0.0,
+      "export_tool": null,
+      "max_voltage_delta_pu": 0.008600297145485205,
+      "model_type": null,
+      "notes": "",
+      "passed": false,
+      "slack_delta_mva": 0.01372076022716709,
+      "source_tool": null,
+      "status": "validated",
+      "timestamp": "2026-04-22T16:10:04Z"
+    }
+  }
+}

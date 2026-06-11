@@ -15,6 +15,7 @@ from typing import Any
 from powermodelconverter.exporters.cgmes import CGMESExportAdapter
 from powermodelconverter.exporters.matpower import MatpowerExportAdapter
 from powermodelconverter.importers.cgmes import CGMESImportAdapter
+from powermodelconverter.importers.ding0 import Ding0ImportAdapter
 from powermodelconverter.importers.matpower import MatpowerImportAdapter
 from powermodelconverter.exporters.opendss import OpenDSSExportAdapter
 from powermodelconverter.importers.opendss import OpenDSSImportAdapter
@@ -38,7 +39,7 @@ from powermodelconverter.runtime import resolve_julia_binary
 from powermodelconverter.validation.powerflow import ValidationResult, ValidationService
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_EXPORT_DIR = REPO_ROOT / "src" / "powermodelconverter" / "data" / "exports"
+DEFAULT_EXPORT_DIR = REPO_ROOT / "artifacts" / "exports"
 DEFAULT_REPORT_PATH = REPO_ROOT / "docs" / "validation_report.json"
 DEFAULT_JULIA_SCRIPT = REPO_ROOT / "src" / "powermodelconverter" / "julia" / "run_powermodels_pf.jl"
 DEFAULT_JULIA_DEPOT = REPO_ROOT / ".julia_depot"
@@ -54,6 +55,7 @@ SOURCE_FORMATS = [
     "powersystems",
     "pypower",
     "opendss",
+    "ding0",
     "simbench",
     "pandapower",
     "pypsa",
@@ -464,11 +466,11 @@ def load_registered_case_with_reference(
                 )
                 return balanced_reference(case)
             if case_id == "case9_from_matpower.pandapower":
-                case9 = MatpowerImportAdapter().import_case(REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m")
+                case9 = MatpowerImportAdapter().import_case(REPO_ROOT / "validation_cases/native/matpower/case9.m")
                 path = pandapower.export_json(case9, tmpdir / f"{case_id}.json")
                 return balanced_reference(PandapowerImportAdapter().import_case(path))
             if case_id == "minimal_radial.pandapower":
-                imported = OpenDSSImportAdapter().import_case(REPO_ROOT / "src/powermodelconverter/data/samples/opendss/minimal_radial.dss")
+                imported = OpenDSSImportAdapter().import_case(REPO_ROOT / "validation_cases/native/opendss/minimal_radial.dss")
                 path = pandapower.export_json(imported, tmpdir / f"{case_id}.json")
                 return balanced_reference(PandapowerImportAdapter().import_case(path))
 
@@ -493,7 +495,7 @@ def load_registered_case_with_reference(
                     "source_reference": {"backend": "pypsa", "snapshot": snapshot},
                 }
             if case_id == "case9_from_matpower.pandapower.pypsa":
-                case9 = MatpowerImportAdapter().import_case(REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m")
+                case9 = MatpowerImportAdapter().import_case(REPO_ROOT / "validation_cases/native/matpower/case9.m")
                 pp_path = pandapower.export_json(case9, tmpdir / "case9_from_matpower.pandapower.json")
                 pp_case = PandapowerImportAdapter().import_case(pp_path)
                 pypsa_path = pypsa.export_netcdf(pp_case, tmpdir / f"{case_id}.nc")
@@ -603,7 +605,7 @@ def run_validate_command(
             cgmes_validation = None
 
     powermodels_validation = None
-    if powermodels_path is not None:
+    if powermodels_path is not None and case.source_format != "ding0":
         powermodels_validation = validator.validate_powermodels_export(
             case,
             powermodels_json=powermodels_path,
@@ -622,7 +624,7 @@ def run_validate_command(
             args,
         )
     powersystems_validation = None
-    if powersystems_path is not None:
+    if powersystems_path is not None and case.source_format != "ding0":
         powersystems_validation = validator.validate_powersystems_export(
             case,
             powersystems_case=powersystems_path,
@@ -632,7 +634,7 @@ def run_validate_command(
             julia_project=Path(args.julia_psi_project),
         )
     pypsa_validation = None
-    if pypsa_path is not None:
+    if pypsa_path is not None and case.source_format != "ding0":
         pypsa_validation = validator.validate_pypsa_export(case, pypsa_path=pypsa_path)
 
     return {
@@ -730,6 +732,27 @@ def load_case_with_reference(
         source_reference = {
             "backend": "pandapower",
             "reference_net": reference,
+        }
+    elif source_format == "ding0":
+        case = Ding0ImportAdapter().import_case(args.source)
+        initial_validation = ValidationResult(
+            case_id=case.case_id,
+            passed=True,
+            slack_delta_mva=math.nan,
+            max_voltage_delta_pu=math.nan,
+            details={
+                "validation_status": "pending",
+                "reason": "ding0 source validation is deferred until Bayreuth power-flow tolerances are measured.",
+            },
+            status="pending",
+            source_tool="ding0",
+            export_tool="pandapower",
+            model_type="balanced",
+            notes="ding0 import succeeded; validation is pending.",
+        )
+        source_reference = {
+            "backend": "pending",
+            "reference_net": None,
         }
     elif source_format == "powersystems":
         case = PowerSystemsImportAdapter().import_case(args.source)

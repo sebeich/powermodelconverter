@@ -175,6 +175,13 @@ class CGMESExportAdapter:
             x_lv_ohm = 0.5 * x_pu * z_base_lv
             if abs(r_hv_ohm) < 1e-12 and abs(x_hv_ohm) < 1e-12:
                 x_hv_ohm = 1e-6
+            # Magnetizing branch, placed entirely on the HV end (CIM load convention: inductive b < 0).
+            pfe_kw = float(row.get("pfe_kw", 0.0) or 0.0)
+            i0_percent = float(row.get("i0_percent", 0.0) or 0.0)
+            u_hv_sq = vn_hv_kv * vn_hv_kv
+            g_hv_s = (pfe_kw / 1000.0) / u_hv_sq if u_hv_sq > 0 else 0.0
+            y_mag_s = (i0_percent / 100.0) * sn_mva / u_hv_sq if u_hv_sq > 0 else 0.0
+            b_hv_s = -math.sqrt(max(y_mag_s * y_mag_s - g_hv_s * g_hv_s, 0.0))
             tap_side = str(row.get("tap_side", "") or "").strip().lower()
             tap_neutral = self._float_or_none(row.get("tap_neutral", None))
             tap_min = self._float_or_none(row.get("tap_min", None))
@@ -207,6 +214,8 @@ class CGMESExportAdapter:
                     "x_hv_ohm": x_hv_ohm,
                     "r_lv_ohm": r_lv_ohm,
                     "x_lv_ohm": x_lv_ohm,
+                    "g_hv_s": g_hv_s,
+                    "b_hv_s": b_hv_s,
                     "connection_hv": self._winding_connection_symbol(vector_group, side="hv"),
                     "connection_lv": self._winding_connection_symbol(vector_group, side="lv"),
                     "phase_angle_clock_hv": 0,
@@ -438,8 +447,8 @@ class CGMESExportAdapter:
             ET.SubElement(hv_end, self._tag("PowerTransformerEnd.ratedU")).text = f"{transformer['rated_u_hv_kv']:.12g}"
             ET.SubElement(hv_end, self._tag("PowerTransformerEnd.r")).text = f"{transformer['r_hv_ohm']:.12g}"
             ET.SubElement(hv_end, self._tag("PowerTransformerEnd.x")).text = f"{transformer['x_hv_ohm']:.12g}"
-            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.g")).text = "0"
-            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.b")).text = "0"
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.g")).text = f"{float(transformer.get('g_hv_s', 0.0)):.12g}"
+            ET.SubElement(hv_end, self._tag("PowerTransformerEnd.b")).text = f"{float(transformer.get('b_hv_s', 0.0)):.12g}"
             ET.SubElement(hv_end, self._tag("TransformerEnd.BaseVoltage"), {self._rdf("resource"): f"#{transformer['base_voltage_hv_id']}"})
             ET.SubElement(hv_end, self._tag("PowerTransformerEnd.phaseAngleClock")).text = str(int(transformer["phase_angle_clock_hv"]))
             ET.SubElement(
@@ -627,8 +636,9 @@ class CGMESExportAdapter:
             ET.SubElement(unit, self._tag("GeneratingUnit.normalPF")).text = "0"
             machine = ET.SubElement(root, self._tag("SynchronousMachine"), {self._rdf("about"): f"#{source['machine_id']}"})
             ET.SubElement(machine, self._tag("RegulatingCondEq.controlEnabled")).text = "true"
-            ET.SubElement(machine, self._tag("RotatingMachine.p")).text = f"{float(source['p_mw']):.12g}"
-            ET.SubElement(machine, self._tag("RotatingMachine.q")).text = f"{float(source['q_mvar']):.12g}"
+            # CIM SSH uses the load sign convention for RotatingMachine: injection is negative.
+            ET.SubElement(machine, self._tag("RotatingMachine.p")).text = f"{-float(source['p_mw']):.12g}"
+            ET.SubElement(machine, self._tag("RotatingMachine.q")).text = f"{-float(source['q_mvar']):.12g}"
             ET.SubElement(machine, self._tag("SynchronousMachine.referencePriority")).text = "1" if bool(source["is_slack"]) else str(100 + idx)
             ET.SubElement(machine, self._tag("SynchronousMachine.operatingMode"), {self._rdf("resource"): "http://iec.ch/TC57/2013/CIM-schema-cim16#SynchronousMachineOperatingMode.generator"})
             reg = ET.SubElement(root, self._tag("RegulatingControl"), {self._rdf("about"): f"#{source['reg_control_id']}"})

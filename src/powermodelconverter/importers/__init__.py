@@ -6,6 +6,7 @@ during package initialization.
 
 __all__ = [
     "import_cgmes",
+    "import_ding0",
     "import_matpower",
     "import_opendss",
     "import_pandapower",
@@ -23,6 +24,10 @@ def __getattr__(name: str):
         from .cgmes import import_cgmes
 
         return import_cgmes
+    if name == "import_ding0":
+        from .ding0 import import_ding0
+
+        return import_ding0
     if name == "import_matpower":
         from .matpower import import_matpower
 

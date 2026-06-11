@@ -1,0 +1,46 @@
+{
+  "artifacts": {
+    "cgmes_roundtrip_zip": "validation_cases/use_cases/uc3/cgmes_smoke.roundtrip.zip"
+  },
+  "case_id": "cgmes",
+  "input": "validation_cases/native/cgmes",
+  "notes": {
+    "roundtrip_mode": "uses a branch-supported smoke network for deterministic CGMES export/import validation"
+  },
+  "script": "docs/examples/uc3_cgmes_roundtrip.py",
+  "use_case": "uc3",
+  "validations": {
+    "cgmes_import": {
+      "case_id": "cgmes",
+      "details": {
+        "compared_buses": 118
+      },
+      "duration_seconds": 0.0,
+      "export_tool": null,
+      "max_voltage_delta_pu": 0.0,
+      "model_type": null,
+      "notes": "",
+      "passed": true,
+      "slack_delta_mva": 0.0,
+      "source_tool": null,
+      "status": "validated",
+      "timestamp": "2026-04-22T16:13:07Z"
+    },
+    "cgmes_roundtrip": {
+      "case_id": "cgmes_smoke.roundtrip",
+      "details": {
+        "compared_buses": 2
+      },
+      "duration_seconds": 0.0,
+      "export_tool": null,
+      "max_voltage_delta_pu": 1.1103585416259206e-16,
+      "model_type": null,
+      "notes": "",
+      "passed": true,
+      "slack_delta_mva": 9.730026004390135e-13,
+      "source_tool": null,
+      "status": "validated",
+      "timestamp": "2026-04-22T16:13:07Z"
+    }
+  }
+}

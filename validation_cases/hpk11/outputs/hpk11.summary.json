@@ -1,0 +1,43 @@
+{
+  "source_workbook": "validation_cases/hpk11/source/Network_3_Urban_HPK11.xlsx",
+  "opendss_master": "validation_cases/hpk11/outputs/hpk11_master.dss",
+  "pandapower_json": "validation_cases/hpk11/outputs/hpk11.pandapower.json",
+  "backend_copy": "validation_cases/hpk11/outputs/hpk11.backend.pandapower.json",
+  "validation": {
+    "case_id": "hpk11_master",
+    "passed": true,
+    "slack_delta_mva": 0.12456405602853675,
+    "max_voltage_delta_pu": 0.005731906273189581,
+    "details": {
+      "compared_nodes": 33564,
+      "mode": "unbalanced_3ph",
+      "backend": "pandapower"
+    },
+    "status": "validated",
+    "source_tool": null,
+    "export_tool": null,
+    "model_type": null,
+    "notes": "",
+    "timestamp": "2026-05-23T13:57:09Z",
+    "duration_seconds": 0.0
+  },
+  "validation_error": null,
+  "counts": {
+    "bus": 11188,
+    "line": 11032,
+    "trafo": 44,
+    "load": 1,
+    "asymmetric_load": 5274,
+    "ext_grid": 1,
+    "bus_geodata": 11189,
+    "bus_geodata_propagated": 10550,
+    "line_geodata": 593
+  },
+  "geodata_bounds": {
+    "count": 11189,
+    "x_min": 409.806817,
+    "x_max": 9041.514449399809,
+    "y_min": -51.43835684465977,
+    "y_max": 6872.761363
+  }
+}

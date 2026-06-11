@@ -1,0 +1,7 @@
+{
+  "full_network": "validation_cases/pypsa-eur/osm_raw_de_60kv/outputs/pypsa_eur_osm_raw_de_60kv.pandapower.json",
+  "validation_report": "validation_cases/pypsa-eur/osm_raw_de_60kv/outputs/pypsa_eur_osm_raw_de_60kv.validation.json",
+  "diagnostic_report": "validation_cases/pypsa-eur/osm_raw_de_60kv/outputs/pypsa_eur_osm_raw_de_60kv.pandapower.json.diagnostic.json",
+  "island_output_dir": "validation_cases/pypsa-eur/osm_raw_de_60kv/outputs/pypsa_eur_osm_raw_de_60kv.pandapower_islands",
+  "islands": []
+}

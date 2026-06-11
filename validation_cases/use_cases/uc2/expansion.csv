@@ -1,0 +1,10 @@
+bus,technology,installed_mw,unit_cost_eur_per_mw
+sourcebus,pv,0.05,700000
+sourcebus,bess,0.02,450000
+sourcebus,heat_pump,0.01,300000
+mvbus,pv,0.05,700000
+mvbus,bess,0.02,450000
+mvbus,heat_pump,0.01,300000
+loadbus,pv,1.2,700000
+loadbus,bess,0.6,450000
+loadbus,heat_pump,0.375,300000

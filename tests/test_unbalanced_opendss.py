@@ -10,7 +10,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_unbalanced_opendss_roundtrip_and_pmd_validation(tmp_path: Path) -> None:
-    source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss"
+    source = REPO_ROOT / "validation_cases/native/opendss/minimal_unbalanced_3ph.dss"
     adapter = OpenDSSImportAdapter()
     reference = adapter.solve_source_case(source)
     case = adapter.import_case(source)

@@ -1,0 +1,135 @@
+{
+  "source": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower.json",
+  "output_dir": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_all_islands",
+  "island_count": 7,
+  "full_network": {
+    "buses": 8660,
+    "lines": 12257,
+    "transformers": 696,
+    "loads": 8659,
+    "generators": 7296,
+    "static_generators": 0,
+    "external_grids": 6
+  },
+  "islands": [
+    {
+      "island_index": 0,
+      "output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_all_islands/pypsa_eur_hv_all_de_mv.island_00.pandapower.json",
+      "source_bus_count": 7824,
+      "buses": 7824,
+      "lines": 10973,
+      "transformers": 696,
+      "loads": 7824,
+      "generators": 6681,
+      "static_generators": 0,
+      "external_grids": 1,
+      "has_geodata": true,
+      "vn_kv_counts": {
+        "60.0": 27,
+        "63.0": 4,
+        "65.0": 13,
+        "110.0": 4488,
+        "132.0": 2,
+        "150.0": 3,
+        "155.0": 6,
+        "380.0": 3281
+      }
+    },
+    {
+      "island_index": 1,
+      "output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_all_islands/pypsa_eur_hv_all_de_mv.island_01.pandapower.json",
+      "source_bus_count": 438,
+      "buses": 438,
+      "lines": 707,
+      "transformers": 0,
+      "loads": 438,
+      "generators": 256,
+      "static_generators": 0,
+      "external_grids": 1,
+      "has_geodata": true,
+      "vn_kv_counts": {
+        "380.0": 438
+      }
+    },
+    {
+      "island_index": 2,
+      "output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_all_islands/pypsa_eur_hv_all_de_mv.island_02.pandapower.json",
+      "source_bus_count": 333,
+      "buses": 333,
+      "lines": 484,
+      "transformers": 0,
+      "loads": 333,
+      "generators": 325,
+      "static_generators": 0,
+      "external_grids": 1,
+      "has_geodata": true,
+      "vn_kv_counts": {
+        "380.0": 333
+      }
+    },
+    {
+      "island_index": 3,
+      "output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_all_islands/pypsa_eur_hv_all_de_mv.island_03.pandapower.json",
+      "source_bus_count": 46,
+      "buses": 46,
+      "lines": 68,
+      "transformers": 0,
+      "loads": 46,
+      "generators": 24,
+      "static_generators": 0,
+      "external_grids": 1,
+      "has_geodata": true,
+      "vn_kv_counts": {
+        "380.0": 46
+      }
+    },
+    {
+      "island_index": 4,
+      "output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_all_islands/pypsa_eur_hv_all_de_mv.island_04.pandapower.json",
+      "source_bus_count": 13,
+      "buses": 13,
+      "lines": 19,
+      "transformers": 0,
+      "loads": 13,
+      "generators": 7,
+      "static_generators": 0,
+      "external_grids": 1,
+      "has_geodata": true,
+      "vn_kv_counts": {
+        "380.0": 13
+      }
+    },
+    {
+      "island_index": 5,
+      "output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_all_islands/pypsa_eur_hv_all_de_mv.island_05.pandapower.json",
+      "source_bus_count": 5,
+      "buses": 5,
+      "lines": 6,
+      "transformers": 0,
+      "loads": 5,
+      "generators": 3,
+      "static_generators": 0,
+      "external_grids": 1,
+      "has_geodata": true,
+      "vn_kv_counts": {
+        "380.0": 5
+      }
+    },
+    {
+      "island_index": 6,
+      "output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_all_islands/pypsa_eur_hv_all_de_mv.island_06.pandapower.json",
+      "source_bus_count": 1,
+      "buses": 1,
+      "lines": 0,
+      "transformers": 0,
+      "loads": 0,
+      "generators": 0,
+      "static_generators": 0,
+      "external_grids": 0,
+      "has_geodata": true,
+      "vn_kv_counts": {
+        "380.0": 1
+      }
+    }
+  ]
+}

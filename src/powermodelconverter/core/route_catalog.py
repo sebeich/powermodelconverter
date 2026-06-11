@@ -676,6 +676,13 @@ ROUTE_CATALOG_BY_TARGET = {
         {
             'source_tool': 'pypsa-eur',
             'model_type': 'balanced',
+            'case_id': 'pypsa_eur_osm_raw_de_60kv',
+            'notes': 'PyPSA-Eur OSM raw Germany base topology down to 60 kV, made power-flow-valid with one slack, one toy load, and one PV generator per AC island before conversion to pandapower.',
+            'requires': ['validation_cases/pypsa-eur/osm_raw_de_60kv/source/base.nc'],
+        },
+        {
+            'source_tool': 'pypsa-eur',
+            'model_type': 'balanced',
             'case_id': 'pypsa_eur_base_synthetic_pf',
             'notes': 'PyPSA-Eur artifact tracked from `pypsa_eur_base_synthetic_pf.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: PyPSA reference power flow failed: None.',
             'requires': [],
@@ -1082,4 +1089,3 @@ ROUTE_CATALOG_BY_TARGET = {
         },
     ],
 }
-

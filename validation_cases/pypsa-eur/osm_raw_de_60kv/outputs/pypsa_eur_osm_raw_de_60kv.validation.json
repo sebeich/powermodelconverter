@@ -1,0 +1,38 @@
+{
+  "source": "validation_cases/pypsa-eur/osm_raw_de_60kv/source/base.nc",
+  "snapshot": "2013-01-01 00:00:00",
+  "output": "validation_cases/pypsa-eur/osm_raw_de_60kv/outputs/pypsa_eur_osm_raw_de_60kv.pandapower.json",
+  "diagnostic_output": "validation_cases/pypsa-eur/osm_raw_de_60kv/outputs/pypsa_eur_osm_raw_de_60kv.pandapower.json.diagnostic.json",
+  "pruned_components": {
+    "links": 5
+  },
+  "synthetic_pf_case": {
+    "mode": "toy_load_pv_per_ac_island",
+    "load_mw_per_island": 50.0,
+    "added_loads": 1,
+    "added_slacks": 1,
+    "added_pv_generators": 1,
+    "configured_islands": [
+      {
+        "subnetwork": "0",
+        "connected_bus_count": 5427,
+        "slack_bus": "virtual_relation/3717718:1-400",
+        "load_bus": "way/1457106049-380",
+        "load_p_mw": 50.0,
+        "pv_p_mw": 50.0
+      }
+    ],
+    "degenerate_islands": []
+  },
+  "validation_scope": "ac_projection_against_pypsa",
+  "full_details_embedded": true,
+  "time_series_embedded": false,
+  "pandapower_trafo_model": "t",
+  "phase9_approach_used": "toy_load_pv_per_ac_island",
+  "reference_island_stats": null,
+  "pandapower_island_validation": null,
+  "validation": {
+    "skipped": true,
+    "reason": "PyPSA reference power flow failed: No AC islands converged for PyPSA PF reference."
+  }
+}
