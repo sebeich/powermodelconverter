@@ -25,7 +25,7 @@ artifacts/
 docs/generated/
 out_*/
 *:Zone.Identifier*
-validation_cases
+validation_cases/*
 # Generated runtime and experimental helper outputs.
 src/powermodelconverter/runtime/
 src/powermodelconverter/julia_psi/
