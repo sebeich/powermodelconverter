@@ -36,7 +36,8 @@ COPY input /opt/powermodelconverter/input
 COPY LICENSE CITATION.cff /opt/powermodelconverter/
 
 RUN python -m pip install --upgrade pip setuptools wheel \
-    && python -m pip install -e ".[dev]"
+    && python -m pip install -e ".[dev,ding0]" \
+    && python -m pip install --no-deps "ding0==0.2.1"
 
 RUN bash scripts/bootstrap_julia_env.sh
 

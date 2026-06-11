@@ -23,8 +23,8 @@ _LENGTH_FACTORS_TO_KM = {
     0: 1.0,
     1: 1.609344,
     2: 0.3048 / 1000.0,
-    3: 0.001,
-    4: 1.0,
+    3: 1.0,
+    4: 0.001,
     5: 0.3048,
     6: 0.0254 / 1000.0,
     7: 0.01 / 1000.0,
@@ -51,6 +51,7 @@ class _TransformerSpec:
     vn_lv_kv: float
     vk_percent: float
     vkr_percent: float
+    pfe_kw: float
     tap_pos: float
     tap_neutral: float
     tap_min: float
@@ -58,6 +59,8 @@ class _TransformerSpec:
     tap_step_percent: float
     phase_count: int
     is_regulator: bool
+    shift_degree: float
+    vector_group: str
 
 
 class OpenDSSImportAdapter(ImportAdapter):
@@ -143,6 +146,7 @@ class OpenDSSImportAdapter(ImportAdapter):
         self._create_ext_grids(net, bus_lookup)
         self._create_lines(net, bus_lookup, is_unbalanced=is_unbalanced)
         self._create_transformers(net, bus_lookup)
+        self._reconcile_bus_nominal_voltages(net)
         self._create_capacitors(net, bus_lookup)
         self._create_loads(net, bus_lookup)
         if not len(net.bus):
@@ -273,9 +277,8 @@ class OpenDSSImportAdapter(ImportAdapter):
                 vn_lv_kv=spec.vn_lv_kv,
                 vk_percent=spec.vk_percent,
                 vkr_percent=spec.vkr_percent,
-                pfe_kw=0.0,
+                pfe_kw=spec.pfe_kw,
                 i0_percent=0.0,
-                shift_degree=0.0,
                 tap_pos=spec.tap_pos,
                 tap_neutral=spec.tap_neutral,
                 tap_min=spec.tap_min,
@@ -284,13 +287,67 @@ class OpenDSSImportAdapter(ImportAdapter):
                 tap_side="lv",
                 tap_changer_type="Ratio" if spec.tap_step_percent else None,
                 name=spec.name,
-                vector_group="Dyn",
+                vector_group=spec.vector_group,
                 vk0_percent=spec.vk_percent,
                 vkr0_percent=spec.vkr_percent,
                 mag0_percent=100.0,
                 mag0_rx=0.0,
                 si0_hv_partial=0.9,
+                shift_degree=spec.shift_degree,
             )
+
+    def _reconcile_bus_nominal_voltages(self, net: Any) -> None:
+        if not len(net.bus):
+            return
+
+        adjacency: dict[int, set[int]] = {int(idx): set() for idx in net.bus.index}
+        if hasattr(net, "line"):
+            for _, row in net.line.iterrows():
+                from_bus = int(row.from_bus)
+                to_bus = int(row.to_bus)
+                adjacency.setdefault(from_bus, set()).add(to_bus)
+                adjacency.setdefault(to_bus, set()).add(from_bus)
+        if hasattr(net, "switch"):
+            for _, row in net.switch.iterrows():
+                if str(row.et).strip().lower() != "b":
+                    continue
+                bus = int(row.bus)
+                other_bus = int(row.element)
+                adjacency.setdefault(bus, set()).add(other_bus)
+                adjacency.setdefault(other_bus, set()).add(bus)
+
+        seeded_vn_kv: dict[int, float] = {}
+        if hasattr(net, "ext_grid"):
+            for _, row in net.ext_grid.iterrows():
+                bus = int(row.bus)
+                seeded_vn_kv.setdefault(bus, float(net.bus.at[bus, "vn_kv"]))
+        if hasattr(net, "trafo"):
+            for _, row in net.trafo.iterrows():
+                seeded_vn_kv[int(row.hv_bus)] = float(row.vn_hv_kv)
+                seeded_vn_kv[int(row.lv_bus)] = float(row.vn_lv_kv)
+
+        visited: set[int] = set()
+        for bus_idx in net.bus.index:
+            start = int(bus_idx)
+            if start in visited:
+                continue
+
+            component: list[int] = []
+            stack = [start]
+            while stack:
+                current = stack.pop()
+                if current in visited:
+                    continue
+                visited.add(current)
+                component.append(current)
+                stack.extend(neighbor for neighbor in adjacency.get(current, set()) if neighbor not in visited)
+
+            component_seeds = {round(seeded_vn_kv[bus], 9) for bus in component if bus in seeded_vn_kv}
+            if len(component_seeds) != 1:
+                continue
+            target_vn_kv = component_seeds.pop()
+            for bus in component:
+                net.bus.at[bus, "vn_kv"] = target_vn_kv
 
     def _collect_transformer_specs(self) -> list[_TransformerSpec]:
         specs: list[_TransformerSpec] = []
@@ -315,6 +372,14 @@ class OpenDSSImportAdapter(ImportAdapter):
             num_taps = max(int(dss.Transformers.NumTaps()), 1)
             percent_r = percent_r_hv + percent_r_lv
             xhl = float(dss.Transformers.Xhl())
+            try:
+                noloadloss_pct = float(dss.Properties.Value("%noloadloss") or 0.0)
+            except Exception:
+                noloadloss_pct = 0.0
+            pfe_kw = max(kva / 1000.0, 0.001) * noloadloss_pct / 100.0 * 1000.0
+            conn_pri, conn_sec = self._transformer_connections()
+            shift_degree = self._transformer_shift_degree(conn_pri, conn_sec)
+            vector_group = self._transformer_vector_group(conn_pri, conn_sec)
             tap_step_percent = ((max_tap - min_tap) / num_taps) * 100.0 if num_taps else 0.0
             tap_pos_steps = int(round((tap_pos - 1.0) / (tap_step_percent / 100.0))) if tap_step_percent else 0
             tap_min = int(round((min_tap - 1.0) / (tap_step_percent / 100.0))) if tap_step_percent else 0
@@ -328,6 +393,7 @@ class OpenDSSImportAdapter(ImportAdapter):
                     vn_lv_kv=vn_lv_kv,
                     vk_percent=max(xhl, 0.001),
                     vkr_percent=max(percent_r, 0.0),
+                    pfe_kw=pfe_kw,
                     tap_pos=float(tap_pos_steps),
                     tap_neutral=0.0,
                     tap_min=float(tap_min),
@@ -335,6 +401,8 @@ class OpenDSSImportAdapter(ImportAdapter):
                     tap_step_percent=tap_step_percent,
                     phase_count=phase_count,
                     is_regulator=bool(re.match(r"reg\d+[a-z]?$", name, re.IGNORECASE)),
+                    shift_degree=shift_degree,
+                    vector_group=vector_group,
                 )
             )
             if not dss.Transformers.Next():
@@ -361,6 +429,7 @@ class OpenDSSImportAdapter(ImportAdapter):
                     vn_lv_kv=first.vn_lv_kv,
                     vk_percent=max(max(item.vk_percent for item in group), 0.3),
                     vkr_percent=max(max(item.vkr_percent for item in group), 0.003),
+                    pfe_kw=sum(item.pfe_kw for item in group),
                     tap_pos=sum(item.tap_pos for item in group) / len(group),
                     tap_neutral=0.0,
                     tap_min=min(item.tap_min for item in group),
@@ -368,9 +437,51 @@ class OpenDSSImportAdapter(ImportAdapter):
                     tap_step_percent=first.tap_step_percent,
                     phase_count=3,
                     is_regulator=True,
+                    shift_degree=first.shift_degree,
+                    vector_group=first.vector_group,
                 )
             )
         return aggregated
+
+    def _transformer_connections(self) -> tuple[str, str]:
+        raw = str(dss.Properties.Value("conns") or "")
+        values = [entry.strip().lower() for entry in raw.strip("[]").split(",") if entry.strip()]
+        if len(values) >= 2:
+            return values[0], values[1]
+        normalized = [self._normalize_transformer_connection(value) for value in values]
+        if len(normalized) >= 2:
+            return normalized[0], normalized[1]
+        return "wye", "wye"
+
+    def _normalize_transformer_connection(self, value: str) -> str:
+        text = value.strip().lower()
+        if text.startswith("delta"):
+            return "delta"
+        if text.startswith("wye") or text.startswith("ln") or text.startswith("star"):
+            return "wye"
+        return text
+
+    def _transformer_shift_degree(self, primary: str, secondary: str) -> float:
+        primary = self._normalize_transformer_connection(primary)
+        secondary = self._normalize_transformer_connection(secondary)
+        if primary == "delta" and secondary == "wye":
+            return 30.0
+        if primary == "wye" and secondary == "delta":
+            return -30.0
+        return 0.0
+
+    def _transformer_vector_group(self, primary: str, secondary: str) -> str:
+        primary = self._normalize_transformer_connection(primary)
+        secondary = self._normalize_transformer_connection(secondary)
+        if primary == "delta" and secondary == "wye":
+            return "Dyn"
+        if primary == "wye" and secondary == "delta":
+            return "Yd"
+        if primary == "wye" and secondary == "wye":
+            return "Yyn"
+        if primary == "delta" and secondary == "delta":
+            return "Dd"
+        return "Yyn"
 
     def _create_loads(self, net: Any, bus_lookup: dict[str, int]) -> None:
         if not dss.Loads.First():
@@ -381,31 +492,14 @@ class OpenDSSImportAdapter(ImportAdapter):
             q_mvar = float(dss.Loads.kvar()) / 1000.0
             phases = int(dss.Loads.Phases())
             is_delta = bool(dss.Loads.IsDelta())
-            load_model = int(dss.Loads.Model())
 
             if phases == 3 and sorted(nodes)[:3] == [1, 2, 3] and not is_delta:
-                load_kwargs: dict[str, Any] = {}
-                if load_model == 2:
-                    load_kwargs.update(
-                        {
-                            "const_z_p_percent": 100.0,
-                            "const_z_q_percent": 100.0,
-                        }
-                    )
-                elif load_model == 5:
-                    load_kwargs.update(
-                        {
-                            "const_i_p_percent": 100.0,
-                            "const_i_q_percent": 100.0,
-                        }
-                    )
                 pp.create_load(
                     net,
                     bus=bus_lookup[bus_name],
                     p_mw=p_mw,
                     q_mvar=q_mvar,
                     name=dss.Loads.Name(),
-                    **load_kwargs,
                 )
             else:
                 phase_nodes = [node for node in nodes if node in _PHASE_BY_NODE]
@@ -429,7 +523,7 @@ class OpenDSSImportAdapter(ImportAdapter):
                     bus=bus_lookup[bus_name],
                     name=dss.Loads.Name(),
                     type="delta" if is_delta else "wye",
-                    pmc_model=load_model,
+                    pmc_model=1,
                     pmc_nodes=",".join(str(node) for node in phase_nodes),
                     pmc_vminpu=float(dss.Loads.Vminpu()),
                     pmc_vmaxpu=float(dss.Loads.Vmaxpu()),

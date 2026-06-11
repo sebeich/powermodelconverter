@@ -4,6 +4,7 @@ import subprocess
 import sys
 
 import pandapower.networks as pn
+import pytest
 
 from powermodelconverter.importers.matpower import MatpowerImportAdapter
 from powermodelconverter.exporters.matpower import MatpowerExportAdapter
@@ -23,11 +24,13 @@ from powermodelconverter.validation.powerflow import ValidationService
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+DTU_ADN_SOURCE = REPO_ROOT / "input/DTU_ADN.py"
+DTU7K_SOURCE = REPO_ROOT / "input/DTU7K.py"
 
 
 def test_matpower_import() -> None:
     case = MatpowerImportAdapter().import_case(
-        REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m"
+        REPO_ROOT / "validation_cases/native/matpower/case9.m"
     )
     assert case.case_id == "case9"
     assert case.source_format == "matpower"
@@ -92,7 +95,7 @@ def test_matpower_import_recovers_type3_slack_without_generator(tmp_path: Path) 
 
 def test_matpower_export_reimports_text_case_file(tmp_path: Path) -> None:
     source_case = MatpowerImportAdapter().import_case(
-        REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m"
+        REPO_ROOT / "validation_cases/native/matpower/case9.m"
     )
 
     exported = MatpowerExportAdapter().export_case(source_case, tmp_path / "case9_roundtrip.m")
@@ -104,7 +107,7 @@ def test_matpower_export_reimports_text_case_file(tmp_path: Path) -> None:
 
 def test_powersystems_import_relabels_source_format() -> None:
     case = PowerSystemsImportAdapter().import_case(
-        REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m"
+        REPO_ROOT / "validation_cases/native/matpower/case9.m"
     )
     assert case.case_id == "case9"
     assert case.source_format == "powersystems"
@@ -113,7 +116,7 @@ def test_powersystems_import_relabels_source_format() -> None:
 
 def test_powersystems_export_writes_matpower_case_file(tmp_path: Path) -> None:
     source_case = MatpowerImportAdapter().import_case(
-        REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m"
+        REPO_ROOT / "validation_cases/native/matpower/case9.m"
     )
     exported = PowerSystemsExportAdapter().export_case(source_case, tmp_path / "case9.powersystems.m")
     reimported = MatpowerImportAdapter().import_case(exported)
@@ -164,7 +167,9 @@ def test_pypower_import_from_python_case(tmp_path: Path) -> None:
 
 
 def test_pypower_dtu_network_only_import_and_validation() -> None:
-    source = REPO_ROOT / "input/DTU_ADN.py"
+    source = DTU_ADN_SOURCE
+    if not source.exists():
+        pytest.skip("DTU_ADN.py is a local scratch input; promote it to validation_cases before making this mandatory.")
 
     adapter = PypowerImportAdapter()
     case = adapter.import_case(source)
@@ -183,13 +188,16 @@ def test_pypower_dtu_network_only_import_and_validation() -> None:
 
 
 def test_pypower_dtu7k_connected_network_default_and_explicit_subnet() -> None:
+    if not DTU7K_SOURCE.exists():
+        pytest.skip("DTU7K.py is a local scratch input; promote it to validation_cases before making this mandatory.")
+
     adapter = PypowerImportAdapter()
     validator = ValidationService()
 
-    default_case = adapter.import_case(REPO_ROOT / "input/DTU7K.py")
-    default_snapshot = adapter.solve_source_case(REPO_ROOT / "input/DTU7K.py")
-    subnet_26_case = adapter.import_case(f"{REPO_ROOT / 'input/DTU7K.py'}::26")
-    subnet_27_case = adapter.import_case(f"{REPO_ROOT / 'input/DTU7K.py'}::27")
+    default_case = adapter.import_case(DTU7K_SOURCE)
+    default_snapshot = adapter.solve_source_case(DTU7K_SOURCE)
+    subnet_26_case = adapter.import_case(f"{DTU7K_SOURCE}::26")
+    subnet_27_case = adapter.import_case(f"{DTU7K_SOURCE}::27")
     default_result = validator.validate_against_pandapower(
         default_case,
         reference_slack_p_mw=default_snapshot.slack_p_mw,
@@ -207,9 +215,12 @@ def test_pypower_dtu7k_connected_network_default_and_explicit_subnet() -> None:
 
 
 def test_pypower_dtu7k_subnet_27_validates_against_source_snapshot() -> None:
+    if not DTU7K_SOURCE.exists():
+        pytest.skip("DTU7K.py is a local scratch input; promote it to validation_cases before making this mandatory.")
+
     adapter = PypowerImportAdapter()
     validator = ValidationService()
-    source = f"{REPO_ROOT / 'input/DTU7K.py'}::27"
+    source = f"{DTU7K_SOURCE}::27"
 
     case = adapter.import_case(source)
     snapshot = adapter.solve_source_case(source)
@@ -226,7 +237,7 @@ def test_pypower_dtu7k_subnet_27_validates_against_source_snapshot() -> None:
 
 
 def test_opendss_import_and_validation() -> None:
-    source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss/minimal_radial.dss"
+    source = REPO_ROOT / "validation_cases/native/opendss/minimal_radial.dss"
     adapter = OpenDSSImportAdapter()
     reference = adapter.solve_source_case(source)
     case = adapter.import_case(source)
@@ -236,7 +247,7 @@ def test_opendss_import_and_validation() -> None:
 
 
 def test_opendss_ieee13_import_smoke() -> None:
-    source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss"
+    source = REPO_ROOT / "validation_cases/native/opendss/IEEE13Nodeckt.dss"
     adapter = OpenDSSImportAdapter()
     case = adapter.import_case(source)
 
@@ -277,7 +288,7 @@ def test_opendss_import_handles_case_mismatched_redirects(tmp_path: Path) -> Non
 
 
 def test_pandapower_split_export_validates_minimal_unbalanced_opendss(tmp_path: Path) -> None:
-    source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss"
+    source = REPO_ROOT / "validation_cases/native/opendss/minimal_unbalanced_3ph.dss"
     source_case = OpenDSSImportAdapter().import_case(source)
     reference = OpenDSSImportAdapter().solve_source_case(source)
 
@@ -303,6 +314,7 @@ def test_opendss_regulator_bank_specs_are_aggregated_for_pandapower() -> None:
             vn_lv_kv=2.402,
             vk_percent=0.01,
             vkr_percent=0.00001,
+            pfe_kw=0.0,
             tap_pos=10.0,
             tap_neutral=0.0,
             tap_min=-16.0,
@@ -310,6 +322,8 @@ def test_opendss_regulator_bank_specs_are_aggregated_for_pandapower() -> None:
             tap_step_percent=0.625,
             phase_count=1,
             is_regulator=True,
+            shift_degree=0.0,
+            vector_group="Yy",
         ),
         _TransformerSpec(
             name="reg4b",
@@ -319,6 +333,7 @@ def test_opendss_regulator_bank_specs_are_aggregated_for_pandapower() -> None:
             vn_lv_kv=2.402,
             vk_percent=0.01,
             vkr_percent=0.00001,
+            pfe_kw=0.0,
             tap_pos=4.0,
             tap_neutral=0.0,
             tap_min=-16.0,
@@ -326,6 +341,8 @@ def test_opendss_regulator_bank_specs_are_aggregated_for_pandapower() -> None:
             tap_step_percent=0.625,
             phase_count=1,
             is_regulator=True,
+            shift_degree=0.0,
+            vector_group="Yy",
         ),
         _TransformerSpec(
             name="reg4c",
@@ -335,6 +352,7 @@ def test_opendss_regulator_bank_specs_are_aggregated_for_pandapower() -> None:
             vn_lv_kv=2.402,
             vk_percent=0.01,
             vkr_percent=0.00001,
+            pfe_kw=0.0,
             tap_pos=6.0,
             tap_neutral=0.0,
             tap_min=-16.0,
@@ -342,6 +360,8 @@ def test_opendss_regulator_bank_specs_are_aggregated_for_pandapower() -> None:
             tap_step_percent=0.625,
             phase_count=1,
             is_regulator=True,
+            shift_degree=0.0,
+            vector_group="Yy",
         ),
     ]
 
@@ -383,7 +403,7 @@ def test_cli_precheck_reports_supported_single_target_route() -> None:
             "powermodelconverter.cli.main",
             "precheck",
             "--source",
-            str(REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m"),
+            str(REPO_ROOT / "validation_cases/native/matpower/case9.m"),
             "--target-format",
             "pypsa",
         ],
@@ -401,7 +421,7 @@ def test_cli_precheck_reports_supported_single_target_route() -> None:
 
 def test_cli_translate_exports_only_requested_target(tmp_path: Path) -> None:
     source = tmp_path / "case9.m"
-    source.write_text((REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m").read_text())
+    source.write_text((REPO_ROOT / "validation_cases/native/matpower/case9.m").read_text())
     completed = subprocess.run(
         [
             sys.executable,
@@ -428,7 +448,7 @@ def test_cli_translate_exports_only_requested_target(tmp_path: Path) -> None:
 
 
 def test_balanced_pandapower_export_to_opendss(tmp_path: Path) -> None:
-    source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss/minimal_radial.dss"
+    source = REPO_ROOT / "validation_cases/native/opendss/minimal_radial.dss"
     opendss_case = OpenDSSImportAdapter().import_case(source)
     pp_json = tmp_path / "minimal_radial.pandapower.json"
     PandapowerAdapter().export_json(opendss_case, pp_json)
@@ -445,14 +465,12 @@ def test_report_generator_surfaces_pypsa_eur_island_records() -> None:
 
     module = _load_generator_module()
     records = module.load_pypsa_eur_validation_records(
-        REPO_ROOT / "src/powermodelconverter/data/exports/pypsa_eur_full_base_island_validated.validation.json"
+        REPO_ROOT / "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.validation.json"
     )
 
-    aggregate = next(record for record in records if record.case_id == "pypsa_eur_full_base_island_validated")
-    island_zero = next(record for record in records if record.case_id.endswith("::island_0"))
-    island_one = next(record for record in records if record.case_id.endswith("::island_1"))
+    aggregate = next(record for record in records if record.case_id == "pypsa_eur_hv_all_de_mv")
+    island_two = next(record for record in records if record.case_id.endswith("::island_2"))
 
     assert aggregate.status == "validated"
-    assert island_zero.status == "validated"
-    assert island_zero.compared_points == 620
-    assert island_one.compared_points == 5283
+    assert island_two.status == "validated"
+    assert island_two.compared_points == 7824

@@ -36,6 +36,16 @@ CAPABILITY_MATRIX: dict[str, ToolCapability] = {
         unbalanced_validation=False,
         notes="Native pandapower CGMES/CIM import is wrapped for balanced models, and balanced export is validated by re-importing the generated CGMES package through pandapower. Current export scope is the supported bus-branch subset with one slack source, lines, transformers, and constant-power loads.",
     ),
+    "ding0": ToolCapability(
+        tool="ding0",
+        balanced_import=True,
+        balanced_export=False,
+        balanced_validation=False,
+        unbalanced_import=False,
+        unbalanced_export=False,
+        unbalanced_validation=False,
+        notes="Primary ding0 import builds the hub pandapower model directly. Validation against ding0 power-flow results is pending.",
+    ),
     "opendss": ToolCapability(
         tool="opendss",
         balanced_import=True,

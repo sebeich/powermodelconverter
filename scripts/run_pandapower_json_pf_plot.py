@@ -9,13 +9,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pandapower as pp
+from pandapower.auxiliary import LoadflowNotConverged
 from pandapower.plotting.geo import convert_geodata_to_geojson
+from pandapower.plotting.plotly import simple_plotly
 from pandapower.plotting.simple_plot import simple_plot
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Import a pandapower JSON, run power flow, and export a PNG network plot."
+        description="Import a pandapower JSON, run power flow, and export geodata-backed network plots."
     )
     parser.add_argument(
         "--input",
@@ -26,6 +28,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-png",
         default=None,
         help="Output PNG path (default: <input_stem>.pf.png)",
+    )
+    parser.add_argument(
+        "--output-html",
+        default=None,
+        help="Output interactive HTML path (default: <input_stem>.pf.html)",
     )
     parser.add_argument(
         "--output-pf-json",
@@ -63,6 +70,12 @@ def resolve_output_png(input_path: Path, output_png: str | None) -> Path:
     if output_png:
         return Path(output_png)
     return input_path.with_suffix(".pf.png")
+
+
+def resolve_output_html(input_path: Path, output_html: str | None) -> Path:
+    if output_html:
+        return Path(output_html)
+    return input_path.with_suffix(".pf.html")
 
 
 def _extract_pypsa_coords(net: pp.pandapowerNet) -> pd.DataFrame | None:
@@ -129,6 +142,28 @@ def render_network_png(net: pp.pandapowerNet, output_png: Path, dpi: int) -> Non
     plt.close(fig)
 
 
+def render_network_html(net: pp.pandapowerNet, output_html: Path) -> None:
+    if not ensure_simple_plot_geodata(net):
+        raise RuntimeError(
+            "No usable geodata found in pandapower JSON (and no embedded PyPSA x/y). "
+            "simple_plotly requires coordinates or optional 'igraph' for auto-layout."
+        )
+
+    output_html.parent.mkdir(parents=True, exist_ok=True)
+    simple_plotly(
+        net,
+        respect_switches=True,
+        use_line_geo=False,
+        on_map=False,
+        filename=str(output_html),
+        auto_open=False,
+        showlegend=True,
+        line_width=1.5,
+        bus_size=8.0,
+        ext_grid_size=14.0,
+    )
+
+
 def run(args: argparse.Namespace) -> int:
     input_path = Path(args.input)
     if not input_path.exists():
@@ -136,19 +171,27 @@ def run(args: argparse.Namespace) -> int:
 
     output_png = resolve_output_png(input_path, args.output_png)
     output_png.parent.mkdir(parents=True, exist_ok=True)
+    output_html = resolve_output_html(input_path, args.output_html)
+    output_html.parent.mkdir(parents=True, exist_ok=True)
 
     net = pp.from_json(str(input_path))
 
-    pp.runpp(
-        net,
-        algorithm=args.algorithm,
-        init=args.init,
-        trafo_model=args.trafo_model,
-        calculate_voltage_angles=True,
-        numba=False,
-    )
+    pf_error = None
+    try:
+        pp.runpp(
+            net,
+            algorithm=args.algorithm,
+            init=args.init,
+            trafo_model=args.trafo_model,
+            calculate_voltage_angles=True,
+            numba=False,
+        )
+    except LoadflowNotConverged as exc:
+        net.converged = False
+        pf_error = str(exc)
 
     render_network_png(net, output_png=output_png, dpi=args.dpi)
+    render_network_html(net, output_html=output_html)
 
     if args.output_pf_json:
         output_pf = Path(args.output_pf_json)
@@ -158,11 +201,14 @@ def run(args: argparse.Namespace) -> int:
     summary = {
         "input": str(input_path),
         "output_png": str(output_png),
+        "output_html": str(output_html),
         "converged": bool(getattr(net, "converged", False)),
         "bus_count": int(len(net.bus)),
         "line_count": int(len(net.line)),
         "trafo_count": int(len(net.trafo)),
     }
+    if pf_error is not None:
+        summary["pf_error"] = pf_error
     if len(net.res_ext_grid):
         summary["slack_p_mw"] = float(net.res_ext_grid.p_mw.sum())
         summary["slack_q_mvar"] = float(net.res_ext_grid.q_mvar.sum())

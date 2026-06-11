@@ -1,0 +1,203 @@
+{
+  "source": "validation_cases/pypsa-eur/hv_all_de_mv/source/base_s_all_elec_de_mv_overlay.nc",
+  "snapshot": "2013-01-01 00:00:00",
+  "output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower.json",
+  "diagnostic_output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower.json.diagnostic.json",
+  "pruned_components": {},
+  "synthetic_pf_case": {
+    "mode": "degree_weighted_near_zero_loads_with_distributed_pv",
+    "total_target_p_mw_per_island": 0.1,
+    "load_q_to_p_ratio": 0.3,
+    "distributed_pv_support": true,
+    "added_pv_generators": 7296,
+    "added_loads": 8659,
+    "added_slacks": 6,
+    "configured_islands": [
+      {
+        "subnetwork": "0",
+        "connected_bus_count": 438,
+        "slack_bus": "relation/11512349-300",
+        "max_degree": 9,
+        "total_target_p_mw": 0.1,
+        "total_assigned_p_mw": 0.1,
+        "min_bus_p_mw": 7.072135785007073e-05,
+        "max_bus_p_mw": 0.0006364922206506365,
+        "distributed_pv_enabled": true,
+        "pv_bus_count": 257,
+        "pv_bus_degree_threshold": 3.0,
+        "pv_unit_p_mw": 0.0003891050583657588
+      },
+      {
+        "subnetwork": "1",
+        "connected_bus_count": 333,
+        "slack_bus": "virtual_way/92676047:1-275",
+        "max_degree": 9,
+        "total_target_p_mw": 0.1,
+        "total_assigned_p_mw": 0.1,
+        "min_bus_p_mw": 0.00010330578512396695,
+        "max_bus_p_mw": 0.0009297520661157026,
+        "distributed_pv_enabled": true,
+        "pv_bus_count": 326,
+        "pv_bus_degree_threshold": 2.0,
+        "pv_unit_p_mw": 0.00030674846625766873
+      },
+      {
+        "subnetwork": "2",
+        "connected_bus_count": 7824,
+        "slack_bus": "way/23287448-225",
+        "max_degree": 23,
+        "total_target_p_mw": 0.1,
+        "total_assigned_p_mw": 0.1,
+        "min_bus_p_mw": 4.284857314251435e-06,
+        "max_bus_p_mw": 9.855171822778302e-05,
+        "distributed_pv_enabled": true,
+        "pv_bus_count": 6682,
+        "pv_bus_degree_threshold": 2.0,
+        "pv_unit_p_mw": 1.49655791679138e-05
+      },
+      {
+        "subnetwork": "3",
+        "connected_bus_count": 46,
+        "slack_bus": "way/88462768-220",
+        "max_degree": 5,
+        "total_target_p_mw": 0.1,
+        "total_assigned_p_mw": 0.1,
+        "min_bus_p_mw": 0.0014705882352941176,
+        "max_bus_p_mw": 0.0036764705882352945,
+        "distributed_pv_enabled": true,
+        "pv_bus_count": 25,
+        "pv_bus_degree_threshold": 3.0,
+        "pv_unit_p_mw": 0.004
+      },
+      {
+        "subnetwork": "4",
+        "connected_bus_count": 13,
+        "slack_bus": "way/144005861-220",
+        "max_degree": 4,
+        "total_target_p_mw": 0.1,
+        "total_assigned_p_mw": 0.1,
+        "min_bus_p_mw": 0.005263157894736842,
+        "max_bus_p_mw": 0.010526315789473684,
+        "distributed_pv_enabled": true,
+        "pv_bus_count": 8,
+        "pv_bus_degree_threshold": 3.0,
+        "pv_unit_p_mw": 0.0125
+      },
+      {
+        "subnetwork": "6",
+        "connected_bus_count": 5,
+        "slack_bus": "way/81409681-220",
+        "max_degree": 4,
+        "total_target_p_mw": 0.1,
+        "total_assigned_p_mw": 0.1,
+        "min_bus_p_mw": 0.008333333333333333,
+        "max_bus_p_mw": 0.03333333333333333,
+        "distributed_pv_enabled": true,
+        "pv_bus_count": 4,
+        "pv_bus_degree_threshold": 2.0,
+        "pv_unit_p_mw": 0.025
+      }
+    ],
+    "degenerate_islands": [
+      {
+        "subnetwork": "5",
+        "bus_count": 1,
+        "reason": "no_line_or_transformer_connections"
+      }
+    ]
+  },
+  "validation_scope": "ac_projection_against_pypsa",
+  "full_details_embedded": true,
+  "time_series_embedded": false,
+  "pandapower_trafo_model": "t",
+  "phase9_approach_used": "B_near_zero_with_distributed_pv",
+  "reference_island_stats": {
+    "total_ac_islands": 7,
+    "converged_islands": 1,
+    "excluded_islands": [
+      {
+        "subnetwork": "0",
+        "bus_count": 438,
+        "reason": "degenerate_non_convergent: 'Transformer'; 'Transformer'",
+        "condition_number": 505856.3423318296
+      },
+      {
+        "subnetwork": "1",
+        "bus_count": 333,
+        "reason": "degenerate_non_convergent: 'Transformer'; 'Transformer'",
+        "condition_number": 91635.99603270956
+      },
+      {
+        "subnetwork": "3",
+        "bus_count": 46,
+        "reason": "degenerate_non_convergent: 'Transformer'; 'Transformer'",
+        "condition_number": 32354.615440931306
+      },
+      {
+        "subnetwork": "4",
+        "bus_count": 13,
+        "reason": "degenerate_non_convergent: 'Transformer'; 'Transformer'",
+        "condition_number": 98690.53451882409
+      },
+      {
+        "subnetwork": "5",
+        "bus_count": 1,
+        "reason": "degenerate_no_connected_buses"
+      },
+      {
+        "subnetwork": "6",
+        "bus_count": 5,
+        "reason": "degenerate_non_convergent: 'Transformer'; 'Transformer'",
+        "condition_number": 29552.18758377009
+      }
+    ],
+    "failed_islands": []
+  },
+  "pandapower_island_validation": {
+    "passed": true,
+    "trafo_model": "t",
+    "total_islands": 1,
+    "passed_islands": 1,
+    "failed_islands": 0,
+    "max_slack_delta_mva": 3.9711513659082476e-08,
+    "max_voltage_delta_pu": 8.783951344071284e-11,
+    "max_ybus_relative_frobenius_norm": 2.073733397333977e-17,
+    "islands": [
+      {
+        "subnetwork": "2",
+        "converged": true,
+        "passed": true,
+        "slack_delta_mva": 3.9711513659082476e-08,
+        "max_voltage_delta_pu": 8.783951344071284e-11,
+        "ybus_relative_frobenius_norm": 2.073733397333977e-17,
+        "ybus_flagged_entry_count": 0,
+        "ybus_error": null,
+        "compared_buses": 7824,
+        "fixes": {
+          "zero_impedance": {
+            "lines": 0,
+            "transformers": 0
+          },
+          "slack_ext_grid_present": true,
+          "transformer_series": {
+            "flagged": 0,
+            "corrected": 0
+          }
+        },
+        "output": "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_islands/base_s_all_elec_de_mv_overlay.island_2.pandapower.json"
+      }
+    ],
+    "smallest_failed_island_diagnostic": null
+  },
+  "validation": {
+    "case_id": "base_s_all_elec_de_mv_overlay",
+    "passed": true,
+    "slack_delta_mva": 3.9711513659082476e-08,
+    "max_voltage_delta_pu": 8.783951344071284e-11,
+    "details": {
+      "total_islands": 1,
+      "passed_islands": 1,
+      "failed_islands": 0
+    }
+  }
+}

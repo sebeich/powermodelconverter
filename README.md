@@ -76,10 +76,13 @@ The detailed route inventory, tested cases, and measured numerical precision are
 - [validation_report.html](docs/validation_report.html)
 - [validation_report.md](docs/validation_report.md)
 - [validation_report.json](docs/validation_report.json)
+- [use_case_examples.md](docs/use_case_examples.md)
 
 Use those reports when you need the exact signed-off route matrix. The README stays focused on the researcher workflow: taking a model from one tool, converting it into another, and checking whether that conversion is within the validated scope of this repository.
 
 If your goal is simpler and more operational, use the `Quickstart` and `User Workflow` sections first. Those are the shortest path from one source file to one validated exported artifact.
+
+For larger paper-style workflows built on top of the hub-and-spoke conversion path, including downstream solver studies and reviewer-facing artifacts, see [use_case_examples.md](docs/use_case_examples.md).
 
 When you want the actual result numbers:
 
@@ -107,10 +110,10 @@ When you want the actual result numbers:
   Local Julia project used for `PowerModels` validation.
 - [src/powermodelconverter/julia_pmd](src/powermodelconverter/julia_pmd)
   Local Julia project used for `PowerModelsDistribution` validation.
-- [src/powermodelconverter/data/samples](src/powermodelconverter/data/samples)
-  Starter model files used for validation and examples.
+- [validation_cases](validation_cases)
+  Canonical validation-case collection. It contains native fixtures, published benchmark snapshots, PyPSA-Eur data-only cases, and checked derived artifacts used by reports and tests.
 - [docs](docs)
-  Generated validation inventory and future documentation.
+  Generated validation inventory and documentation. Model artifacts live in `validation_cases`, not under `docs`.
 - [tests](tests)
   Smoke tests and route-validation tests.
 - [scripts](scripts)
@@ -279,15 +282,15 @@ This project is released under the BSD 3-Clause License. See [LICENSE](LICENSE).
 
 Included sample files:
 
-- CGMES base case: [CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip](src/powermodelconverter/data/samples/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip)
-- CGMES boundary case: [CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip](src/powermodelconverter/data/samples/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip)
-- MATPOWER: [case9.m](src/powermodelconverter/data/samples/matpower/case9.m)
-- OpenDSS starter case: [minimal_radial.dss](src/powermodelconverter/data/samples/opendss/minimal_radial.dss)
-- OpenDSS balanced chained feeder: [minimal_chain.dss](src/powermodelconverter/data/samples/opendss/minimal_chain.dss)
-- OpenDSS unbalanced starter feeder: [minimal_unbalanced_3ph.dss](src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss)
-- OpenDSS unbalanced branched feeder: [minimal_unbalanced_branch.dss](src/powermodelconverter/data/samples/opendss/minimal_unbalanced_branch.dss)
-- OpenDSS IEEE benchmark feeder: [IEEE13Nodeckt.dss](src/powermodelconverter/data/samples/opendss/IEEE13Nodeckt.dss)
-- pandapower 3-phase: [ieee_european_lv_asymmetric.json](src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json)
+- CGMES base case: [CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip](validation_cases/native/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_BaseCase_Complete_v3.0.0.zip)
+- CGMES boundary case: [CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip](validation_cases/native/cgmes/CGMES_v2.4.15_SmallGridTestConfiguration_Boundary_v3.0.0.zip)
+- MATPOWER: [case9.m](validation_cases/native/matpower/case9.m)
+- OpenDSS starter case: [minimal_radial.dss](validation_cases/native/opendss/minimal_radial.dss)
+- OpenDSS balanced chained feeder: [minimal_chain.dss](validation_cases/native/opendss/minimal_chain.dss)
+- OpenDSS unbalanced starter feeder: [minimal_unbalanced_3ph.dss](validation_cases/native/opendss/minimal_unbalanced_3ph.dss)
+- OpenDSS unbalanced branched feeder: [minimal_unbalanced_branch.dss](validation_cases/native/opendss/minimal_unbalanced_branch.dss)
+- OpenDSS IEEE benchmark feeder: [IEEE13Nodeckt.dss](validation_cases/native/opendss/IEEE13Nodeckt.dss)
+- pandapower 3-phase: [ieee_european_lv_asymmetric.json](validation_cases/native/pandapower/ieee_european_lv_asymmetric.json)
 
 These samples serve as reference cases for the validated conversion routes and as minimal examples of the supported input structure.
 
@@ -323,7 +326,7 @@ Use this first. It is the quick way to see whether the source and target ecosyst
 
 ```bash
 ./scripts/pmc-docker.sh precheck \
-  --source src/powermodelconverter/data/samples/matpower/case9.m \
+  --source validation_cases/native/matpower/case9.m \
   --target-format pypsa
 ```
 
@@ -363,7 +366,7 @@ Use `--source-format` only when auto-detection is ambiguous, and `--output` only
 
 ```bash
 ./scripts/pmc-docker.sh translate \
-  --source src/powermodelconverter/data/samples/matpower/case9.m \
+  --source validation_cases/native/matpower/case9.m \
   --target-format pypsa
 ```
 
@@ -371,7 +374,7 @@ Use `--source-format` only when auto-detection is ambiguous, and `--output` only
 
 ```bash
 ./scripts/pmc-docker.sh translate \
-  --source src/powermodelconverter/data/samples/opendss/minimal_radial.dss \
+  --source validation_cases/native/opendss/minimal_radial.dss \
   --target-format pandapower
 ```
 
@@ -379,7 +382,7 @@ Use `--source-format` only when auto-detection is ambiguous, and `--output` only
 
 ```bash
 ./scripts/pmc-docker.sh translate \
-  --source src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json \
+  --source validation_cases/native/pandapower/ieee_european_lv_asymmetric.json \
   --target-format powermodelsdistribution
 ```
 
@@ -390,7 +393,7 @@ The maintainer-oriented command is still `validate`. It fans out into the curren
 ```bash
 ./scripts/pmc-docker.sh validate \
   --source-format matpower \
-  --source src/powermodelconverter/data/samples/matpower/case9.m
+  --source validation_cases/native/matpower/case9.m
 ```
 
 For paper-grade regression checks inside the pinned runtime, the same container can also run:
@@ -411,6 +414,18 @@ For day-to-day use, the practical reading is:
 3. check the slack mismatch to see whether the overall power balance stayed consistent
 4. check the voltage mismatch to see whether the solved state was preserved bus by bus, or phase by phase for unbalanced cases
 5. consult [validation_report.html](docs/validation_report.html) when you need the maintained signed-off routes and measured precision
+
+## Research Examples
+
+The repo also carries a set of documented research-style example workflows that sit above the single-route `translate` command. They cover:
+
+- convex OPF benchmarking after `pandapower -> powermodels`
+- OpenDSS feeder planning after `opendss -> pandapower -> pypsa`
+- CGMES to `powermodelsdistribution` interface studies
+- conceptual TSO-DSO merge experiments
+- PyPSA-Eur island cross-tool checks
+
+See [use_case_examples.md](docs/use_case_examples.md) for the full use-case specs, expected artifacts, and branch-specific caveats.
 
 ## CLI Output
 

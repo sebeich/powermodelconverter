@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import math
 from copy import deepcopy
@@ -98,6 +99,7 @@ class PandapowerAdapter:
         path.parent.mkdir(parents=True, exist_ok=True)
         net = self.to_net(case)
         convert_pp_to_pm(net, pm_file_path=str(path))
+        self._normalize_powermodels_export(path, net)
         return path
 
     def get_pm_bus_lookup(self, case: CanonicalCase) -> dict[int, int]:
@@ -226,3 +228,62 @@ class PandapowerAdapter:
         magnitude = float(net.res_bus_3ph.at[bus_idx, f"vm_{suffix}_pu"])
         angle = math.radians(float(net.res_bus_3ph.at[bus_idx, f"va_{suffix}_degree"]))
         return complex(magnitude * math.cos(angle), magnitude * math.sin(angle))
+
+    def _normalize_powermodels_export(self, path: Path, net: Any) -> None:
+        data = json.loads(path.read_text())
+        base_mva = float(data.get("baseMVA", getattr(net, "sn_mva", 1.0) or 1.0))
+        if math.isclose(base_mva, 0.0):
+            raise ValueError("PowerModels export baseMVA must be non-zero")
+
+        for load in data.get("load", {}).values():
+            load["pd"] = float(load.get("pd", 0.0)) / base_mva
+            load["qd"] = float(load.get("qd", 0.0)) / base_mva
+
+        for gen in data.get("gen", {}).values():
+            for key in ("pg", "qg", "pmax", "pmin", "qmax", "qmin"):
+                if key in gen:
+                    gen[key] = float(gen[key]) / base_mva
+            self._normalize_powermodels_cost(gen, base_mva)
+
+        for branch in data.get("branch", {}).values():
+            for key in ("br_r", "br_x", "g_fr", "g_to"):
+                if key in branch:
+                    branch[key] = float(branch[key]) * base_mva
+            for key in ("b_fr", "b_to", "rate_a", "rate_b", "rate_c", "c_rating_a", "c_rating_b", "c_rating_c"):
+                if key in branch:
+                    branch[key] = float(branch[key]) / base_mva
+
+        bus_lookup = net.get("_pd2pm_lookups", {}).get("bus")
+        if bus_lookup is not None and hasattr(net, "bus"):
+            for bus_idx, pm_bus in enumerate(bus_lookup):
+                if int(pm_bus) < 0 or bus_idx not in net.bus.index:
+                    continue
+                bus = data.get("bus", {}).get(str(int(pm_bus)))
+                if bus is None:
+                    continue
+                if "max_vm_pu" in net.bus.columns:
+                    bus["vmax"] = float(net.bus.at[bus_idx, "max_vm_pu"])
+                if "min_vm_pu" in net.bus.columns:
+                    bus["vmin"] = float(net.bus.at[bus_idx, "min_vm_pu"])
+
+        path.write_text(json.dumps(data, indent=4, sort_keys=True))
+
+    def _normalize_powermodels_cost(self, gen: dict[str, Any], base_mva: float) -> None:
+        model = int(gen.get("model", 0) or 0)
+        cost = list(gen.get("cost") or [])
+        if not cost:
+            return
+        if model == 2:
+            degree = len(cost) - 1
+            normalized: list[float] = []
+            for coefficient in cost:
+                scale = base_mva**degree if degree > 0 else 1.0
+                normalized.append(float(coefficient) * scale)
+                degree -= 1
+            gen["cost"] = normalized
+            return
+        if model == 1:
+            normalized = []
+            for idx, value in enumerate(cost):
+                normalized.append(float(value) / base_mva if idx % 2 == 0 else float(value))
+            gen["cost"] = normalized

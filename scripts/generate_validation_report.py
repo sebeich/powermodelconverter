@@ -41,10 +41,8 @@ MARKDOWN_REPORT = DOCS_DIR / "validation_report.md"
 HTML_REPORT = DOCS_DIR / "validation_report.html"
 JULIA_BINARY = resolve_julia_binary()
 PYPSA_EUR_VALIDATION_ARTIFACTS = (
-    REPO_ROOT / "src/powermodelconverter/data/exports/pypsa_eur_base_synthetic_pf.validation.json",
-    REPO_ROOT / "src/powermodelconverter/data/exports/pypsa_eur_full_base_network.validation.json",
-    REPO_ROOT / "src/powermodelconverter/data/exports/pypsa_eur_full_base_pf_validated.validation.json",
-    REPO_ROOT / "src/powermodelconverter/data/exports/pypsa_eur_full_base_island_validated.validation.json",
+    REPO_ROOT / "validation_cases/pypsa-eur/osm_raw_de_60kv/outputs/pypsa_eur_osm_raw_de_60kv.validation.json",
+    REPO_ROOT / "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.validation.json",
 )
 
 PM_JL_NATIVE_CASE_CANDIDATES = (
@@ -243,7 +241,7 @@ def main() -> None:
 
         # MATPOWER balanced sample
         matpower_case = MatpowerImportAdapter().import_case(
-            REPO_ROOT / "src/powermodelconverter/data/samples/matpower/case9.m"
+            REPO_ROOT / "validation_cases/native/matpower/case9.m"
         )
         records.append(
             validation_record(
@@ -363,7 +361,7 @@ def main() -> None:
 
         # CGMES official balanced sample
         cgmes_case = cgmes_import.import_case(
-            REPO_ROOT / "src/powermodelconverter/data/samples/cgmes"
+            REPO_ROOT / "validation_cases/native/cgmes"
         )
         records.append(
             validation_record(
@@ -387,7 +385,7 @@ def main() -> None:
         )
 
         # OpenDSS subset sample
-        opendss_source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss/minimal_radial.dss"
+        opendss_source = REPO_ROOT / "validation_cases/native/opendss/minimal_radial.dss"
         opendss_adapter = OpenDSSImportAdapter()
         opendss_reference = opendss_adapter.solve_source_case(opendss_source)
         opendss_case = opendss_adapter.import_case(opendss_source)
@@ -449,7 +447,7 @@ def main() -> None:
 
         # OpenDSS unbalanced starter feeder
         opendss_unbalanced_source = (
-            REPO_ROOT / "src/powermodelconverter/data/samples/opendss/minimal_unbalanced_3ph.dss"
+            REPO_ROOT / "validation_cases/native/opendss/minimal_unbalanced_3ph.dss"
         )
         opendss_unbalanced_reference = opendss_adapter.solve_source_case(opendss_unbalanced_source)
         opendss_unbalanced_case = opendss_adapter.import_case(opendss_unbalanced_source)
@@ -537,7 +535,7 @@ def main() -> None:
 
         # Pandapower native unbalanced sample
         pp_unbalanced_case = PandapowerImportAdapter().import_case(
-            REPO_ROOT / "src/powermodelconverter/data/samples/pandapower/ieee_european_lv_asymmetric.json"
+            REPO_ROOT / "validation_cases/native/pandapower/ieee_european_lv_asymmetric.json"
         )
         records.append(
             validation_record(
@@ -600,7 +598,7 @@ def main() -> None:
                 "OpenDSS native branched unbalanced feeder validated against source node voltages through PowerModelsDistribution.",
             ),
         ]:
-            source = REPO_ROOT / "src/powermodelconverter/data/samples/opendss" / sample_name
+            source = REPO_ROOT / "validation_cases/native/opendss" / sample_name
             source_reference = opendss_adapter.solve_source_case(source)
             source_case = opendss_adapter.import_case(source)
             records.append(
@@ -1086,13 +1084,28 @@ def validate_unbalanced_export(
     validator: ValidationService,
     tmpdir: Path,
 ) -> ValidationResult:
-    if export_tool == "pandapower":
-        return validator.validate_pandapower_unbalanced_roundtrip(case)
-    if export_tool == "opendss":
-        return validate_opendss_from_pandapower(case, validator, tmpdir)
-    if export_tool == "powermodelsdistribution":
-        return validate_powermodelsdistribution_from_pandapower(case, pandapower, validator, tmpdir)
-    raise ValueError(f"Unsupported unbalanced export tool {export_tool}")
+    try:
+        if export_tool == "pandapower":
+            return validator.validate_pandapower_unbalanced_roundtrip(case)
+        if export_tool == "opendss":
+            return validate_opendss_from_pandapower(case, validator, tmpdir)
+        if export_tool == "powermodelsdistribution":
+            return validate_powermodelsdistribution_from_pandapower(case, pandapower, validator, tmpdir)
+        raise ValueError(f"Unsupported unbalanced export tool {export_tool}")
+    except Exception as exc:
+        return ValidationResult(
+            case_id=case.case_id,
+            passed=False,
+            slack_delta_mva=math.inf,
+            max_voltage_delta_pu=math.inf,
+            details={
+                "compared_buses": 0,
+                "backend": export_tool,
+                "error": str(exc),
+            },
+            status="pending",
+            notes=f"Validation pending: {exc}",
+        )
 
 
 def _build_balanced_case_star_3bus() -> Any:
