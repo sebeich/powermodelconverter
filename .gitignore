@@ -57,3 +57,15 @@ src/powermodelconverter/data/exports/*.pandapower_all_islands/
 # Legacy generated sample derivatives.
 src/powermodelconverter/data/samples/**/*.pypsa.nc
 src/powermodelconverter/data/samples/**/*.pandapower-split.json
+
+# Paper material, use cases, notes and restricted data: local only, never publish.
+docs/paper/
+docs/examples/uc*
+docs/use_case_examples.md
+docs/research_methodology_llm_input.md
+docs/publication_checklist.md
+docs/issues/
+tests/test_uc*
+validation_cases/hpk11/
+validation_cases/use_cases/
+docs/examples/hpk11_opendss_to_pandapower.py
