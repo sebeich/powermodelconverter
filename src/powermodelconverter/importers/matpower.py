@@ -19,8 +19,25 @@ class MatpowerImportAdapter(ImportAdapter):
     def import_case(self, source: str | Path, **kwargs: Any) -> CanonicalCase:
         return import_matpower(source, **kwargs)
 
+    # Kept separate from import_case so the power-flow-only normalisation is an
+    # explicit choice at the call site rather than a default nobody notices.
+    def import_case_merged_generators(self, source: str | Path, **kwargs: Any) -> CanonicalCase:
+        return import_matpower(source, merge_colocated_generators=True, **kwargs)
 
-def import_matpower(path: str | Path, **kwargs: Any) -> CanonicalCase:
+
+def import_matpower(
+    path: str | Path, *, merge_colocated_generators: bool = False, **kwargs: Any
+) -> CanonicalCase:
+    """Import a MATPOWER case into the pandapower hub.
+
+    `merge_colocated_generators` folds several units on one bus into a single
+    voltage-controlling machine, restoring MATPOWER's bus-level reactive control
+    (see `_merge_colocated_generators`). It is OFF by default because it is only
+    correct for power flow: merging discards the units' individual cost curves,
+    which changes the feasible set of any OPF built on the converted model. On
+    pglib_opf_case5_pjm it moves the QC/SOC relaxation gap from 14.5407 % to
+    14.6830 %, away from the published PGLib baseline of 14.55 %.
+    """
     source_path = Path(path)
     source_text = source_path.read_text()
     try:
@@ -37,6 +54,8 @@ def import_matpower(path: str | Path, **kwargs: Any) -> CanonicalCase:
         finally:
             normalized_path.unlink(missing_ok=True)
     _ensure_reference_bus_from_matpower_source(net, source_text)
+    if merge_colocated_generators:
+        _merge_colocated_generators(net)
     return PandapowerAdapter().to_canonical(
         net,
         case_id=source_path.stem,
@@ -44,6 +63,57 @@ def import_matpower(path: str | Path, **kwargs: Any) -> CanonicalCase:
         metadata={"import_backend": "pandapower.from_mpc"},
         source_path=source_path,
     )
+
+
+def _merge_colocated_generators(net: Any) -> None:
+    """Merge several MATPOWER units on one bus into a single controlling machine.
+
+    MATPOWER has no per-machine voltage control: a bus is PV or slack, and the
+    reactive output of every unit on it is free, jointly holding one setpoint.
+    pandapower's converter keeps the first unit as the voltage-controlling
+    element and turns the rest into `sgen`, whose reactive power is *fixed* at
+    whatever Qg the case file happened to carry. The active powers survive that
+    translation, but the bus then holds its voltage with only part of its
+    reactive capability free, so the reactive dispatch -- and with it the voltage
+    at surrounding PQ buses -- drifts from what MATPOWER computes. On the IEEE
+    RTS-24 case, where six buses carry three to six units each, that is worth
+    almost 0.04 pu.
+
+    Folding the co-located units back into the controlling element restores
+    MATPOWER's semantics: one voltage setpoint per bus, the full active power of
+    the units behind it, and their reactive capability free. Buses with a single
+    unit are untouched, and `sgen` rows the converter created for anything other
+    than a generator (negative bus loads, for instance) are left alone -- only
+    rows sharing a bus with a gen or the external grid are folded in.
+    """
+    if net.sgen.empty:
+        return
+    controlled = set(net.gen.bus) | set(net.ext_grid.bus)
+    absorbed: list[int] = []
+    for sgen_idx, sgen in net.sgen.iterrows():
+        bus = int(sgen.bus)
+        if bus not in controlled:
+            continue
+        target = net.gen.index[net.gen.bus == bus]
+        if len(target):
+            net.gen.loc[target[0], "p_mw"] += float(sgen.p_mw)
+            for limit, contribution in (("max_p_mw", "p_mw"), ("min_p_mw", "p_mw"),
+                                        ("max_q_mvar", "q_mvar"), ("min_q_mvar", "q_mvar")):
+                if limit in net.gen.columns and limit in net.sgen.columns:
+                    base = net.gen.loc[target[0], limit]
+                    extra = sgen.get(limit)
+                    if base == base and extra == extra:  # both non-NaN
+                        net.gen.loc[target[0], limit] = float(base) + float(extra)
+            if "sn_mva" in net.gen.columns and "sn_mva" in net.sgen.columns:
+                base, extra = net.gen.loc[target[0], "sn_mva"], sgen.get("sn_mva")
+                if base == base and extra == extra:
+                    net.gen.loc[target[0], "sn_mva"] = float(base) + float(extra)
+        # At the reference bus the external grid balances the system, so a unit
+        # there needs no active-power transfer -- dropping the fixed injection is
+        # what frees the slack to pick up the same total MATPOWER assigns it.
+        absorbed.append(sgen_idx)
+    if absorbed:
+        net.sgen.drop(index=absorbed, inplace=True)
 
 
 def _normalize_matpower_matrix_rows(contents: str) -> str:

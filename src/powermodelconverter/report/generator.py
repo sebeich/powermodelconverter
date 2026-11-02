@@ -44,6 +44,7 @@ def build_report_payload(records: list[dict[str, Any]]) -> dict[str, Any]:
             max_voltage_delta_pu=record.get("max_voltage_delta_pu"),
             compared_points=record.get("compared_points"),
             notes=str(record.get("notes", "")),
+            diagnostic=record.get("diagnostic"),
         )
         for record in records
     ]
@@ -72,6 +73,7 @@ def write_report_artifacts(payload: dict[str, Any], output_path: str | Path = DE
             max_voltage_delta_pu=record.get("max_voltage_delta_pu"),
             compared_points=record.get("compared_points"),
             notes=str(record.get("notes", "")),
+            diagnostic=record.get("diagnostic"),
         )
         for record in payload.get("records", [])
     ]

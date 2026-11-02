@@ -36,6 +36,7 @@ from powermodelconverter.core.model import CanonicalCase
 from powermodelconverter.core.registry import Route, ensure_routes_loaded, get_routes
 from powermodelconverter.report import generate_full_report, list_report_records, merge_partial_results
 from powermodelconverter.runtime import resolve_julia_binary
+from powermodelconverter.validation.matpower_native import validate_against_matpower
 from powermodelconverter.validation.powerflow import ValidationResult, ValidationService
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -213,15 +214,29 @@ def main() -> None:
             validator,
             args,
         )
+        source_validation = (
+            None if args.skip_source_validation else asdict(loaded["initial_validation"]))
+        target_validation_dict = asdict(target_validation) if target_validation else None
+        # The plausibility pass describes the imported hub model, so it belongs to
+        # the conversion, not to each validation leg. Report it once at the top
+        # level and strip the per-leg copies the ValidationService decorator adds,
+        # otherwise the same finding is repeated for every leg and reads like
+        # several independent checks.
+        diagnostic = None
+        for leg in (source_validation, target_validation_dict):
+            if leg and isinstance(leg.get("details"), dict):
+                candidate = leg["details"].pop("diagnostic", None)
+                diagnostic = diagnostic or candidate
         result = {
             "case_id": loaded["case"].case_id,
             "source_format": loaded["case"].source_format,
             "target_format": args.target_format,
             "is_unbalanced": loaded["case"].is_unbalanced,
             "precheck": precheck,
-            "source_validation": None if args.skip_source_validation else asdict(loaded["initial_validation"]),
+            "diagnostic": diagnostic,
+            "source_validation": source_validation,
             "target_export": str(exported_path),
-            "target_validation": asdict(target_validation) if target_validation else None,
+            "target_validation": target_validation_dict,
         }
     else:
         raise ValueError(f"Unsupported command {args.command}")
@@ -670,9 +685,13 @@ def load_case_with_reference(
     if source_format == "matpower":
         case = MatpowerImportAdapter().import_case(args.source)
         reference = pandapower.run_power_flow(case)
-        initial_validation = validate_against_pandapower_reference(case, reference, validator)
+        # Anchored on MATPOWER itself. Comparing pandapower with pandapower on the
+        # same converted model only shows the solver is deterministic and cannot
+        # detect a misread of the source file, because both sides misread it the
+        # same way.
+        initial_validation = validate_against_matpower(case, args.source, reference)
         source_reference = {
-            "backend": "pandapower",
+            "backend": "matpower",
             "reference_net": reference,
         }
     elif source_format == "simbench":

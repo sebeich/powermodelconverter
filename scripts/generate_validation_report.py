@@ -31,6 +31,9 @@ from powermodelconverter.importers.pypsa import PypsaImportAdapter
 from powermodelconverter.core.capabilities import capability_rows
 from powermodelconverter.core.model import CanonicalCase
 from powermodelconverter.runtime import resolve_julia_binary
+from powermodelconverter.validation.diagnostics import diagnose_case, summarize_diagnostic
+from powermodelconverter.validation.cgmes_sv import validate_against_sv_profile
+from powermodelconverter.validation.matpower_native import validate_against_matpower
 from powermodelconverter.validation.powerflow import ValidationResult, ValidationService
 
 
@@ -137,6 +140,9 @@ class RouteRecord:
     max_voltage_delta_pu: float | None
     compared_points: int | None
     notes: str
+    # Advisory pandapower.diagnostic pass over the imported hub model. Attached
+    # per (case_id, source_tool) in main(); never feeds `status`.
+    diagnostic: dict[str, Any] | None = None
 
 
 @dataclass(slots=True)
@@ -149,6 +155,9 @@ class ValidationSummary:
     total_compared_points: int
     max_compared_points: int
     min_compared_points: int
+    diagnosed_routes: int = 0
+    clean_diagnostic_routes: int = 0
+    routes_with_diagnostic_findings: int = 0
 
 
 BALANCED_SOURCE_TOOLS = ("pandapower", "matpower", "opendss", "cgmes", "pypsa")
@@ -161,12 +170,30 @@ def main() -> None:
     configure_report_logging()
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
-    validator = ValidationService()
+    # The report runs its own pass keyed by (case_id, source_tool), so the
+    # service does not need to attach a second one per result.
+    validator = ValidationService(attach_diagnostics=False)
     pandapower = PandapowerAdapter()
     pypsa = PypsaAdapter()
     cgmes_import = CGMESImportAdapter()
     cgmes_export = CGMESExportAdapter()
     records: list[RouteRecord] = []
+
+    # Advisory plausibility pass. Keyed by (case_id, source_tool) because the same
+    # logical case imported from two source tools is two different hub models;
+    # attached to the records after every route has run. `diagnose` returns the
+    # case it was handed so it can wrap a materialisation inline.
+    diagnostics: dict[tuple[str, str], dict[str, Any]] = {}
+
+    def diagnose(
+        case: CanonicalCase, source_tool: str, case_id: str | None = None
+    ) -> CanonicalCase:
+        # `case_id` overrides where the record declares an id that differs from
+        # the case's own (the pm.jl/PowerSystems routes append a suffix).
+        key = (case_id or case.case_id, source_tool)
+        if key not in diagnostics:
+            diagnostics[key] = diagnose_case(case)
+        return case
 
     with TemporaryDirectory(prefix="pmc_validation_") as tmp:
         tmpdir = Path(tmp)
@@ -184,6 +211,7 @@ def main() -> None:
                     cgmes_export=cgmes_export,
                     tmpdir=tmpdir,
                 )
+                diagnose(imported_case, source_tool)
                 for export_tool in BALANCED_EXPORT_TOOLS:
                     records.append(
                         validation_record(
@@ -218,6 +246,7 @@ def main() -> None:
                     source_tool=source_tool,
                     tmpdir=tmpdir,
                 )
+                diagnose(imported_case, source_tool)
                 for export_tool in UNBALANCED_EXPORT_TOOLS:
                     records.append(
                         validation_record(
@@ -240,8 +269,11 @@ def main() -> None:
                     )
 
         # MATPOWER balanced sample
-        matpower_case = MatpowerImportAdapter().import_case(
-            REPO_ROOT / "validation_cases/native/matpower/case9.m"
+        matpower_case = diagnose(
+            MatpowerImportAdapter().import_case(
+                REPO_ROOT / "validation_cases/native/matpower/case9.m"
+            ),
+            "matpower",
         )
         records.append(
             validation_record(
@@ -273,6 +305,7 @@ def main() -> None:
         )
         if additional_matpower_native is not None:
             case_id, native_matpower_case = additional_matpower_native
+            diagnose(native_matpower_case, "matpower")
             records.append(
                 validation_record(
                     case_id=native_matpower_case.case_id,
@@ -292,7 +325,7 @@ def main() -> None:
         pypower_adapter = PypowerImportAdapter()
         try:
             pypower_reference = pypower_adapter.solve_source_case(pypower_source)
-            pypower_case = pypower_adapter.import_case(pypower_source)
+            pypower_case = diagnose(pypower_adapter.import_case(pypower_source), "pypower")
             records.append(
                 validation_record(
                     case_id=pypower_case.case_id,
@@ -360,8 +393,9 @@ def main() -> None:
             )
 
         # CGMES official balanced sample
-        cgmes_case = cgmes_import.import_case(
-            REPO_ROOT / "validation_cases/native/cgmes"
+        cgmes_case = diagnose(
+            cgmes_import.import_case(REPO_ROOT / "validation_cases/native/cgmes"),
+            "cgmes",
         )
         records.append(
             validation_record(
@@ -388,7 +422,7 @@ def main() -> None:
         opendss_source = REPO_ROOT / "validation_cases/native/opendss/minimal_radial.dss"
         opendss_adapter = OpenDSSImportAdapter()
         opendss_reference = opendss_adapter.solve_source_case(opendss_source)
-        opendss_case = opendss_adapter.import_case(opendss_source)
+        opendss_case = diagnose(opendss_adapter.import_case(opendss_source), "opendss")
         opendss_pp_result = validator.validate_opendss_roundtrip(opendss_case, opendss_reference)
         records.append(
             validation_record(
@@ -412,7 +446,10 @@ def main() -> None:
         )
         balanced_opendss_as_pandapower_path = tmpdir / "minimal_radial.pandapower.json"
         pandapower.export_json(opendss_case, balanced_opendss_as_pandapower_path)
-        opendss_as_pandapower_case = PandapowerImportAdapter().import_case(balanced_opendss_as_pandapower_path)
+        opendss_as_pandapower_case = diagnose(
+            PandapowerImportAdapter().import_case(balanced_opendss_as_pandapower_path),
+            "pandapower",
+        )
         records.append(
             validation_record(
                 case_id=opendss_as_pandapower_case.case_id,
@@ -427,7 +464,7 @@ def main() -> None:
                 notes="Balanced pandapower re-import of the OpenDSS starter feeder exported back to OpenDSS and validated against pandapower AC power flow.",
             )
         )
-        cgmes_subset_case = build_cgmes_subset_case()
+        cgmes_subset_case = diagnose(build_cgmes_subset_case(), "pandapower")
         records.append(
             validation_record(
                 case_id=cgmes_subset_case.case_id,
@@ -450,7 +487,9 @@ def main() -> None:
             REPO_ROOT / "validation_cases/native/opendss/minimal_unbalanced_3ph.dss"
         )
         opendss_unbalanced_reference = opendss_adapter.solve_source_case(opendss_unbalanced_source)
-        opendss_unbalanced_case = opendss_adapter.import_case(opendss_unbalanced_source)
+        opendss_unbalanced_case = diagnose(
+            opendss_adapter.import_case(opendss_unbalanced_source), "opendss"
+        )
         records.append(
             validation_record(
                 case_id=opendss_unbalanced_case.case_id,
@@ -483,7 +522,9 @@ def main() -> None:
         # Pandapower balanced sample generated from validated case9 export
         balanced_pp_path = tmpdir / "case9_from_matpower.pandapower.json"
         pandapower.export_json(matpower_case, balanced_pp_path)
-        pp_balanced_case = PandapowerImportAdapter().import_case(balanced_pp_path)
+        pp_balanced_case = diagnose(
+            PandapowerImportAdapter().import_case(balanced_pp_path), "pandapower"
+        )
         records.append(
             validation_record(
                 case_id=pp_balanced_case.case_id,
@@ -515,7 +556,7 @@ def main() -> None:
             )
         )
         pypsa_path = tmpdir / f"{pp_balanced_case.case_id}.pypsa.nc"
-        pypsa_case = PypsaImportAdapter().import_case(pypsa_path)
+        pypsa_case = diagnose(PypsaImportAdapter().import_case(pypsa_path), "pypsa")
         pypsa_reference = pypsa.solve_network_file(pypsa_path)
         records.append(
             validation_record(
@@ -534,8 +575,11 @@ def main() -> None:
         )
 
         # Pandapower native unbalanced sample
-        pp_unbalanced_case = PandapowerImportAdapter().import_case(
-            REPO_ROOT / "validation_cases/native/pandapower/ieee_european_lv_asymmetric.json"
+        pp_unbalanced_case = diagnose(
+            PandapowerImportAdapter().import_case(
+                REPO_ROOT / "validation_cases/native/pandapower/ieee_european_lv_asymmetric.json"
+            ),
+            "pandapower",
         )
         records.append(
             validation_record(
@@ -600,7 +644,7 @@ def main() -> None:
         ]:
             source = REPO_ROOT / "validation_cases/native/opendss" / sample_name
             source_reference = opendss_adapter.solve_source_case(source)
-            source_case = opendss_adapter.import_case(source)
+            source_case = diagnose(opendss_adapter.import_case(source), "opendss")
             records.append(
                 validation_record(
                     case_id=source_case.case_id,
@@ -642,7 +686,12 @@ def main() -> None:
                 "Pandapower package Baran-Wu 33-bus feeder validated with Julia PowerModels AC power flow.",
             ),
         ]:
-            case = CanonicalCase.from_pandapower(case_id=case_id, source_format="pandapower", net=net_builder())
+            case = diagnose(
+                CanonicalCase.from_pandapower(
+                    case_id=case_id, source_format="pandapower", net=net_builder()
+                ),
+                "pandapower",
+            )
             records.append(
                 validation_record(
                     case_id=case.case_id,
@@ -675,6 +724,7 @@ def main() -> None:
             ),
         ]:
             native_case, native_reference = build_pypsa_origin_case(case_id, builder, pypsa, tmpdir)
+            diagnose(native_case, "pypsa")
             records.append(
                 validation_record(
                     case_id=native_case.case_id,
@@ -695,6 +745,7 @@ def main() -> None:
         pmjl_native_cases = load_importable_pm_jl_native_cases(limit=2)
         if pmjl_native_cases:
             case_id, _source, case = pmjl_native_cases[0]
+            diagnose(case, "pm.jl", f"{case_id}_pmjl_pkg")
             records.append(
                 validation_record(
                     case_id=f"{case_id}_pmjl_pkg",
@@ -716,6 +767,7 @@ def main() -> None:
             )
             if validated_pmjl_powermodels is not None:
                 pm_case_id, _pm_case, pm_result = validated_pmjl_powermodels
+                diagnose(_pm_case, "pm.jl", f"{pm_case_id}_pmjl_pkg")
                 records.append(
                     validation_record(
                         case_id=f"{pm_case_id}_pmjl_pkg",
@@ -733,6 +785,7 @@ def main() -> None:
             for ps_case_id, _ps_source, ps_case in load_importable_pm_jl_native_cases():
                 ps_result = safe_validate_powersystems(ps_case, validator, tmpdir)
                 if ps_result.passed:
+                    diagnose(ps_case, "powersystems.jl", f"{ps_case_id}_powersystems_pkg")
                     validated_powersystems = (ps_case_id, ps_result)
                     break
             if validated_powersystems is not None:
@@ -752,6 +805,7 @@ def main() -> None:
                 )
             if len(pmjl_native_cases) > 1:
                 second_case_id, _second_source, second_case = pmjl_native_cases[1]
+                diagnose(second_case, "pm.jl", f"{second_case_id}_pmjl_pkg")
                 records.append(
                     validation_record(
                         case_id=f"{second_case_id}_pmjl_pkg",
@@ -768,6 +822,9 @@ def main() -> None:
 
         for artifact in PYPSA_EUR_VALIDATION_ARTIFACTS:
             records.extend(load_pypsa_eur_validation_records(artifact))
+
+        for record in records:
+            record.diagnostic = diagnostics.get((record.case_id, record.source_tool))
 
         summary = build_summary(records)
         payload = {
@@ -786,6 +843,21 @@ def main() -> None:
 
 def self_validate_balanced(case: Any, pandapower: PandapowerAdapter, validator: ValidationService) -> ValidationResult:
     reference = pandapower.run_power_flow(case)
+    # A MATPOWER-sourced case is anchored on MATPOWER. Comparing pandapower with
+    # pandapower on the same converted model only shows the solver is
+    # deterministic, and it cannot see a misread of the source format -- both
+    # sides would misread it identically. The tool that owns the format is the
+    # only reference that can.
+    if case.source_format == "matpower" and case.source_path and Path(case.source_path).exists():
+        return validate_against_matpower(case, case.source_path, reference)
+    # CGMES has no executable reference implementation, but a conformity package
+    # carries the originating TSO's solved state in its StateVariables profile.
+    # Where one is present that is the anchor, not pandapower re-solving its own
+    # converted model.
+    if case.source_format == "cgmes" and case.source_path and Path(case.source_path).exists():
+        anchored = validate_against_sv_profile(case, case.source_path, reference)
+        if anchored.details.get("compared_buses"):
+            return anchored
     reference_slack_p, reference_slack_q = validator._extract_balanced_slack(reference)
     reference_voltages = {
         validator._bus_key(reference, int(idx)): complex(
@@ -919,16 +991,12 @@ def validate_matpower_export(
 ) -> ValidationResult:
     destination = tmpdir / f"{case.case_id}.m"
     path = MatpowerExportAdapter().export_case(case, destination)
-    reimported = MatpowerImportAdapter().import_case(path)
     reference = PandapowerAdapter().run_power_flow(case)
-    reference_slack_p, reference_slack_q = validator._extract_balanced_slack(reference)
-    reference_voltages = _reference_voltages_with_reimported_keys(reference, reimported, validator)
-    return validator.validate_against_pandapower(
-        reimported,
-        reference_slack_p_mw=reference_slack_p,
-        reference_slack_q_mvar=reference_slack_q,
-        reference_voltages=reference_voltages,
-    )
+    # Hand the file pmc just wrote to MATPOWER and compare its solution against
+    # the hub model it came from. Re-importing through pmc's own reader instead
+    # would only show the reader and writer agree with each other, which says
+    # nothing about whether the file means to MATPOWER what it means to pmc.
+    return validate_against_matpower(case, path, reference)
 
 
 def validate_opendss_from_pandapower(
@@ -1542,6 +1610,12 @@ def build_summary(records: list[RouteRecord]) -> ValidationSummary:
     compared_counts = [record.compared_points for record in validated if record.compared_points is not None]
     balanced_routes = [record for record in validated if "unbalanced" not in record.model_type]
     unbalanced_routes = [record for record in validated if "unbalanced" in record.model_type]
+    diagnosed = [record for record in records if record.diagnostic]
+    clean = [record for record in diagnosed if record.diagnostic.get("clean")]
+    with_findings = [
+        record for record in diagnosed
+        if record.diagnostic.get("clean") is False
+    ]
     return ValidationSummary(
         method="deterministic full-voltage comparison",
         validated_routes=len(validated),
@@ -1551,6 +1625,9 @@ def build_summary(records: list[RouteRecord]) -> ValidationSummary:
         total_compared_points=sum(compared_counts),
         max_compared_points=max(compared_counts, default=0),
         min_compared_points=min(compared_counts, default=0),
+        diagnosed_routes=len(diagnosed),
+        clean_diagnostic_routes=len(clean),
+        routes_with_diagnostic_findings=len(with_findings),
     )
 
 
@@ -1572,6 +1649,8 @@ def render_markdown(summary: ValidationSummary, records: list[RouteRecord]) -> s
         f"- Total deterministic voltage points compared: {summary.total_compared_points}",
         f"- Smallest route comparison set: {summary.min_compared_points}",
         f"- Largest route comparison set: {summary.max_compared_points}",
+        f"- Routes carrying a plausibility pass: {summary.diagnosed_routes} "
+        f"({summary.clean_diagnostic_routes} clean, {summary.routes_with_diagnostic_findings} with findings)",
         "",
         "Every validated route records both the slack-power mismatch and the maximum deterministic complex-voltage mismatch across all matched buses or phase nodes.",
         "The result numbers live in the route tables below and in `docs/validation_report.json` for machine-readable use.",
@@ -1581,6 +1660,8 @@ def render_markdown(summary: ValidationSummary, records: list[RouteRecord]) -> s
         "- Native-origin cases are the primary ground-truth layer and provide the strongest evidence for source-tool fidelity.",
         "- Canonical common-subset cases are the interoperability layer and intentionally exercise only the subset that can be represented across multiple tools with minimal hidden semantics.",
         "- Balanced and unbalanced evidence are reported separately because the supported semantics, solver backends, and tolerances differ.",
+        "- The `Diagnostic` column is an advisory plausibility pass over the imported hub model, run with `pandapower.diagnostic` and no pmc-authored checks. It never affects `Status`: validation asks whether two independent tools agree on the model, the diagnostic asks whether the model is plausible, and a converted model can legitimately trip the latter (deliberately merged voltage levels, typed line defaults, loads carrying embedded generation as negative `p_mw`). Per-check detail is in `docs/validation_report.json`.",
+        "- On unbalanced routes the pass is partial: `pandapower.diagnostic` solves with `runpp`, so its convergence checks do not see the `asymmetric_load`/`asymmetric_sgen` tables. The static data checks still apply.",
         "",
         "## Balanced Routes",
         "",
@@ -1818,6 +1899,7 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
         <article class="analysis-card">
           <h3>Deterministic Coverage</h3>
           <p>The current report signs off {summary['validated_routes']} route(s) with deterministic full-voltage comparisons across {summary['total_compared_points']} matched buses or phase nodes in total. Individual routes compare between {summary['min_compared_points']} and {summary['max_compared_points']} points.</p>
+          <p>{summary.get('diagnosed_routes', 0)} route(s) also carry an advisory plausibility pass over the imported hub model, run with <code>pandapower.diagnostic</code> and no pmc-authored checks: {summary.get('clean_diagnostic_routes', 0)} clean, {summary.get('routes_with_diagnostic_findings', 0)} with findings. The <em>Diagnostic</em> column never affects <em>Status</em> &mdash; validation asks whether two independent tools agree on the model, the diagnostic asks whether the model is plausible, and a converted model can legitimately trip the latter. Hover a cell for the per-check counts; full detail is in <code>docs/validation_report.json</code>. On unbalanced routes the pass is partial, because <code>pandapower.diagnostic</code> solves with <code>runpp</code> and so its convergence checks do not see the <code>asymmetric_load</code> tables.</p>
         </article>
         <article class="analysis-card">
           <h3>Strongest Current Route</h3>
@@ -1922,6 +2004,7 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
             <th>Slack Delta</th>
             <th>Voltage Delta</th>
             <th>Compared Points</th>
+            <th>Diagnostic</th>
             <th>Notes</th>
           </tr>
         </thead>
@@ -1944,6 +2027,7 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
             <th>Slack Delta</th>
             <th>Voltage Delta</th>
             <th>Compared Points</th>
+            <th>Diagnostic</th>
             <th>Notes</th>
           </tr>
         </thead>
@@ -1961,15 +2045,16 @@ def render_html(payload: dict[str, Any], records: list[RouteRecord]) -> str:
 
 def render_markdown_table(records: list[RouteRecord]) -> list[str]:
     lines = [
-        "| Source | Export | Case | Model | Status | Slack Delta (MVA) | Max Voltage Delta (pu) | Compared Points | Notes |",
-        "| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |",
+        "| Source | Export | Case | Model | Status | Slack Delta (MVA) | Max Voltage Delta (pu) | Compared Points | Diagnostic | Notes |",
+        "| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | --- |",
     ]
     for record in records:
         lines.append(
             "| "
             f"{record.source_tool} | {record.export_tool} | {record.case_id} | {record.model_type} | {record.status} | "
             f"{format_metric(record.slack_delta_mva)} | {format_metric(record.max_voltage_delta_pu)} | "
-            f"{record.compared_points if record.compared_points is not None else '-'} | {record.notes} |"
+            f"{record.compared_points if record.compared_points is not None else '-'} | "
+            f"{summarize_diagnostic(record.diagnostic)} | {record.notes} |"
         )
     return lines
 
@@ -2014,6 +2099,20 @@ def render_precision_rows(records: list[RouteRecord]) -> list[str]:
     return rows
 
 
+def diagnostic_cell(record: dict[str, Any] | None) -> str:
+    """Render one diagnostic verdict, with the per-check breakdown on hover."""
+    label = summarize_diagnostic(record)
+    if not record:
+        return f"<span class=\"pill pill-not_validated\">{escape(label)}</span>"
+    if record.get("clean"):
+        return f"<span class=\"pill pill-validated\">{escape(label)}</span>"
+    findings = record.get("findings") or {}
+    title = "; ".join(
+        f"{name}: {entry.get('count')}" for name, entry in sorted(findings.items())
+    ) or str(record.get("error", ""))
+    return f"<span class=\"pill pill-failed\" title=\"{escape(title)}\">{escape(label)}</span>"
+
+
 def render_detail_rows(records: list[RouteRecord]) -> list[str]:
     rows = []
     for record in records:
@@ -2028,6 +2127,7 @@ def render_detail_rows(records: list[RouteRecord]) -> list[str]:
               <td>{format_metric(record.slack_delta_mva)}</td>
               <td>{format_metric(record.max_voltage_delta_pu)}</td>
               <td>{record.compared_points if record.compared_points is not None else '-'}</td>
+              <td>{diagnostic_cell(record.diagnostic)}</td>
               <td>{escape(record.notes)}</td>
             </tr>
             """

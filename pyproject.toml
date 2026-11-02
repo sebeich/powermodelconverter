@@ -24,6 +24,14 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = []
+# Solver stack for the UC2 paper reproduction: Pyomo drives the De Mel et al. (2024)
+# model, HiGHS replaces CPLEX on the MILP. The NLP leg additionally needs an `ipopt`
+# executable on PATH (replacing CONOPT); it is not pip-installable and is optional.
+reproduction = [
+  "highspy>=1.7",
+  "pyomo>=6.7",
+  "xlrd>=2.0",
+]
 ding0 = [
   "egoio>=0.4.8",
   "geopy>=2.1",

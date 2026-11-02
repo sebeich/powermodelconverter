@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import math
 import re
+import tempfile
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +11,7 @@ from powermodelconverter.importers.opendss import OpenDSSResultSnapshot
 from powermodelconverter.core.model import CanonicalCase
 from powermodelconverter.core.pandapower_backend import PandapowerAdapter
 from powermodelconverter.importers.pypsa import PypsaAdapter
+from powermodelconverter.validation.diagnostics import diagnose_case
 from powermodelconverter.validation.result import ValidationResult
 from powermodelconverter.validation.runners import (
     run_julia_pmd,
@@ -45,11 +48,53 @@ def compare_voltages(source_v: dict[str, complex], target_v: dict[str, complex],
     )
 
 
+def _with_diagnostic(method):
+    """Attach an advisory pandapower.diagnostic record to a validation result.
+
+    Validation says whether two tools agree on the model; the diagnostic says
+    whether the model is plausible. Both belong on the same result, but only the
+    first decides `passed` -- converted models legitimately trip several of
+    pandapower's checks, so a verdict that flipped on them would be useless.
+
+    Every public validate_* method takes the case first, so one wrapper covers
+    them all.
+    """
+
+    @wraps(method)
+    def wrapper(self, case, *args, **kwargs):
+        result = method(self, case, *args, **kwargs)
+        if self.attach_diagnostics and isinstance(result, ValidationResult):
+            result.details.setdefault("diagnostic", self.diagnose(case))
+        return result
+
+    return wrapper
+
+
 class ValidationService:
-    def __init__(self) -> None:
+    def __init__(self, *, attach_diagnostics: bool = True) -> None:
         self._pandapower = PandapowerAdapter()
         self._pypsa = PypsaAdapter()
+        # Callers that run their own diagnostic pass (the validation-report
+        # generator keys one per case *and* source tool) turn this off rather
+        # than paying for it twice.
+        self.attach_diagnostics = attach_diagnostics
+        self._diagnostic_cache: dict[int, tuple[Any, dict[str, Any]]] = {}
 
+    def diagnose(self, case: CanonicalCase) -> dict[str, Any]:
+        """Diagnose `case`, reusing the record across repeated validations of it.
+
+        Keyed on object identity, not `case_id`: the same logical case imported
+        from two source tools is two different hub models under one id. The case
+        is kept alive alongside its record so the id cannot be recycled.
+        """
+        key = id(case)
+        cached = self._diagnostic_cache.get(key)
+        if cached is None:
+            cached = (case, diagnose_case(case))
+            self._diagnostic_cache[key] = cached
+        return cached[1]
+
+    @_with_diagnostic
     def validate_against_pandapower(
         self,
         case: CanonicalCase,
@@ -85,6 +130,7 @@ class ValidationService:
             details={"compared_buses": compared},
         )
 
+    @_with_diagnostic
     def validate_opendss_roundtrip(
         self,
         case: CanonicalCase,
@@ -99,6 +145,7 @@ class ValidationService:
             **kwargs,
         )
 
+    @_with_diagnostic
     def validate_opendss_unbalanced_roundtrip(
         self,
         case: CanonicalCase,
@@ -132,6 +179,7 @@ class ValidationService:
             details={"compared_nodes": compared, "mode": "unbalanced_3ph", "backend": "pandapower"},
         )
 
+    @_with_diagnostic
     def validate_pandapower_case_against_opendss(
         self,
         case: CanonicalCase,
@@ -165,6 +213,7 @@ class ValidationService:
             details={"compared_buses": compared, "backend": "opendss"},
         )
 
+    @_with_diagnostic
     def validate_pandapower_unbalanced_against_opendss(
         self,
         case: CanonicalCase,
@@ -198,6 +247,7 @@ class ValidationService:
             details={"compared_nodes": compared, "mode": "unbalanced_3ph", "backend": "opendss"},
         )
 
+    @_with_diagnostic
     def validate_pandapower_split_against_opendss(
         self,
         case: CanonicalCase,
@@ -266,6 +316,7 @@ class ValidationService:
             },
         )
 
+    @_with_diagnostic
     def validate_pandapower_unbalanced_roundtrip(
         self,
         case: CanonicalCase,
@@ -273,8 +324,12 @@ class ValidationService:
         slack_tolerance_mva: float = UNBALANCED_PP_TOLERANCES["slack_mva"],
         voltage_tolerance_pu: float = UNBALANCED_PP_TOLERANCES["voltage_pu"],
     ) -> ValidationResult:
+        # A genuine round-trip: serialise through the pandapower JSON codec and
+        # solve what comes back. Solving the same in-memory case twice, as this
+        # did before, compares a model with itself and can only detect solver
+        # non-determinism -- it exercises no conversion at all.
         reference_net = run_pandapower_3ph_pf(case)
-        candidate_net = run_pandapower_3ph_pf(case)
+        candidate_net = run_pandapower_3ph_pf(self._roundtrip_through_json(case))
         reference_voltages = self._extract_3ph_bus_voltages(reference_net)
         candidate_voltages = self._extract_3ph_bus_voltages(candidate_net)
         reference_slack = self._extract_3ph_slack(reference_net)
@@ -299,6 +354,7 @@ class ValidationService:
             details={"compared_nodes": compared, "mode": "unbalanced_3ph", "backend": "pandapower"},
         )
 
+    @_with_diagnostic
     def validate_powermodels_export(
         self,
         case: CanonicalCase,
@@ -347,6 +403,7 @@ class ValidationService:
             details={"compared_buses": compared, "backend": "powermodels"},
         )
 
+    @_with_diagnostic
     def validate_powermodelsdistribution_export(
         self,
         case: CanonicalCase,
@@ -395,6 +452,7 @@ class ValidationService:
             },
         )
 
+    @_with_diagnostic
     def validate_powersystems_export(
         self,
         case: CanonicalCase,
@@ -448,6 +506,7 @@ class ValidationService:
             },
         )
 
+    @_with_diagnostic
     def validate_pypsa_export(
         self,
         case: CanonicalCase,
@@ -490,6 +549,15 @@ class ValidationService:
             max_voltage_delta_pu=max_voltage_delta,
             details={"compared_buses": compared, "backend": "pypsa"},
         )
+
+    def _roundtrip_through_json(self, case: CanonicalCase) -> CanonicalCase:
+        """Write the case out as pandapower JSON and read it back."""
+        from powermodelconverter.importers.pandapower_json import PandapowerImportAdapter
+
+        with tempfile.TemporaryDirectory(prefix="pmc_pp_roundtrip_") as staging:
+            path = self._pandapower.export_json(
+                case, Path(staging) / f"{case.case_id}.pandapower.json")
+            return PandapowerImportAdapter().import_case(path).copy_with(case_id=case.case_id)
 
     def _extract_balanced_slack(self, net: Any) -> tuple[float, float]:
         slack_p = float(net.res_ext_grid.p_mw.sum()) if hasattr(net, "res_ext_grid") else 0.0

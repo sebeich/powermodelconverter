@@ -26,6 +26,11 @@ docs/generated/
 out_*/
 *:Zone.Identifier*
 validation_cases/*
+# Small source cases the tests and MATPOWER/PGLib validation need; outputs stay local.
+!validation_cases/native/
+!validation_cases/pglib/
+validation_cases/native/outputs/
+validation_cases/native/matpower/*.pandapower.json
 # Generated runtime and experimental helper outputs.
 src/powermodelconverter/runtime/
 src/powermodelconverter/julia_psi/
