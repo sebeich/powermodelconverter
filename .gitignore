@@ -69,3 +69,5 @@ tests/test_uc*
 validation_cases/hpk11/
 validation_cases/use_cases/
 docs/examples/hpk11_opendss_to_pandapower.py
+scripts/inject_faults.py
+scripts/reproduce_known_defects.py

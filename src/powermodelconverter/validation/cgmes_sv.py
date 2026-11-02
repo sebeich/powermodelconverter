@@ -29,8 +29,8 @@ from powermodelconverter.core.model import CanonicalCase
 from powermodelconverter.validation.result import ValidationResult
 
 # The SV profile is a solved state from another tool, not a re-solve of the same
-# model, so it carries genuine numerical difference. UC3 measures 1.68e-4 pu on
-# the ENTSO-E SmallGrid package; 1e-3 is the signed-off balanced tier.
+# model, so it carries genuine numerical difference. The ENTSO-E SmallGrid package
+# measures 1.68e-4 pu; 1e-3 is the signed-off balanced tier.
 SV_TOLERANCE_PU = 1e-3
 
 _SV_ID_COLUMNS = ("origin_id", "cim_topnode")

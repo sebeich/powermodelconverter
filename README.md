@@ -76,13 +76,10 @@ The detailed route inventory, tested cases, and measured numerical precision are
 - [validation_report.html](docs/validation_report.html)
 - [validation_report.md](docs/validation_report.md)
 - [validation_report.json](docs/validation_report.json)
-- [use_case_examples.md](docs/use_case_examples.md)
 
 Use those reports when you need the exact signed-off route matrix. The README stays focused on the researcher workflow: taking a model from one tool, converting it into another, and checking whether that conversion is within the validated scope of this repository.
 
 If your goal is simpler and more operational, use the `Quickstart` and `User Workflow` sections first. Those are the shortest path from one source file to one validated exported artifact.
-
-For larger paper-style workflows built on top of the hub-and-spoke conversion path, including downstream solver studies and reviewer-facing artifacts, see [use_case_examples.md](docs/use_case_examples.md).
 
 When you want the actual result numbers:
 
@@ -248,7 +245,7 @@ Because the current repository is mounted into the container, users can point at
 
 The Docker wrapper also bind-mounts the host directories passed via `--source` and `--output`, and it runs the container as your current host user so translated files come back on disk with normal ownership. Your input model does not need to live inside this repository.
 
-The Docker wrapper also keeps the paper-validation path available without requiring local tooling:
+The Docker wrapper also keeps the validation path available without requiring local tooling:
 
 ```bash
 ./scripts/pmc-docker.sh test
@@ -396,7 +393,7 @@ The maintainer-oriented command is still `validate`. It fans out into the curren
   --source validation_cases/native/matpower/case9.m
 ```
 
-For paper-grade regression checks inside the pinned runtime, the same container can also run:
+For regression checks inside the pinned runtime, the same container can also run:
 
 ```bash
 ./scripts/pmc-docker.sh report
@@ -414,18 +411,6 @@ For day-to-day use, the practical reading is:
 3. check the slack mismatch to see whether the overall power balance stayed consistent
 4. check the voltage mismatch to see whether the solved state was preserved bus by bus, or phase by phase for unbalanced cases
 5. consult [validation_report.html](docs/validation_report.html) when you need the maintained signed-off routes and measured precision
-
-## Research Examples
-
-The repo also carries a set of documented research-style example workflows that sit above the single-route `translate` command. They cover:
-
-- convex OPF benchmarking after `pandapower -> powermodels`
-- OpenDSS feeder planning after `opendss -> pandapower -> pypsa`
-- CGMES to `powermodelsdistribution` interface studies
-- conceptual TSO-DSO merge experiments
-- PyPSA-Eur island cross-tool checks
-
-See [use_case_examples.md](docs/use_case_examples.md) for the full use-case specs, expected artifacts, and branch-specific caveats.
 
 ## CLI Output
 
