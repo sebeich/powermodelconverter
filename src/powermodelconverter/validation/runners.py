@@ -48,6 +48,44 @@ def run_julia_powermodels(
     return _extract_json_payload(completed.stdout, "PowerModels")
 
 
+def run_julia_powermodels_opf(
+    powermodels_json: str | Path,
+    *,
+    problem: str,
+    julia_binary: str,
+    julia_script: str | Path,
+    julia_depot: str | Path,
+    voltage_bounds_pu: tuple[float, float] | None = None,
+    loss_slack_capacity_mw: float | None = None,
+) -> dict[str, Any]:
+    """Solve a DC or AC OPF on a converted model in PowerModels.jl.
+
+    Unlike the power-flow runner this does not raise when the solver stops
+    short: an OPF that fails to converge, or stops at Ipopt's acceptable
+    tolerance, is a reportable result about the converted model rather than a
+    broken run, and the caller needs to see the status to say so.
+    """
+    safe_json_path = _sanitize_powermodels_json(Path(powermodels_json))
+    env = {
+        **os.environ,
+        "JULIA_DEPOT_PATH": str(julia_depot),
+        "JULIA_PROJECT": str(Path(julia_script).parent),
+    }
+    command = [julia_binary, str(julia_script), str(safe_json_path), str(problem)]
+    if voltage_bounds_pu is not None:
+        command += ["--vbounds", repr(float(voltage_bounds_pu[0])),
+                    repr(float(voltage_bounds_pu[1]))]
+    if loss_slack_capacity_mw is not None:
+        command += ["--loss-slack-capacity", repr(float(loss_slack_capacity_mw))]
+    completed = subprocess.run(command, capture_output=True, text=True, env=env, check=False)
+    if completed.returncode != 0:
+        raise ValidationError(
+            f"PowerModels {problem} failed: "
+            f"{completed.stderr.strip() or completed.stdout.strip() or 'unknown Julia error'}"
+        )
+    return _extract_json_payload(completed.stdout, f"PowerModels {problem}")
+
+
 def run_julia_pmd(
     pmd_input_path: str | Path,
     *,
@@ -105,7 +143,11 @@ def _extract_json_payload(stdout: str, backend_name: str) -> dict[str, Any]:
 
 def _sanitize_powermodels_json(powermodels_json: Path) -> Path:
     data = json.loads(powermodels_json.read_text())
-    data.pop("user_defined_params", None)
+    # pandapower's converter attaches bookkeeping of its own that is not part of
+    # the PowerModels schema; its parser rejects the file outright rather than
+    # ignoring the extra keys.
+    for extra_key in ("user_defined_params", "gen_and_controllable_sgen"):
+        data.pop(extra_key, None)
     with tempfile.NamedTemporaryFile(mode="w", suffix=".powermodels.json", prefix="pmc_", delete=False) as handle:
         json.dump(data, handle)
         return Path(handle.name)

@@ -97,7 +97,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--synthetic-pf-mode",
-        choices=["degree-weighted", "toy-load-pv"],
+        choices=["degree-weighted", "toy-load-pv", "local-pv", "opf-dispatch"],
         default="degree-weighted",
         help=(
             "Synthetic injection model used when validating topology-only PyPSA-Eur base networks. "
@@ -120,6 +120,16 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Transformer equivalent model used by pandapower runpp (default: t). "
             "Use 't' for PyPSA-sourced networks because PyPSA uses t-model transformers."
+        ),
+    )
+    parser.add_argument(
+        "--min-voltage-kv",
+        type=float,
+        default=None,
+        help=(
+            "Drop every bus below this nominal voltage before anything else runs. "
+            "Use 220 to exclude the OSM-derived sub-transmission overlay and keep "
+            "only the PyPSA-Eur transmission network."
         ),
     )
     parser.add_argument(
@@ -186,7 +196,16 @@ def select_snapshot(network: pypsa.Network, snapshot_arg: str | None) -> Any:
 
     if snapshot_arg not in network.snapshots:
         raise ValueError(f"Snapshot label not found: {snapshot_arg}")
-    return snapshot_arg
+
+    # Return the index's own object, never the label string. `loads_t.p_set.loc[...]`
+    # accepts either, so a string looks harmless -- but `subnetwork.pf(snapshots=[...])`
+    # silently fails to converge when handed one, on every island and in every
+    # injection mode. With the Timestamp the same case converges 6 of 7 in 13 s;
+    # with the string it grinds for 97 s and reports none.
+    location = network.snapshots.get_loc(snapshot_arg)
+    if isinstance(location, slice) or hasattr(location, "__len__"):
+        return network.snapshots[location][0]
+    return network.snapshots[location]
 
 
 def prune_unsupported_components(network: pypsa.Network) -> dict[str, int]:
@@ -324,6 +343,323 @@ def _run_island_pf(
             return False, f"{first_error}; {fallback_error}" if first_error else fallback_error
 
     return False, first_error or "non-convergent"
+
+
+# One definition, shared with downstream OPF runners: they have to build the same
+# stripped model this pipeline does, and two copies would drift.
+from powermodelconverter.validation.opf_reconstruction import (  # noqa: E402
+    SLACK_NAME_PREFIX,
+    strip_powerflow_slacks,
+)
+
+
+def inject_opf_dispatch_validation_case(
+    network: pypsa.Network,
+    snapshot: Any,
+    *,
+    solver_name: str = "highs",
+) -> dict[str, Any]:
+    """Use the network's own optimal dispatch as the AC reference operating point.
+
+    The other modes invent an operating point because the planning network has
+    none: its generators are investment candidates at p_nom = 0. This mode lets
+    the model produce one itself -- PyPSA's linear optimisation sizes and
+    dispatches the candidates, and that solution is then frozen as the operating
+    point for the AC power flow.
+
+    What is inherited and what is added, precisely. The optimisation is purely
+    active-power: it returns `generators_t.p`, active line flows and voltage
+    angles, and no reactive quantity anywhere (`generators_t.q` and `lines_t.q0`
+    are absent, and the loads carry no reactive demand). Active dispatch is
+    therefore the model's own; bus types are not, so the dispatching units are
+    given PV control and each island a slack, as the AC power flow needs a
+    voltage reference the planning formulation never defines.
+
+    The result is worth stating rather than hiding: the linearised solution is
+    not AC-feasible on the same network. It satisfies the optimisation's line
+    limits, which ignore reactive power, while the AC check puts the main island
+    between 0.63 and 1.27 pu -- outside any operating band. That gap is the
+    reason a planning model has to be carried into an operational tool at all.
+    """
+    if not len(network.generators):
+        raise ValueError("Network has no generators to dispatch.")
+
+    network.set_snapshots([snapshot])
+    status, condition = network.optimize(solver_name=solver_name, log_to_console=False)
+    if str(condition) != "optimal":
+        raise RuntimeError(f"PyPSA optimisation did not solve: status={status}, condition={condition}")
+    try:
+        lopf_objective = float(network.objective)
+    except Exception:  # noqa: BLE001 - a missing objective must not sink the run
+        lopf_objective = float("nan")
+
+    # Materialise the loads for this snapshot into the static frame. Their power
+    # lives in loads_t.p_set; the pandapower converter reads loads.p_set, which is
+    # zero here, so without this the converted network carries the full dispatch
+    # against no demand at all.
+    if len(network.loads_t.p_set.columns):
+        network.loads["p_set"] = network.loads_t.p_set.loc[snapshot].reindex(
+            network.loads.index).fillna(network.loads.p_set)
+    if len(network.loads_t.q_set.columns):
+        network.loads["q_set"] = network.loads_t.q_set.loc[snapshot].reindex(
+            network.loads.index).fillna(network.loads.q_set)
+
+    dispatch = network.generators_t.p.loc[snapshot].copy()
+    network.generators["p_nom"] = network.generators.p_nom_opt
+    network.generators["p_nom_extendable"] = False
+    network.generators["p_set"] = dispatch
+    network.generators["q_set"] = 0.0
+
+    dispatching = dispatch[dispatch > 1e-6].index
+    network.generators["control"] = "PQ"
+    network.generators.loc[dispatching, "control"] = "PV"
+
+    network.determine_network_topology()
+    bus_degrees = _collect_bus_degrees(network)
+    ac_subnets = network.sub_networks[network.sub_networks.carrier == "AC"]
+    total_slacks = 0
+    # Per-island reference for the OPF reconstruction. `network.objective` cannot
+    # serve: it covers the whole network and, because PyPSA-Eur ships extendable
+    # capacity, it prices capital expenditure as well. A DC OPF on one converted
+    # island minimises linear generation cost alone, so the number to compare it
+    # against is the dispatch cost of that island's own machines, taken from
+    # PyPSA rather than from anything pmc wrote.
+    island_reference: dict[str, Any] = {}
+    for subnet_id, row in ac_subnets.iterrows():
+        island_buses = {str(bus) for bus in _subnetwork_buses(row)}
+        island_generators = network.generators.index[
+            network.generators.bus.astype(str).isin(island_buses)]
+        island_dispatch = dispatch.reindex(island_generators).fillna(0.0)
+        island_marginal = network.generators.marginal_cost.reindex(
+            island_generators).fillna(0.0)
+        island_reference[str(subnet_id)] = {
+            "dispatch_mw": float(island_dispatch.sum()),
+            "marginal_cost_eur": float((island_dispatch * island_marginal).sum()),
+            "generators": int(len(island_generators)),
+        }
+        buses = [b for b in _subnetwork_buses(row) if bus_degrees.get(str(b), 0) > 0]
+        if not buses:
+            continue
+        slack = max(buses, key=lambda b: (bus_degrees.get(str(b), 0), str(b)))
+        # Leave the reference bus to the slack alone: PyPSA books that bus's whole
+        # injection on its Slack machine while pandapower splits it between the
+        # ext_grid and any gen sharing the bus, which would make the two sides
+        # report different quantities for the same injection.
+        network.generators.loc[network.generators.bus == slack, "control"] = "PQ"
+        # This slack exists only to give the AC power flow a voltage reference.
+        # PyPSA never saw it -- it is added after the optimisation -- so it is not
+        # part of the dispatch problem and must be removed again before the model
+        # is used for an OPF comparison (see SLACK_NAME_PREFIX). Pricing it
+        # instead would leave an extra unit in the problem and change the answer.
+        network.add("Generator", SLACK_NAME_PREFIX + _sanitize_name(str(subnet_id)),
+                    bus=slack, control="Slack", p_set=0.0, q_set=0.0,
+                    p_nom=1e7, p_nom_min=0.0, p_nom_max=1e7)
+        total_slacks += 1
+
+    return {
+        "mode": "opf_dispatch",
+        "snapshot": str(snapshot),
+        "solver": solver_name,
+        "optimisation_status": f"{status}/{condition}",
+        "built_capacity_mw": float(network.generators.p_nom_opt.sum()),
+        "dispatched_mw": float(dispatch.sum()),
+        "dispatching_generators": int(len(dispatching)),
+        "added_slacks": int(total_slacks),
+        "pypsa_objective_incl_capex": lopf_objective,
+        "island_reference": island_reference,
+        "caveat": (
+            "Active dispatch is the model's own optimisation result. The "
+            "optimisation returns no reactive quantities, so bus types and the "
+            "voltage reference are assigned: dispatching units get PV control and "
+            "each island a slack."
+        ),
+    }
+
+
+def inject_local_pv_validation_case(
+    network: pypsa.Network,
+    snapshot: Any,
+    *,
+    local_coverage: float = 0.99,
+    reactive_power_ratio: float = 0.3,
+) -> dict[str, Any]:
+    """Build the AC reference case from the network's own loads and generator sites.
+
+    The other two modes delete the operating point and invent a tiny one -- 0.1 MW
+    per island smeared by bus degree, or 50 MW on a single bus. Neither converges
+    in PyPSA on the merged EHV+OSM island: the first leaves the Newton-Raphson no
+    gradient from a flat start, the second collapses voltage.
+
+    This mode keeps the real spatial pattern instead. Loads are materialised from
+    the snapshot time series at their own buses, and the network's existing
+    generators -- PyPSA-Eur expansion candidates, co-located with 3266 of 3276
+    island-2 load buses -- are given capacity and `control="PV"`, each covering
+    `local_coverage` of its bus's load.
+
+    Two findings drove this, both measured:
+
+    * Voltage control is what the model lacks, not reactive capacity. All 11938
+      generators ship as PQ with p_nom=0, so a whole island has one voltage
+      reference. Supplying the local reactive load through PQ generators makes
+      convergence *worse*, not better; only PV buses converge.
+    * The network cannot carry realistic flows. At 99% local coverage net
+      injection is ~1% of load and it solves; at 90% it does not. The resulting
+      power flow is therefore a structural check, not an operational one.
+
+    Capacity and dispatch here are synthetic -- p_nom is zero in the source, since
+    PyPSA-Eur leaves sizing to the optimisation. Only the locations are real.
+    """
+    if not len(network.loads):
+        raise ValueError("Network has no loads to build a local-PV reference from.")
+
+    load_p = network.loads_t.p_set.loc[snapshot] if len(network.loads_t.p_set.columns) \
+        else network.loads.p_set
+    load_bus = network.loads.bus.copy()
+    load_by_bus = (pd.Series(load_p.values, index=[load_bus[i] for i in load_p.index])
+                   .groupby(level=0).sum())
+    load_by_bus = load_by_bus[load_by_bus > 0.0]
+
+    _remove_components(network, "Load", list(network.loads.index))
+    network.add("Load", ["pmc_val_load_%s" % _sanitize_name(str(b)) for b in load_by_bus.index],
+                bus=list(load_by_bus.index), p_set=load_by_bus.values,
+                q_set=load_by_bus.values * reactive_power_ratio)
+
+    # Reuse the existing generator sites; add one only where a load bus has none.
+    existing = network.generators[network.generators.control != "Slack"]
+    per_bus = existing.groupby("bus").size()
+    target = (existing.bus.map(load_by_bus).fillna(0.0)
+              / existing.bus.map(per_bus).replace(0, 1) * local_coverage)
+    network.generators.loc[existing.index, "control"] = "PV"
+    network.generators.loc[existing.index, "p_set"] = target.values
+    network.generators.loc[existing.index, "p_nom"] = target.values * 10.0 + 1.0
+    network.generators.loc[existing.index, "p_nom_max"] = target.values * 10.0 + 1.0
+
+    uncovered = [b for b in load_by_bus.index if b not in set(existing.bus)]
+    if uncovered:
+        cover = load_by_bus[uncovered].values * local_coverage
+        network.add("Generator", ["pmc_val_pv_%s" % _sanitize_name(str(b)) for b in uncovered],
+                    bus=uncovered, control="PV", p_set=cover, q_set=0.0,
+                    p_nom=cover * 10.0 + 1.0, p_nom_min=0.0, p_nom_max=cover * 10.0 + 1.0)
+
+    network.determine_network_topology()
+    bus_degrees = _collect_bus_degrees(network)
+    ac_subnets = network.sub_networks[network.sub_networks.carrier == "AC"]
+
+    # Slacks the network already carries ship with p_set = NaN and p_nom = 0,
+    # because PyPSA-Eur leaves them for the optimisation to size. The NaN is the
+    # dangerous half: `generators_t.p[...].sum()` treats it as zero, so the island
+    # reports a 0 MW slack and a 2.5 GW power-balance gap passes as "converged"
+    # with no error anywhere. Initialise them the way the modes that create their
+    # own slack always did.
+    existing_slacks = network.generators.index[network.generators.control == "Slack"]
+    if len(existing_slacks):
+        network.generators.loc[existing_slacks, ["p_set", "q_set"]] = 0.0
+        network.generators.loc[existing_slacks, ["p_nom", "p_nom_max"]] = 1e7
+        network.generators.loc[existing_slacks, "p_nom_min"] = 0.0
+    slack_buses = set(network.generators.bus[network.generators.control == "Slack"])
+
+    # Clear other generators off the reference buses. PyPSA books the whole
+    # reference-bus injection on its Slack machine; pandapower splits it between
+    # ext_grid and any gen sharing that bus, so a co-located generator makes the
+    # two sides report different quantities for the same physical injection
+    # (252.692 MVAr on island 2). Leaving the bus to the slack alone keeps the
+    # comparison machine-for-machine instead of widening it to a bus total, which
+    # would hide a genuine misattribution between co-located machines. The slack
+    # covers that bus's load itself; it is one bus in 3276.
+    colocated = network.generators.index[
+        (network.generators.bus.isin(slack_buses))
+        & (network.generators.control != "Slack")
+    ]
+    if len(colocated):
+        _remove_components(network, "Generator", list(colocated))
+    total_slacks = 0
+    for subnet_id, row in ac_subnets.iterrows():
+        buses = [b for b in _subnetwork_buses(row) if bus_degrees.get(str(b), 0) > 0]
+        if not buses or slack_buses.intersection(buses):
+            continue
+        slack = max(buses, key=lambda b: (bus_degrees.get(str(b), 0), str(b)))
+        network.add("Generator", "pmc_val_slack_%s" % _sanitize_name(str(subnet_id)),
+                    bus=slack, control="Slack", p_set=0.0, q_set=0.0,
+                    p_nom=1e7, p_nom_min=0.0, p_nom_max=1e7)
+        total_slacks += 1
+
+    return {
+        "mode": "local_pv_from_native_loads",
+        "snapshot": str(snapshot),
+        "local_coverage": float(local_coverage),
+        "load_q_to_p_ratio": float(reactive_power_ratio),
+        "load_buses": int(len(load_by_bus)),
+        "total_load_mw": float(load_by_bus.sum()),
+        "reused_generator_sites": int(len(existing)),
+        "added_pv_generators": int(len(uncovered)),
+        "added_slacks": int(total_slacks),
+        "caveat": (
+            "Locations are the network's own; capacity and dispatch are synthetic "
+            "because PyPSA-Eur ships p_nom=0 expansion candidates. Net injection is "
+            "~1% of load, so the power flow is a structural check rather than an "
+            "operational one."
+        ),
+    }
+
+
+def _remove_components(network: pypsa.Network, kind: str, names: list) -> None:
+    """Remove components across PyPSA versions (mremove was dropped in 1.2.4)."""
+    if not names:
+        return
+    if hasattr(network, "mremove"):
+        network.mremove(kind, names)
+    else:
+        network.remove(kind, names)
+
+
+def drop_buses_below_voltage(network: pypsa.Network, threshold_kv: float) -> dict[str, Any]:
+    """Remove everything below a nominal voltage, undoing the OSM overlay.
+
+    The composed source is PyPSA-Eur's transmission network plus a German
+    sub-transmission layer built from OpenStreetMap, and the two are separated
+    exactly by `MV_VOLTAGE_CUTOFF_KV = 220` kV in
+    `scripts/build_pypsa_eur_hv_de_mv_overlay.py`: every bus below it came from
+    the overlay. Dropping them therefore recovers the transmission network the
+    overlay was grafted onto, without needing the original file.
+
+    Components attached to a removed bus go with it; a branch is removed if
+    either end is gone.
+    """
+    keep = network.buses.index[network.buses.v_nom.astype(float) >= float(threshold_kv)]
+    dropped_buses = [b for b in network.buses.index if b not in set(keep)]
+    if not dropped_buses:
+        return {"threshold_kv": float(threshold_kv), "buses_removed": 0}
+    gone = set(dropped_buses)
+    removed: dict[str, int] = {}
+    for kind, frame_name, columns in (
+        ("Line", "lines", ("bus0", "bus1")),
+        ("Transformer", "transformers", ("bus0", "bus1")),
+        ("Link", "links", ("bus0", "bus1")),
+        ("Generator", "generators", ("bus",)),
+        ("Load", "loads", ("bus",)),
+        ("ShuntImpedance", "shunt_impedances", ("bus",)),
+        ("StorageUnit", "storage_units", ("bus",)),
+        ("Store", "stores", ("bus",)),
+    ):
+        frame = getattr(network, frame_name, None)
+        if frame is None or not len(frame):
+            continue
+        mask = None
+        for column in columns:
+            if column not in frame.columns:
+                continue
+            hit = frame[column].astype(str).isin(gone)
+            mask = hit if mask is None else (mask | hit)
+        if mask is None or not bool(mask.any()):
+            continue
+        victims = list(frame.index[mask])
+        _remove_components(network, kind, victims)
+        removed[frame_name] = len(victims)
+    _remove_components(network, "Bus", dropped_buses)
+    removed["buses"] = len(dropped_buses)
+    return {"threshold_kv": float(threshold_kv), "buses_removed": len(dropped_buses),
+            "buses_kept": int(len(network.buses)), "removed": removed}
+
 
 
 def inject_fixed_small_pq_validation_case(
@@ -2447,6 +2783,11 @@ def run(args: argparse.Namespace) -> int:
             f"Loaded PyPSA source has only {len(network.buses)} buses, "
             f"below --min-source-buses={int(args.min_source_buses)}."
         )
+    voltage_filter: dict[str, Any] | None = None
+    if args.min_voltage_kv is not None:
+        voltage_filter = drop_buses_below_voltage(network, float(args.min_voltage_kv))
+        print(f"voltage filter: kept {voltage_filter.get('buses_kept')} buses at or above "
+              f"{args.min_voltage_kv} kV, removed {voltage_filter['buses_removed']}", flush=True)
     snapshot = select_snapshot(network, args.snapshot)
 
     removed_components = {
@@ -2471,7 +2812,13 @@ def run(args: argparse.Namespace) -> int:
     synthetic_pf: dict[str, Any] | None = None
     approach_used = "none"
     if not args.skip_validation:
-        if args.synthetic_pf_mode == "toy-load-pv":
+        if args.synthetic_pf_mode == "opf-dispatch":
+            synthetic_pf = inject_opf_dispatch_validation_case(network_for_conversion, snapshot)
+            approach_used = "opf_dispatch"
+        elif args.synthetic_pf_mode == "local-pv":
+            synthetic_pf = inject_local_pv_validation_case(network_for_conversion, snapshot)
+            approach_used = "local_pv_from_native_loads"
+        elif args.synthetic_pf_mode == "toy-load-pv":
             synthetic_pf = inject_toy_load_pv_validation_case(network_for_conversion)
             approach_used = "toy_load_pv_per_ac_island"
         else:
@@ -2575,6 +2922,12 @@ def run(args: argparse.Namespace) -> int:
     output_path = resolve_output_path(source, args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     pandapower_adapter.export_json(case, output_path)
+    # The planning model's own optimum, written where a downstream runner can read
+    # it without re-solving the LP. A DC OPF reconstruction can be checked against
+    # this number.
+    if synthetic_pf is not None:
+        output_path.with_suffix(output_path.suffix + ".synthetic_pf.json").write_text(
+            json.dumps(synthetic_pf, indent=2, default=str))
     island_output_dir = resolve_island_output_dir(output_path, args.island_output_dir)
     bundle_output = resolve_bundle_output_path(output_path, args.bundle_output)
     diagnostic_output = resolve_diagnostic_output_path(output_path)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 import shutil
 
 
@@ -20,4 +21,12 @@ def resolve_julia_binary() -> str:
     return "/opt/julia/bin/julia"
 
 
-__all__ = ["resolve_julia_binary"]
+def resolve_julia_depot() -> Path:
+    explicit = os.environ.get("JULIA_DEPOT_PATH")
+    if explicit:
+        return Path(explicit.split(os.pathsep)[0])
+
+    return Path(__file__).resolve().parents[2] / ".julia_depot"
+
+
+__all__ = ["resolve_julia_binary", "resolve_julia_depot"]

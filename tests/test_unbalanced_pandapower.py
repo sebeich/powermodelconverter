@@ -8,7 +8,7 @@ from powermodelconverter.importers.opendss import OpenDSSImportAdapter
 from powermodelconverter.core.pandapower_backend import PandapowerAdapter
 from powermodelconverter.importers.pandapower_json import PandapowerImportAdapter
 from powermodelconverter.exporters.powermodels_distribution import PowerModelsDistributionAdapter
-from powermodelconverter.runtime import resolve_julia_binary
+from powermodelconverter.runtime import resolve_julia_binary, resolve_julia_depot
 from powermodelconverter.validation.powerflow import ValidationService
 
 
@@ -47,7 +47,7 @@ def test_unbalanced_pandapower_roundtrip(tmp_path: Path) -> None:
         julia_binary=resolve_julia_binary(),
         julia_script=Path(__file__).resolve().parents[1]
         / "src/powermodelconverter/julia_pmd/run_powermodels_distribution_pf.jl",
-        julia_depot=Path(__file__).resolve().parents[1] / ".julia_depot",
+        julia_depot=resolve_julia_depot(),
         julia_project=Path(__file__).resolve().parents[1] / "src/powermodelconverter/julia_pmd",
         reference_slack_p_mw=sum(slack[key] for key in ("p_a_mw", "p_b_mw", "p_c_mw")),
         reference_slack_q_mvar=sum(slack[key] for key in ("q_a_mvar", "q_b_mvar", "q_c_mvar")),

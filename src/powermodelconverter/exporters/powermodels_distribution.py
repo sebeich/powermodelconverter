@@ -18,14 +18,16 @@ class PowerModelsDistributionAdapter:
     def __init__(self) -> None:
         self._pandapower = PandapowerAdapter()
 
-    def export_input(self, case: CanonicalCase, destination: str | Path) -> Path:
+    def export_input(self, case: CanonicalCase, destination: str | Path, *,
+                     from_hub: bool = False) -> Path:
+        """Export DSS; ``from_hub`` explicitly forbids the source-file shortcut."""
         if not case.is_unbalanced:
             raise ValueError("PowerModelsDistribution export is intended for unbalanced cases.")
 
         path = Path(destination)
         path.parent.mkdir(parents=True, exist_ok=True)
         source_path = case.source_path
-        if source_path is not None and source_path.suffix.lower() == ".dss":
+        if not from_hub and source_path is not None and source_path.suffix.lower() == ".dss":
             if source_path.resolve() == path.resolve():
                 return path
             shutil.copy2(source_path, path)
@@ -49,9 +51,13 @@ class PowerModelsDistributionAdapter:
 
         lines: list[str] = [
             "Clear",
+            f"Set DefaultBaseFrequency={float(net.f_hz):.12g}",
             "",
             f"New Circuit.{self._sanitize_name(case.case_id)} basekv={base_kv:.12g} pu={pu:.12g} phases=3 "
             f"bus1={source_bus_name} angle={angle:.12g}",
+            # The hub ext_grid is an ideal slack; source impedance, when present,
+            # is represented by explicit network branches rather than DSS defaults.
+            "Edit Vsource.Source R1=1e-8 X1=1e-8 R0=1e-8 X0=1e-8",
             "",
         ]
 
@@ -62,9 +68,10 @@ class PowerModelsDistributionAdapter:
             vector_group = str(row.get("vector_group", "") or "").lower()
             hv_conn, lv_conn = self._transformer_connections(vector_group)
             r_each = max(float(row.vkr_percent) / 2.0, 0.0)
+            x_percent = math.sqrt(max(float(row.vk_percent)**2 - float(row.vkr_percent)**2, 0.0))
             lines.extend(
                 [
-                    f"New Transformer.{name} phases=3 windings=2 XHL={float(row.vk_percent):.12g}",
+                    f"New Transformer.{name} phases=3 windings=2 XHL={x_percent:.12g}",
                     f"~ wdg=1 bus={hv_bus_name} conn={hv_conn} kv={float(row.vn_hv_kv):.12g} "
                     f"kva={float(row.sn_mva) * 1000.0:.12g} %r={r_each:.12g}",
                     f"~ wdg=2 bus={lv_bus_name} conn={lv_conn} kv={float(row.vn_lv_kv):.12g} "
@@ -102,7 +109,8 @@ class PowerModelsDistributionAdapter:
                 kv = float(bus.vn_kv) if load_type == "delta" else kv_ln
                 lines.append(
                     f"New Load.{load_name} bus1={bus_name}.{phase_idx} phases=1 conn={load_type} model=1 "
-                    f"kv={kv:.12g} kW={p_mw * 1000.0:.12g} kvar={q_mvar * 1000.0:.12g}"
+                    f"kv={kv:.12g} kW={p_mw * 1000.0:.12g} kvar={q_mvar * 1000.0:.12g} "
+                    "Vminpu=0.5 Vmaxpu=1.5"
                 )
         lines.extend(
             [
@@ -157,8 +165,9 @@ class PowerModelsDistributionAdapter:
         return [f"{value:.12g}" for value in unique]
 
 
-def export_powermodels_distribution(case: CanonicalCase, output_path: str | Path, **_: object) -> Path:
-    return PowerModelsDistributionAdapter().export_input(case, output_path)
+def export_powermodels_distribution(case: CanonicalCase, output_path: str | Path, **kwargs: object) -> Path:
+    return PowerModelsDistributionAdapter().export_input(
+        case, output_path, from_hub=bool(kwargs.get("from_hub", False)))
 
 
 register_target_routes(

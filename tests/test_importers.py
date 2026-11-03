@@ -463,10 +463,12 @@ def test_balanced_pandapower_export_to_opendss(tmp_path: Path) -> None:
 def test_report_generator_surfaces_pypsa_eur_island_records() -> None:
     from powermodelconverter.report.generator import _load_generator_module
 
+    source = REPO_ROOT / "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.validation.json"
+    if not source.exists():
+        pytest.skip("PyPSA-Eur validation results are generated locally from OSM-derived data and are not shipped.")
+
     module = _load_generator_module()
-    records = module.load_pypsa_eur_validation_records(
-        REPO_ROOT / "validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.validation.json"
-    )
+    records = module.load_pypsa_eur_validation_records(source)
 
     aggregate = next(record for record in records if record.case_id == "pypsa_eur_hv_all_de_mv")
     island_two = next(record for record in records if record.case_id.endswith("::island_2"))

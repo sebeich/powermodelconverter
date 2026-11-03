@@ -35,7 +35,7 @@ from powermodelconverter.core.exceptions import ConversionError
 from powermodelconverter.core.model import CanonicalCase
 from powermodelconverter.core.registry import Route, ensure_routes_loaded, get_routes
 from powermodelconverter.report import generate_full_report, list_report_records, merge_partial_results
-from powermodelconverter.runtime import resolve_julia_binary
+from powermodelconverter.runtime import resolve_julia_binary, resolve_julia_depot
 from powermodelconverter.validation.matpower_native import validate_against_matpower
 from powermodelconverter.validation.powerflow import ValidationResult, ValidationService
 
@@ -43,7 +43,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_EXPORT_DIR = REPO_ROOT / "artifacts" / "exports"
 DEFAULT_REPORT_PATH = REPO_ROOT / "docs" / "validation_report.json"
 DEFAULT_JULIA_SCRIPT = REPO_ROOT / "src" / "powermodelconverter" / "julia" / "run_powermodels_pf.jl"
-DEFAULT_JULIA_DEPOT = REPO_ROOT / ".julia_depot"
+DEFAULT_JULIA_DEPOT = resolve_julia_depot()
 DEFAULT_JULIA_PSI_SCRIPT = REPO_ROOT / "src" / "powermodelconverter" / "julia_psi" / "run_powersimulations_pf.jl"
 DEFAULT_JULIA_PSI_PROJECT = REPO_ROOT / "src" / "powermodelconverter" / "julia_psi"
 DEFAULT_JULIA_PMD_SCRIPT = REPO_ROOT / "src" / "powermodelconverter" / "julia_pmd" / "run_powermodels_distribution_pf.jl"

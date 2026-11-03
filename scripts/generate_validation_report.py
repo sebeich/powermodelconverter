@@ -30,7 +30,7 @@ from powermodelconverter.importers.pypsa import PypsaAdapter
 from powermodelconverter.importers.pypsa import PypsaImportAdapter
 from powermodelconverter.core.capabilities import capability_rows
 from powermodelconverter.core.model import CanonicalCase
-from powermodelconverter.runtime import resolve_julia_binary
+from powermodelconverter.runtime import resolve_julia_binary, resolve_julia_depot
 from powermodelconverter.validation.diagnostics import diagnose_case, summarize_diagnostic
 from powermodelconverter.validation.cgmes_sv import validate_against_sv_profile
 from powermodelconverter.validation.matpower_native import validate_against_matpower
@@ -78,7 +78,7 @@ def configure_report_logging() -> None:
 
 
 def find_pm_jl_native_cases(*, limit: int | None = None) -> list[tuple[str, Path]]:
-    base = REPO_ROOT / ".julia_depot/packages/PowerModels"
+    base = resolve_julia_depot() / "packages/PowerModels"
     if not base.exists():
         return []
 
@@ -887,7 +887,7 @@ def validate_powermodels(
         powermodels_json=path,
         julia_binary=JULIA_BINARY,
         julia_script=REPO_ROOT / "src/powermodelconverter/julia/run_powermodels_pf.jl",
-        julia_depot=REPO_ROOT / ".julia_depot",
+        julia_depot=resolve_julia_depot(),
     )
 
 
@@ -903,7 +903,7 @@ def validate_powersystems(
         powersystems_case=path,
         julia_binary=JULIA_BINARY,
         julia_script=REPO_ROOT / "src/powermodelconverter/julia_psi/run_powersimulations_pf.jl",
-        julia_depot=REPO_ROOT / ".julia_depot",
+        julia_depot=resolve_julia_depot(),
         julia_project=REPO_ROOT / "src/powermodelconverter/julia_psi",
     )
 
@@ -942,7 +942,7 @@ def validate_powermodelsdistribution(
         pmd_input_path=path,
         julia_binary=JULIA_BINARY,
         julia_script=REPO_ROOT / "src/powermodelconverter/julia_pmd/run_powermodels_distribution_pf.jl",
-        julia_depot=REPO_ROOT / ".julia_depot",
+        julia_depot=resolve_julia_depot(),
         julia_project=REPO_ROOT / "src/powermodelconverter/julia_pmd",
         reference_slack_p_mw=reference.slack_p_mw,
         reference_slack_q_mvar=reference.slack_q_mvar,
@@ -965,7 +965,7 @@ def validate_powermodelsdistribution_from_pandapower(
         pmd_input_path=path,
         julia_binary=JULIA_BINARY,
         julia_script=REPO_ROOT / "src/powermodelconverter/julia_pmd/run_powermodels_distribution_pf.jl",
-        julia_depot=REPO_ROOT / ".julia_depot",
+        julia_depot=resolve_julia_depot(),
         julia_project=REPO_ROOT / "src/powermodelconverter/julia_pmd",
         reference_slack_p_mw=sum(slack[key] for key in ("p_a_mw", "p_b_mw", "p_c_mw")),
         reference_slack_q_mvar=sum(slack[key] for key in ("q_a_mvar", "q_b_mvar", "q_c_mvar")),

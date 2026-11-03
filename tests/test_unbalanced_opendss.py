@@ -2,7 +2,7 @@ from pathlib import Path
 
 from powermodelconverter.importers.opendss import OpenDSSImportAdapter
 from powermodelconverter.exporters.powermodels_distribution import PowerModelsDistributionAdapter
-from powermodelconverter.runtime import resolve_julia_binary
+from powermodelconverter.runtime import resolve_julia_binary, resolve_julia_depot
 from powermodelconverter.validation.powerflow import ValidationService
 
 
@@ -32,7 +32,7 @@ def test_unbalanced_opendss_roundtrip_and_pmd_validation(tmp_path: Path) -> None
         pmd_input_path=export_path,
         julia_binary=resolve_julia_binary(),
         julia_script=REPO_ROOT / "src/powermodelconverter/julia_pmd/run_powermodels_distribution_pf.jl",
-        julia_depot=REPO_ROOT / ".julia_depot",
+        julia_depot=resolve_julia_depot(),
         julia_project=REPO_ROOT / "src/powermodelconverter/julia_pmd",
         reference_slack_p_mw=reference.slack_p_mw,
         reference_slack_q_mvar=reference.slack_q_mvar,

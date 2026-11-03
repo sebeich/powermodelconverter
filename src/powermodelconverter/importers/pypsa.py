@@ -264,6 +264,15 @@ class PypsaAdapter:
                 max_i_ka=max_i_ka,
                 parallel=parallel,
                 name=str(line_name),
+                # PyPSA's s_nom is the rating itself, so the element is loaded to
+                # 100 % at its own limit. pandapower needs this second field to
+                # emit a thermal limit at all: build_branch sets RATE_A from
+                # max_i_ka *and* max_loading_percent, and without the latter it
+                # writes RATE_A = 0, which PowerModels reads as unlimited. The
+                # rating then silently disappears between the hub and any OPF
+                # built on it -- a DC OPF on the converted model becomes
+                # unconstrained apart from power balance.
+                max_loading_percent=100.0,
             )
 
         for trafo_name, row in network.transformers.iterrows():
@@ -292,6 +301,7 @@ class PypsaAdapter:
                 shift_degree=float(row.phase_shift) if "phase_shift" in row else 0.0,
                 tap_side=tap_side,
                 name=str(trafo_name),
+                max_loading_percent=100.0,
             )
 
         for shunt_name, row in network.shunt_impedances.iterrows():
@@ -314,34 +324,51 @@ class PypsaAdapter:
                 name=str(load_name),
             )
 
+        demoted_slacks = _demoted_slack_generators(network)
         for generator_name, row in network.generators.iterrows():
             control = str(row.control)
+            # At most one reference per AC island, exactly as PyPSA's own
+            # find_slack_bus decides it (see _demoted_slack_generators).
+            if control == "Slack" and str(generator_name) in demoted_slacks:
+                control = "PV"
             vm_pu = float(row.vm_pu) if "vm_pu" in row and pd.notna(row.vm_pu) else float(
                 network.buses.loc[row.bus, "v_mag_pu_set"]
             )
             if control == "Slack":
-                pp.create_ext_grid(
+                index = pp.create_ext_grid(
                     net,
                     bus=bus_lookup[str(row.bus)],
                     vm_pu=vm_pu,
                     name=str(generator_name),
+                    **_pypsa_generator_limits(row),
                 )
+                # A PyPSA Slack is an ordinary priced, capacity-bounded machine
+                # that also sets the angle reference. Mapping it to a bare
+                # ext_grid keeps the reference but discards both, leaving an
+                # unbounded zero-cost source: an OPF on the converted model then
+                # dispatches it ahead of everything else and reconstructs a
+                # different problem from the one the source tool solved.
+                _carry_marginal_cost(net, row, element=index, et="ext_grid")
             elif control == "PV":
-                pp.create_gen(
+                index = pp.create_gen(
                     net,
                     bus=bus_lookup[str(row.bus)],
                     p_mw=float(row.p_set),
                     vm_pu=vm_pu,
                     name=str(generator_name),
+                    **_pypsa_generator_limits(row),
                 )
+                _carry_marginal_cost(net, row, element=index, et="gen")
             else:
-                pp.create_sgen(
+                index = pp.create_sgen(
                     net,
                     bus=bus_lookup[str(row.bus)],
                     p_mw=float(row.p_set),
                     q_mvar=float(row.q_set),
                     name=str(generator_name),
+                    **_pypsa_generator_limits(row),
                 )
+                _carry_marginal_cost(net, row, element=index, et="sgen")
 
         return net
 
@@ -482,3 +509,147 @@ __all__ = [
     "import_pypsa",
     "solve_pypsa_reference",
 ]
+
+
+
+def _ac_island_labels(network: Any) -> dict[str, str]:
+    """Group buses into galvanically connected AC islands.
+
+    Union-find over lines and transformers only. DC links are deliberately not
+    traversed: PyPSA splits sub-networks at them, and each side carries its own
+    voltage-angle reference.
+
+    Computed here rather than read from ``network.buses.sub_network`` because
+    that column is only populated once ``determine_network_topology()`` has run,
+    and an importer must not depend on -- or trigger -- a mutation of the caller's
+    network.
+    """
+    parent: dict[str, str] = {}
+
+    def find(node: str) -> str:
+        parent.setdefault(node, node)
+        root = node
+        while parent[root] != root:
+            root = parent[root]
+        while parent[node] != root:
+            parent[node], node = root, parent[node]
+        return root
+
+    def union(left: str, right: str) -> None:
+        left_root, right_root = find(left), find(right)
+        if left_root != right_root:
+            parent[left_root] = right_root
+
+    for bus_name in network.buses.index:
+        find(str(bus_name))
+    for frame in (network.lines, network.transformers):
+        if frame is None or frame.empty:
+            continue
+        for bus0, bus1 in zip(frame.bus0.astype(str), frame.bus1.astype(str)):
+            union(bus0, bus1)
+    return {str(bus_name): find(str(bus_name)) for bus_name in network.buses.index}
+
+
+def _demoted_slack_generators(network: Any) -> set[str]:
+    """Slack generators PyPSA would itself demote to PV control.
+
+    A PyPSA sub-network has exactly one voltage-angle reference:
+    ``sub_network.find_slack_bus`` keeps the first ``control="Slack"`` generator
+    it encounters and rewrites every further one on the same sub-network to
+    ``control="PV"``. Mapping each Slack generator to its own pandapower
+    ``ext_grid`` gives the converted model more reference buses than the network
+    PyPSA solves, and the two tools stop answering the same question: PyPSA books
+    the island's whole mismatch on one machine while pandapower shares it out
+    over several, so the slack injections disagree by construction.
+
+    The PyPSA-Eur staging path only avoided this by accident of ordering -- it
+    converts after ``pf()`` has already applied the demotion -- so a network
+    converted before being solved was the broken case.
+
+    First-wins, in ``network.generators`` order, to match PyPSA's own choice.
+    """
+    islands = _ac_island_labels(network)
+    claimed: set[str] = set()
+    demoted: set[str] = set()
+    for generator_name, row in network.generators.iterrows():
+        if str(row.control) != "Slack":
+            continue
+        island = islands.get(str(row.bus))
+        if island in claimed:
+            demoted.add(str(generator_name))
+        else:
+            claimed.add(island)
+    return demoted
+
+# PyPSA has no reactive capability at all: its optimisation is active-power only
+# and `p_nom` is the whole rating a generator carries. Exporting no reactive bound
+# makes pandapower substitute its own "no limit" default of 1e9 MVAr, which is
+# then written into the PowerModels model as if it were data -- and an
+# interior-point solver puts a barrier term on every bound, so a limit 1e9 wide
+# against dispatches of ~1e2 destroys the conditioning. On the 333-bus island it
+# is the difference between ITERATION_LIMIT and a solution in 28 s.
+#
+# So a capability has to be assumed, and the assumption is recorded here rather
+# than buried in a solver default: each machine may exchange reactive power up to
+# this fraction of its active rating, i.e. roughly cos(phi) >= 0.96.
+REACTIVE_CAPABILITY_FRACTION = 0.3
+
+
+def _pypsa_generator_limits(row: Any) -> dict[str, float]:
+    """Carry a PyPSA generator's active-power box into pandapower.
+
+    Without this the converted model has no active-power limits at all, and the
+    PowerModels writer emits +/-1e9 bounds -- which makes any OPF on the exported
+    model a different problem from the one PyPSA solved. The capacity bound is
+    `p_nom_opt` where an optimisation has sized the unit, `p_nom` otherwise.
+    """
+    limits: dict[str, float] = {}
+    capacity = None
+    for attribute in ("p_nom_opt", "p_nom"):
+        if attribute in row and pd.notna(row[attribute]):
+            capacity = float(row[attribute])
+            break
+    if capacity is None:
+        return limits
+    # Zero is a bound, not missing information. An optimisation that built no
+    # capacity at a site says that site cannot generate; emitting no bound instead
+    # lets the downstream writer default to +/-1e9, which hands an OPF an
+    # unbounded machine. Normalise -0.0 so the bound reads as a clean zero.
+    capacity = 0.0 if capacity == 0.0 else capacity
+    minimum_pu = float(row["p_min_pu"]) if "p_min_pu" in row and pd.notna(row["p_min_pu"]) else 0.0
+    maximum_pu = float(row["p_max_pu"]) if "p_max_pu" in row and pd.notna(row["p_max_pu"]) else 1.0
+    # Never bind below the dispatch the model already carries: a setpoint above a
+    # stated capacity is a contradiction in the source, and clamping it here would
+    # make the converted case infeasible rather than surfacing the inconsistency.
+    setpoint = abs(float(row["p_set"])) if "p_set" in row and pd.notna(row["p_set"]) else 0.0
+    limits["max_p_mw"] = max(capacity * maximum_pu, setpoint)
+    limits["min_p_mw"] = min(capacity * minimum_pu, setpoint)
+    # Assumed, not converted -- see REACTIVE_CAPABILITY_FRACTION. Written even
+    # when it evaluates to zero: a machine of zero rating has no reactive
+    # capability either, and leaving the field unset is not neutral -- pandapower
+    # fills it with 1e9 MVAr, which is both untrue and numerically ruinous.
+    reactive = REACTIVE_CAPABILITY_FRACTION * abs(limits["max_p_mw"])
+    limits["max_q_mvar"] = reactive
+    limits["min_q_mvar"] = -reactive
+    return limits
+
+
+def _carry_marginal_cost(net: Any, row: Any, *, element: int, et: str) -> None:
+    """Record a PyPSA marginal cost as a pandapower linear polynomial cost.
+
+    PyPSA prices dispatch per MWh through `marginal_cost`; pandapower expresses
+    the same thing as the first-order term of a polynomial cost. Dropping it
+    leaves every generator with an identical objective, so an OPF on the
+    converted model is degenerate and its dispatch says nothing about the
+    dispatch PyPSA computed.
+    """
+    if "marginal_cost" not in row or pd.isna(row["marginal_cost"]):
+        return
+    # A zero cost is written, not skipped. Omitting the row does not mean "free
+    # of charge" to a downstream OPF -- it means no cost term at all, which an LP
+    # reads as a free source and will load up without limit. That is how a DC OPF
+    # on the exported model found a dispatch 45 % cheaper than the one PyPSA
+    # computed: it pushed 113 GW through unpriced generators.
+    pp.create_poly_cost(net, element=element, et=et,
+                        cp1_eur_per_mw=float(row["marginal_cost"]))
+

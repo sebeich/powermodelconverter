@@ -123,12 +123,12 @@
     <div class="grid">
       <article class="card">
         <h2>Validated Routes</h2>
-        <div class="value">132</div>
+        <div class="value">131</div>
         <div class="sub">Routes with successful measured validation</div>
       </article>
       <article class="card">
         <h2>Pending Routes</h2>
-        <div class="value">21</div>
+        <div class="value">22</div>
         <div class="sub">Tracked explicitly, but not yet signed off</div>
       </article>
       <article class="card">
@@ -161,7 +161,8 @@
         </article>
         <article class="analysis-card">
           <h3>Deterministic Coverage</h3>
-          <p>The current report signs off 132 route(s) with deterministic full-voltage comparisons across 16868 matched buses or phase nodes in total. Individual routes compare between 1 and 7824 points.</p>
+          <p>The current report signs off 131 route(s) with deterministic full-voltage comparisons across 16844 matched buses or phase nodes in total. Individual routes compare between 1 and 7824 points.</p>
+          <p>148 route(s) also carry an advisory plausibility pass over the imported hub model, run with <code>pandapower.diagnostic</code> and no pmc-authored checks: 112 clean, 36 with findings. The <em>Diagnostic</em> column never affects <em>Status</em> &mdash; validation asks whether two independent tools agree on the model, the diagnostic asks whether the model is plausible, and a converted model can legitimately trip the latter. Hover a cell for the per-check counts; full detail is in <code>docs/validation_report.json</code>. On unbalanced routes the pass is partial, because <code>pandapower.diagnostic</code> solves with <code>runpp</code> and so its convergence checks do not see the <code>asymmetric_load</code> tables.</p>
         </article>
         <article class="analysis-card">
           <h3>Strongest Current Route</h3>
@@ -237,9 +238,9 @@
               <td>matpower</td>
               <td>core_bal_star_3bus.pandapower</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>9.34121597105e-15</td>
+              <td>5.07632758264e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="124" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.1918924714e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -309,9 +310,9 @@
               <td>matpower</td>
               <td>core_bal_radial_3bus.pandapower</td>
               <td>Balanced</td>
-              <td>1.7763568394e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="176" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>2.66770974164e-15</td>
+              <td>1.72934489209e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="146" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.63028590139e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -381,9 +382,9 @@
               <td>matpower</td>
               <td>core_bal_ring_4bus.pandapower</td>
               <td>Balanced</td>
-              <td>3.5527136788e-13</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>1.06705413026e-15</td>
+              <td>1.37554652105e-08</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="118" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>4.64184308886e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -441,9 +442,9 @@
               <td>pandapower</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>5.07632758264e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="124" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.18967744537e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -453,9 +454,9 @@
               <td>matpower</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>5.08131915315e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="124" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.18967744537e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -513,9 +514,9 @@
               <td>pandapower</td>
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>1.74449462787e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="146" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.60361768535e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -525,9 +526,9 @@
               <td>matpower</td>
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>1.74449462787e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="146" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.60361768535e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -585,9 +586,9 @@
               <td>pandapower</td>
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>1.37555534197e-08</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="118" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>4.64850772401e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -597,9 +598,9 @@
               <td>matpower</td>
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
+              <td>1.3780722397e-08</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="118" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>4.64850772401e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -669,9 +670,9 @@
               <td>matpower</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>9.09494701773e-13</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>9.40399181322e-15</td>
+              <td>1.88949979883e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="131" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>1.78968525928e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -741,9 +742,9 @@
               <td>matpower</td>
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
-              <td>5.53224029345e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="169" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>2.47080227765e-15</td>
+              <td>3.4517381158e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="127" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.46057050159e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -813,9 +814,9 @@
               <td>matpower</td>
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
-              <td>3.6662903532e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="172" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>1.00777468505e-15</td>
+              <td>1.06146832784e-11</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="165" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.48501743035e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -875,8 +876,8 @@
               <td>Balanced</td>
               <td>0</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>6.14464269081e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="168" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
             
@@ -885,9 +886,9 @@
               <td>matpower</td>
               <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
-              <td>3.6662903532e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="172" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>9.36943927174e-15</td>
+              <td>7.17214041193e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="137" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.65871891651e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -897,7 +898,7 @@
               <td>opendss</td>
               <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
-              <td>0.0911481082074</td>
+              <td>0.0911481080385</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="16" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
               <td>3.89769900321e-05</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="66" height="10" rx="5" fill="#059669"></rect></svg></td>
@@ -933,7 +934,7 @@
               <td>powermodels</td>
               <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
-              <td>6.16672171273e-07</td>
+              <td>6.16672281563e-07</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="93" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
               <td>9.3450250332e-11</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="150" height="10" rx="5" fill="#059669"></rect></svg></td>
@@ -947,8 +948,8 @@
               <td>Balanced</td>
               <td>0</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>4.49839458587e-11</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="155" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
             
@@ -957,9 +958,9 @@
               <td>matpower</td>
               <td>core_bal_radial_3bus.cgmes</td>
               <td>Balanced</td>
-              <td>5.53224029345e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="169" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>3.2357740779e-15</td>
+              <td>9.77989305231e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="135" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>4.79727774294e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -1019,8 +1020,8 @@
               <td>Balanced</td>
               <td>0</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>4.58232419299e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="170" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
             
@@ -1029,9 +1030,9 @@
               <td>matpower</td>
               <td>core_bal_ring_4bus.cgmes</td>
               <td>Balanced</td>
-              <td>7.33258070641e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="167" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>5.42627666011e-16</td>
+              <td>5.36940221041e-11</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="154" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.09086897921e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -1101,9 +1102,9 @@
               <td>matpower</td>
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>9.34121597105e-15</td>
+              <td>5.07632758264e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="124" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.1918924714e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -1173,9 +1174,9 @@
               <td>matpower</td>
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
-              <td>1.7763568394e-12</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="176" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>2.66770974164e-15</td>
+              <td>1.72934489209e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="146" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>3.63028590139e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>3</td>
             </tr>
@@ -1245,9 +1246,9 @@
               <td>matpower</td>
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
-              <td>3.5527136788e-13</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>1.06705413026e-15</td>
+              <td>1.37554652105e-08</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="118" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>4.64184308886e-13</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>4</td>
             </tr>
@@ -1305,10 +1306,10 @@
               <td>pandapower</td>
               <td>case9</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>6.79770466856e-09</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="123" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>9.91795188837e-12</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="165" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>9</td>
             </tr>
             
@@ -1329,10 +1330,10 @@
               <td>pandapower</td>
               <td>case30</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>1.68431415384e-07</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="102" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>4.05276846236e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="141" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>30</td>
             </tr>
             
@@ -1343,8 +1344,8 @@
               <td>Balanced</td>
               <td>0</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>0.000168282888558</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="57" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>118</td>
             </tr>
             
@@ -1557,10 +1558,10 @@
               <td>pandapower</td>
               <td>case30_pmjl_pkg</td>
               <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
+              <td>1.68431415384e-07</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="102" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
+              <td>4.05276846236e-10</td>
+              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="141" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>30</td>
             </tr>
             
@@ -1574,18 +1575,6 @@
               <td>3.15109388582e-10</td>
               <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="143" height="10" rx="5" fill="#059669"></rect></svg></td>
               <td>30</td>
-            </tr>
-            
-            <tr>
-              <td>pm.jl</td>
-              <td>pandapower</td>
-              <td>case24_pmjl_pkg</td>
-              <td>Balanced</td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#1d4ed8"></rect></svg></td>
-              <td>0</td>
-              <td><svg width="190" height="14" viewBox="0 0 190 14" aria-hidden="true"><rect x="0" y="2" width="190" height="10" rx="5" fill="#ece5d8"></rect><rect x="0" y="2" width="180" height="10" rx="5" fill="#059669"></rect></svg></td>
-              <td>24</td>
             </tr>
             
             <tr>
@@ -1949,6 +1938,7 @@
             <th>Slack Delta</th>
             <th>Voltage Delta</th>
             <th>Compared Points</th>
+            <th>Diagnostic</th>
             <th>Notes</th>
           </tr>
         </thead>
@@ -1963,6 +1953,7 @@
               <td>0</td>
               <td>0</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -1972,9 +1963,10 @@
               <td>core_bal_star_3bus.pandapower</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>9.34121597105e-15</td>
+              <td>5.07632758264e-09</td>
+              <td>3.1918924714e-13</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -1987,6 +1979,7 @@
               <td>0.0911480598113</td>
               <td>3.89769900321e-05</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -1999,6 +1992,7 @@
               <td>4.88519557909e-08</td>
               <td>7.62336912265e-12</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2011,6 +2005,7 @@
               <td>5.55746769635e-07</td>
               <td>8.72918302272e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2023,6 +2018,7 @@
               <td>5.68130842136e-07</td>
               <td>8.72918193821e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2035,6 +2031,7 @@
               <td>0</td>
               <td>0</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2044,9 +2041,10 @@
               <td>core_bal_radial_3bus.pandapower</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>1.7763568394e-12</td>
-              <td>2.66770974164e-15</td>
+              <td>1.72934489209e-10</td>
+              <td>3.63028590139e-13</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2059,6 +2057,7 @@
               <td>0.0652657924658</td>
               <td>4.14827587024e-05</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2071,6 +2070,7 @@
               <td>3.03148273296e-07</td>
               <td>4.23768184815e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2083,6 +2083,7 @@
               <td>3.0314856421e-07</td>
               <td>4.23768953284e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2095,6 +2096,7 @@
               <td>3.03144799402e-07</td>
               <td>4.23766954966e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2107,6 +2109,7 @@
               <td>0</td>
               <td>0</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2116,9 +2119,10 @@
               <td>core_bal_ring_4bus.pandapower</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>3.5527136788e-13</td>
-              <td>1.06705413026e-15</td>
+              <td>1.37554652105e-08</td>
+              <td>4.64184308886e-13</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2131,6 +2135,7 @@
               <td>0.106332156793</td>
               <td>4.85200664673e-05</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2143,6 +2148,7 @@
               <td>2.30953758244e-08</td>
               <td>1.30101256817e-12</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2155,6 +2161,7 @@
               <td>1.98752631627e-07</td>
               <td>1.17953377441e-11</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2167,6 +2174,7 @@
               <td>2.03764975026e-07</td>
               <td>1.17950437149e-11</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2176,9 +2184,10 @@
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>5.07632758264e-09</td>
+              <td>3.18967744537e-13</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2188,9 +2197,10 @@
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>5.08131915315e-09</td>
+              <td>3.18967744537e-13</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2203,6 +2213,7 @@
               <td>0.0911480595758</td>
               <td>3.89769900321e-05</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2215,6 +2226,7 @@
               <td>4.88519557909e-08</td>
               <td>7.62449460581e-12</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2227,6 +2239,7 @@
               <td>5.5574649058e-07</td>
               <td>8.72918101187e-11</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2239,6 +2252,7 @@
               <td>5.68132260496e-07</td>
               <td>8.72918883907e-11</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2248,9 +2262,10 @@
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>1.74449462787e-10</td>
+              <td>3.60361768535e-13</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2260,9 +2275,10 @@
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>1.74449462787e-10</td>
+              <td>3.60361768535e-13</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2275,6 +2291,7 @@
               <td>0.0652657923781</td>
               <td>4.14827587025e-05</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2287,6 +2304,7 @@
               <td>3.03155462422e-07</td>
               <td>4.23786935586e-11</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2299,6 +2317,7 @@
               <td>3.03159043946e-07</td>
               <td>4.23784154659e-11</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2311,6 +2330,7 @@
               <td>3.03145969666e-07</td>
               <td>4.23770754764e-11</td>
               <td>3</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 2">1 check(s), 2 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2320,9 +2340,10 @@
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>1.37555534197e-08</td>
+              <td>4.64850772401e-13</td>
               <td>4</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 4">1 check(s), 4 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2332,9 +2353,10 @@
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>1.3780722397e-08</td>
+              <td>4.64850772401e-13</td>
               <td>4</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 4">1 check(s), 4 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2347,6 +2369,7 @@
               <td>0.106332156623</td>
               <td>4.85200664673e-05</td>
               <td>4</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 4">1 check(s), 4 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2359,6 +2382,7 @@
               <td>2.30940234709e-08</td>
               <td>1.30049085178e-12</td>
               <td>4</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 4">1 check(s), 4 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2371,6 +2395,7 @@
               <td>1.98749488531e-07</td>
               <td>1.17956555727e-11</td>
               <td>4</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 4">1 check(s), 4 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2383,6 +2408,7 @@
               <td>2.03769476532e-07</td>
               <td>1.17954090416e-11</td>
               <td>4</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 4">1 check(s), 4 element(s)</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2395,6 +2421,7 @@
               <td>0</td>
               <td>0</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2404,9 +2431,10 @@
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>9.09494701773e-13</td>
-              <td>9.40399181322e-15</td>
+              <td>1.88949979883e-09</td>
+              <td>1.78968525928e-13</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2419,6 +2447,7 @@
               <td>2.28435937372e-05</td>
               <td>3.9042627192e-05</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2431,6 +2460,7 @@
               <td>0</td>
               <td>0</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2443,6 +2473,7 @@
               <td>5.93144998496e-07</td>
               <td>9.31260115369e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2455,6 +2486,7 @@
               <td>6.1449078169e-07</td>
               <td>9.3125917725e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2467,6 +2499,7 @@
               <td>0</td>
               <td>0</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2476,9 +2509,10 @@
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>5.53224029345e-12</td>
-              <td>2.47080227765e-15</td>
+              <td>3.4517381158e-09</td>
+              <td>3.46057050159e-13</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2491,6 +2525,7 @@
               <td>2.40194881541e-05</td>
               <td>4.1594377858e-05</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2503,6 +2538,7 @@
               <td>0</td>
               <td>0</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2515,6 +2551,7 @@
               <td>3.63797880709e-12</td>
               <td>4.54222692694e-16</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2527,6 +2564,7 @@
               <td>2.51862093613e-12</td>
               <td>1.16061297877e-16</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2539,6 +2577,7 @@
               <td>0</td>
               <td>0</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2548,9 +2587,10 @@
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>3.6662903532e-12</td>
-              <td>1.00777468505e-15</td>
+              <td>1.06146832784e-11</td>
+              <td>3.48501743035e-13</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2563,6 +2603,7 @@
               <td>3.35706229145e-05</td>
               <td>4.85720307424e-05</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2575,6 +2616,7 @@
               <td>0</td>
               <td>0</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2587,6 +2629,7 @@
               <td>2.1886290567e-07</td>
               <td>1.24962018707e-11</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2599,6 +2642,7 @@
               <td>2.25824622544e-07</td>
               <td>1.24964323305e-11</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2609,8 +2653,9 @@
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
               <td>0</td>
-              <td>0</td>
+              <td>6.14464269081e-12</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2620,9 +2665,10 @@
               <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>3.6662903532e-12</td>
-              <td>9.36943927174e-15</td>
+              <td>7.17214041193e-10</td>
+              <td>3.65871891651e-13</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2632,9 +2678,10 @@
               <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0.0911481082074</td>
+              <td>0.0911481080385</td>
               <td>3.89769900321e-05</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2647,6 +2694,7 @@
               <td>0</td>
               <td>0</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2659,6 +2707,7 @@
               <td>5.95185931535e-07</td>
               <td>9.34503397739e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2668,9 +2717,10 @@
               <td>core_bal_star_3bus.cgmes</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>6.16672171273e-07</td>
+              <td>6.16672281563e-07</td>
               <td>9.3450250332e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2681,8 +2731,9 @@
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
               <td>0</td>
-              <td>0</td>
+              <td>4.49839458587e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2692,9 +2743,10 @@
               <td>core_bal_radial_3bus.cgmes</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>5.53224029345e-12</td>
-              <td>3.2357740779e-15</td>
+              <td>9.77989305231e-10</td>
+              <td>4.79727774294e-13</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2707,6 +2759,7 @@
               <td>0.0652660917301</td>
               <td>4.14827587024e-05</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2719,6 +2772,7 @@
               <td>0</td>
               <td>0</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2731,6 +2785,7 @@
               <td>1.81898940355e-12</td>
               <td>2.3668806386e-16</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2743,6 +2798,7 @@
               <td>1.58399343999e-12</td>
               <td>1.53373494162e-16</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2753,8 +2809,9 @@
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
               <td>0</td>
-              <td>0</td>
+              <td>4.58232419299e-12</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2764,9 +2821,10 @@
               <td>core_bal_ring_4bus.cgmes</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>7.33258070641e-12</td>
-              <td>5.42627666011e-16</td>
+              <td>5.36940221041e-11</td>
+              <td>3.09086897921e-13</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2779,6 +2837,7 @@
               <td>0.106332179298</td>
               <td>4.85200664674e-05</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2791,6 +2850,7 @@
               <td>0</td>
               <td>0</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2803,6 +2863,7 @@
               <td>2.19793446509e-07</td>
               <td>1.25530238875e-11</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2815,6 +2876,7 @@
               <td>2.26781462309e-07</td>
               <td>1.25525804543e-11</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2827,6 +2889,7 @@
               <td>0</td>
               <td>0</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2836,9 +2899,10 @@
               <td>core_bal_star_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>9.34121597105e-15</td>
+              <td>5.07632758264e-09</td>
+              <td>3.1918924714e-13</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2851,6 +2915,7 @@
               <td>0.0911480595758</td>
               <td>3.89769900321e-05</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2863,6 +2928,7 @@
               <td>4.88519557909e-08</td>
               <td>7.62336912265e-12</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2875,6 +2941,7 @@
               <td>5.55746769635e-07</td>
               <td>8.72918302272e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2887,6 +2954,7 @@
               <td>5.68130842136e-07</td>
               <td>8.72918193821e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2899,6 +2967,7 @@
               <td>0</td>
               <td>0</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2908,9 +2977,10 @@
               <td>core_bal_radial_3bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>1.7763568394e-12</td>
-              <td>2.66770974164e-15</td>
+              <td>1.72934489209e-10</td>
+              <td>3.63028590139e-13</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2923,6 +2993,7 @@
               <td>0.0652657923855</td>
               <td>4.14827587025e-05</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2935,6 +3006,7 @@
               <td>3.03148273296e-07</td>
               <td>4.23768184815e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2947,6 +3019,7 @@
               <td>3.0314856421e-07</td>
               <td>4.23768953284e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2959,6 +3032,7 @@
               <td>3.03144799402e-07</td>
               <td>4.23766954966e-11</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2971,6 +3045,7 @@
               <td>0</td>
               <td>0</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2980,9 +3055,10 @@
               <td>core_bal_ring_4bus</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>3.5527136788e-13</td>
-              <td>1.06705413026e-15</td>
+              <td>1.37554652105e-08</td>
+              <td>4.64184308886e-13</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -2995,6 +3071,7 @@
               <td>0.106332156573</td>
               <td>4.85200664672e-05</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -3007,6 +3084,7 @@
               <td>2.30953758244e-08</td>
               <td>1.30101256817e-12</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -3019,6 +3097,7 @@
               <td>1.98752631627e-07</td>
               <td>1.17953377441e-11</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -3031,6 +3110,7 @@
               <td>2.03764975026e-07</td>
               <td>1.17950437149e-11</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced common-subset interoperability case. Supported elements: one slack source, buses, lines, and constant-power loads.</td>
             </tr>
             
@@ -3040,9 +3120,10 @@
               <td>case9</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>6.79770466856e-09</td>
+              <td>9.91795188837e-12</td>
               <td>9</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 9; implausible_impedance_values: 8">2 check(s), 17 element(s)</span></td>
               <td>Official MATPOWER case9 imported through pandapower converter.</td>
             </tr>
             
@@ -3055,6 +3136,7 @@
               <td>6.78525966914e-09</td>
               <td>9.65382299721e-12</td>
               <td>9</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 9; implausible_impedance_values: 8">2 check(s), 17 element(s)</span></td>
               <td>Balanced export validated with Julia PowerModels AC power flow.</td>
             </tr>
             
@@ -3064,9 +3146,10 @@
               <td>case30</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>1.68431415384e-07</td>
+              <td>4.05276846236e-10</td>
               <td>30</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 38; implausible_impedance_values: 3; invalid_values: 4">3 check(s), 45 element(s)</span></td>
               <td>Representative MATPOWER-native case30 case imported from the bundled PowerModels package test corpus and validated against deterministic pandapower AC power flow.</td>
             </tr>
             
@@ -3079,6 +3162,7 @@
               <td>-</td>
               <td>-</td>
               <td>-</td>
+              <td><span class="pill pill-not_validated">not run</span></td>
               <td>Skipped strict bilateral validation for DTU7K subnet 26 because one side did not converge: [Errno 2] No such file or directory: &#x27;/workspace/input/DTU7K.py&#x27;.</td>
             </tr>
             
@@ -3091,6 +3175,7 @@
               <td>-</td>
               <td>-</td>
               <td>-</td>
+              <td><span class="pill pill-not_validated">not run</span></td>
               <td>Skipped strict bilateral validation for DTU7K subnet 27 because one side did not converge: [Errno 2] No such file or directory: &#x27;/workspace/input/DTU7K.py&#x27;.</td>
             </tr>
             
@@ -3101,8 +3186,9 @@
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
               <td>0</td>
-              <td>0</td>
+              <td>0.000168282888558</td>
               <td>118</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Official pandapower SmallGrid CGMES sample imported through pandapower&#x27;s native CGMES loader.</td>
             </tr>
             
@@ -3115,6 +3201,7 @@
               <td>7.61442970836e-08</td>
               <td>1.89794367131e-10</td>
               <td>118</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Official CGMES sample exported onward to PowerModels and validated with Julia AC power flow.</td>
             </tr>
             
@@ -3127,6 +3214,7 @@
               <td>0.000239770132898</td>
               <td>0.000931571971601</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Validated against OpenDSS source slack power and bus voltages for the currently supported subset.</td>
             </tr>
             
@@ -3139,6 +3227,7 @@
               <td>2.22328640353e-13</td>
               <td>1.45864664714e-15</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced-equivalent export validated with Julia PowerModels AC power flow.</td>
             </tr>
             
@@ -3151,6 +3240,7 @@
               <td>0.000224237794403</td>
               <td>0.000135378084749</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Balanced pandapower re-import of the OpenDSS starter feeder exported back to OpenDSS and validated against pandapower AC power flow.</td>
             </tr>
             
@@ -3163,6 +3253,7 @@
               <td>9.73002600439e-13</td>
               <td>1.11035854163e-16</td>
               <td>2</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Transformer-free balanced pandapower subset exported to CGMES and validated by native pandapower CGMES re-import.</td>
             </tr>
             
@@ -3175,6 +3266,7 @@
               <td>0</td>
               <td>0</td>
               <td>9</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 9; implausible_impedance_values: 8">2 check(s), 17 element(s)</span></td>
               <td>Pandapower JSON re-import generated from the validated MATPOWER case9 route.</td>
             </tr>
             
@@ -3187,6 +3279,7 @@
               <td>6.78525966914e-09</td>
               <td>9.65382299721e-12</td>
               <td>9</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 9; implausible_impedance_values: 8">2 check(s), 17 element(s)</span></td>
               <td>Balanced pandapower JSON export validated with Julia PowerModels AC power flow.</td>
             </tr>
             
@@ -3199,6 +3292,7 @@
               <td>6.78474455648e-09</td>
               <td>9.65318809283e-12</td>
               <td>9</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 9; implausible_impedance_values: 8">2 check(s), 17 element(s)</span></td>
               <td>Balanced line-based pandapower model exported to PyPSA NetCDF and validated against pandapower AC power flow.</td>
             </tr>
             
@@ -3211,6 +3305,7 @@
               <td>6.78474455648e-09</td>
               <td>9.65318809283e-12</td>
               <td>9</td>
+              <td><span class="pill pill-failed" title="implausible_impedance_values: 8">1 check(s), 8 element(s)</span></td>
               <td>PyPSA NetCDF re-import validated against PyPSA AC power flow and converted back through pandapower for the current line-based balanced subset.</td>
             </tr>
             
@@ -3223,6 +3318,7 @@
               <td>0.000211267312299</td>
               <td>0.000973872409869</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>OpenDSS native chained feeder with two loads validated against source bus voltages through pandapower.</td>
             </tr>
             
@@ -3235,6 +3331,7 @@
               <td>8.13947908763e-08</td>
               <td>2.83050014513e-11</td>
               <td>4</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Pandapower package case4gs validated through PyPSA on the supported balanced AC subset.</td>
             </tr>
             
@@ -3247,6 +3344,7 @@
               <td>7.41711783924e-10</td>
               <td>6.25769027876e-13</td>
               <td>5</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Pandapower package case5 validated through PyPSA on the supported balanced AC subset.</td>
             </tr>
             
@@ -3259,6 +3357,7 @@
               <td>1.3273371798e-07</td>
               <td>1.760930313e-10</td>
               <td>6</td>
+              <td><span class="pill pill-failed" title="implausible_impedance_values: 9">1 check(s), 9 element(s)</span></td>
               <td>Pandapower package case6ww validated with Julia PowerModels AC power flow.</td>
             </tr>
             
@@ -3271,6 +3370,7 @@
               <td>3.86352086939e-08</td>
               <td>2.23491853587e-09</td>
               <td>33</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Pandapower package Baran-Wu 33-bus feeder validated with Julia PowerModels AC power flow.</td>
             </tr>
             
@@ -3283,6 +3383,7 @@
               <td>4.36557456851e-11</td>
               <td>1.22845464836e-16</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Native PyPSA meshed triangle with one slack, one PV generator, and two loads validated against PyPSA AC power flow through pandapower.</td>
             </tr>
             
@@ -3295,6 +3396,7 @@
               <td>1.54688980732e-10</td>
               <td>1.3564234608e-15</td>
               <td>3</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Native PyPSA radial transmission-style case validated against PyPSA AC power flow through pandapower.</td>
             </tr>
             
@@ -3307,6 +3409,7 @@
               <td>1.21967274857e-10</td>
               <td>2.22875838357e-16</td>
               <td>5</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Native PyPSA five-bus ring with distributed load validated against PyPSA AC power flow through pandapower.</td>
             </tr>
             
@@ -3316,9 +3419,10 @@
               <td>case30_pmjl_pkg</td>
               <td>Balanced</td>
               <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td>1.68431415384e-07</td>
+              <td>4.05276846236e-10</td>
               <td>30</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 38; implausible_impedance_values: 3; invalid_values: 4">3 check(s), 45 element(s)</span></td>
               <td>pm.jl package-native MATPOWER case30 imported into pandapower and validated against deterministic pandapower AC power flow.</td>
             </tr>
             
@@ -3331,6 +3435,7 @@
               <td>6.6316743796e-08</td>
               <td>3.15109388582e-10</td>
               <td>30</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 38; implausible_impedance_values: 3; invalid_values: 4">3 check(s), 45 element(s)</span></td>
               <td>pm.jl package-native MATPOWER case30 imported to canonical, exported back to PowerModels JSON, and validated with Julia PowerModels AC power flow.</td>
             </tr>
             
@@ -3339,10 +3444,11 @@
               <td>pandapower</td>
               <td>case24_pmjl_pkg</td>
               <td>Balanced</td>
-              <td><span class="pill pill-validated">validated</span></td>
-              <td>0</td>
-              <td>0</td>
+              <td><span class="pill pill-failed">failed</span></td>
+              <td>361.314485086</td>
+              <td>0.039108545964</td>
               <td>24</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 38; invalid_values: 5">2 check(s), 43 element(s)</span></td>
               <td>Additional pm.jl package-native MATPOWER case24 imported into pandapower and validated against deterministic pandapower AC power flow.</td>
             </tr>
             
@@ -3355,6 +3461,7 @@
               <td>-</td>
               <td>-</td>
               <td>-</td>
+              <td><span class="pill pill-not_validated">not run</span></td>
               <td>PyPSA-Eur artifact tracked from `pypsa_eur_osm_raw_de_60kv.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Validation skipped: PyPSA reference power flow failed: No AC islands converged for PyPSA PF reference..</td>
             </tr>
             
@@ -3367,6 +3474,7 @@
               <td>3.97115136591e-08</td>
               <td>8.78395134407e-11</td>
               <td>1</td>
+              <td><span class="pill pill-not_validated">not run</span></td>
               <td>PyPSA-Eur artifact tracked from `pypsa_eur_hv_all_de_mv.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata.</td>
             </tr>
             
@@ -3379,6 +3487,7 @@
               <td>3.97115136591e-08</td>
               <td>8.78395134407e-11</td>
               <td>7824</td>
+              <td><span class="pill pill-not_validated">not run</span></td>
               <td>PyPSA-Eur artifact tracked from `pypsa_eur_hv_all_de_mv.validation.json` with scope `ac_projection_against_pypsa`. See the JSON artifact for the full export metadata. Island 2 validated as an individually solved synchronous island from `validation_cases/pypsa-eur/hv_all_de_mv/outputs/pypsa_eur_hv_all_de_mv.pandapower_islands/base_s_all_elec_de_mv_overlay.island_2.pandapower.json`.</td>
             </tr>
             
@@ -3399,6 +3508,7 @@
             <th>Slack Delta</th>
             <th>Voltage Delta</th>
             <th>Compared Points</th>
+            <th>Diagnostic</th>
             <th>Notes</th>
           </tr>
         </thead>
@@ -3413,6 +3523,7 @@
               <td>0</td>
               <td>0</td>
               <td>6</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3425,6 +3536,7 @@
               <td>2.25612768337e-05</td>
               <td>0.000548868681768</td>
               <td>6</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3437,6 +3549,7 @@
               <td>0.000295938091335</td>
               <td>0.00312684932482</td>
               <td>6</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3449,6 +3562,7 @@
               <td>0</td>
               <td>0</td>
               <td>9</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3461,6 +3575,7 @@
               <td>0.000718279218828</td>
               <td>0.00150717434267</td>
               <td>9</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3473,6 +3588,7 @@
               <td>0.000200972822597</td>
               <td>0.00305870338616</td>
               <td>9</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3485,6 +3601,7 @@
               <td>0</td>
               <td>0</td>
               <td>9</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3497,6 +3614,7 @@
               <td>1.26319030006e-05</td>
               <td>0.000394188148588</td>
               <td>9</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3509,6 +3627,7 @@
               <td>0.000160249498394</td>
               <td>0.00223428757989</td>
               <td>9</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3521,6 +3640,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3533,6 +3653,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3545,6 +3666,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3557,6 +3679,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3569,6 +3692,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3581,6 +3705,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3593,6 +3718,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3605,6 +3731,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3617,6 +3744,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3629,6 +3757,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3641,6 +3770,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3653,6 +3783,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3665,6 +3796,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3677,6 +3809,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3689,6 +3822,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3701,6 +3835,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3713,6 +3848,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3725,6 +3861,7 @@
               <td>inf</td>
               <td>inf</td>
               <td>0</td>
+              <td><span class="pill pill-validated">clean</span></td>
               <td>Unbalanced common-subset interoperability case. Supported elements: one slack source, buses, lines, native asymmetric loads, and the current signed-off transformer subset.</td>
             </tr>
             
@@ -3737,6 +3874,7 @@
               <td>9.59308605559e-12</td>
               <td>6.38370292542e-06</td>
               <td>6</td>
+              <td><span class="pill pill-failed" title="implausible_impedance_values: 1">1 check(s), 1 element(s)</span></td>
               <td>Unbalanced OpenDSS starter feeder validated against source node voltages with pandapower runpp_3ph.</td>
             </tr>
             
@@ -3749,6 +3887,7 @@
               <td>7.08868116922e-06</td>
               <td>0.000936091367299</td>
               <td>6</td>
+              <td><span class="pill pill-failed" title="implausible_impedance_values: 1">1 check(s), 1 element(s)</span></td>
               <td>Unbalanced OpenDSS starter feeder exported to PowerModelsDistribution and validated against source node voltages.</td>
             </tr>
             
@@ -3761,6 +3900,7 @@
               <td>0</td>
               <td>0</td>
               <td>2721</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 1; implausible_impedance_values: 901">2 check(s), 902 element(s)</span></td>
               <td>Native pandapower 3-phase roundtrip validated with runpp_3ph.</td>
             </tr>
             
@@ -3773,6 +3913,7 @@
               <td>0.000117740284812</td>
               <td>0.000644392850147</td>
               <td>2721</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 1; implausible_impedance_values: 901">2 check(s), 902 element(s)</span></td>
               <td>Native pandapower 3-phase model exported to OpenDSS and validated against runpp_3ph node voltages.</td>
             </tr>
             
@@ -3785,6 +3926,7 @@
               <td>0.000232197071199</td>
               <td>0.00477785674599</td>
               <td>2721</td>
+              <td><span class="pill pill-failed" title="deviation_from_std_type: 1; implausible_impedance_values: 901">2 check(s), 902 element(s)</span></td>
               <td>Native pandapower 3-phase model exported to PowerModelsDistribution and validated against runpp_3ph node voltages.</td>
             </tr>
             
@@ -3797,6 +3939,7 @@
               <td>1.49577896639e-10</td>
               <td>8.20082949264e-06</td>
               <td>9</td>
+              <td><span class="pill pill-failed" title="implausible_impedance_values: 2">1 check(s), 2 element(s)</span></td>
               <td>OpenDSS native branched unbalanced feeder validated against source node voltages through pandapower.</td>
             </tr>
             
@@ -3809,6 +3952,7 @@
               <td>1.38129736733e-05</td>
               <td>0.00117023422238</td>
               <td>9</td>
+              <td><span class="pill pill-failed" title="implausible_impedance_values: 2">1 check(s), 2 element(s)</span></td>
               <td>OpenDSS native branched unbalanced feeder validated against source node voltages through PowerModelsDistribution.</td>
             </tr>
             
